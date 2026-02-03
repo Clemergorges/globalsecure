@@ -1,0 +1,373 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // Otimizações para Europa
+  relationMode = "prisma"
+}
+
+// ==========================================
+// USUÁRIOS E AUTENTICAÇÃO
+// ==========================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String?
+  lastName      String?
+  phone         String?   @unique
+  phoneVerified Boolean   @default(false)
+   
+  // KYC - Compliance Europa (GDPR)
+  kycLevel      Int       @default(0)
+  kycStatus     KYCStatus @default(PENDING)
+  gdprConsent   Boolean   @default(false)
+  gdprConsentAt DateTime?
+   
+  // Localização
+  country       String?   // Código ISO (LU, FR, DE, etc)
+  timezone      String    @default("Europe/Luxembourg")
+   
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+   
+  // Relações
+  wallet              Wallet?
+  transfers           Transfer[]      @relation("SenderTransfers")
+  receivedTransfers   Transfer[]      @relation("ReceiverTransfers")
+  cards               VirtualCard[]
+  kycDocuments        KYCDocument[]
+  oTPs                OTP[]
+  sessions            Session[]
+  notifications       Notification[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([country])
+}
+
+enum KYCStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+// ==========================================
+// WALLET (Saldo Interno)
+// ==========================================
+
+model Wallet {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+   
+  // Multi-moeda
+  balanceEUR    Decimal  @default(0) @db.Decimal(12, 2)
+  balanceUSD    Decimal  @default(0) @db.Decimal(12, 2)
+  balanceGBP    Decimal  @default(0) @db.Decimal(12, 2)
+  primaryCurrency String @default("EUR")
+   
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+   
+  transactions  WalletTransaction[]
+
+  @@index([userId])
+}
+
+model WalletTransaction {
+  id          String       @id @default(cuid())
+  walletId    String
+  wallet      Wallet       @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type        WalletTxType
+  amount      Decimal      @db.Decimal(12, 2)
+  currency    String       @default("EUR")
+  description String
+  transferId  String?
+  createdAt   DateTime     @default(now())
+
+  @@index([walletId])
+  @@index([transferId])
+  @@index([createdAt])
+}
+
+enum WalletTxType {
+  CREDIT    // Recebeu
+  DEBIT     // Enviou
+  WITHDRAW  // Saque
+  REFUND    // Estorno
+  FEE       // Taxa
+}
+
+// ==========================================
+// TRANSFERÊNCIAS
+// ==========================================
+
+model Transfer {
+  id                String         @id @default(cuid())
+   
+  // Remetente
+  senderId          String
+  sender            User           @relation("SenderTransfers", fields: [senderId], references: [id])
+   
+  // Destinatário
+  recipientEmail    String
+  recipientName     String?
+  recipientId       String?
+  recipient         User?          @relation("ReceiverTransfers", fields: [recipientId], references: [id])
+   
+  // Valores
+  amountSent        Decimal        @db.Decimal(12, 2)
+  currencySent      String         // EUR, USD, GBP
+  fee               Decimal        @db.Decimal(12, 2)
+  feePercentage     Decimal        @default(1.8) @db.Decimal(5, 2)
+  exchangeRate      Decimal        @default(1) @db.Decimal(10, 6)
+  amountReceived    Decimal        @db.Decimal(12, 2)
+  currencyReceived  String
+   
+  // Tipo e Status
+  type              TransferType
+  status            TransferStatus @default(PENDING)
+   
+  // Compliance
+  amlCheckPassed    Boolean        @default(false)
+  amlCheckAt        DateTime?
+   
+  // Cartão (se type = CARD)
+  card              VirtualCard?
+   
+  // Timestamps
+  createdAt         DateTime       @default(now())
+  completedAt       DateTime?
+  canceledAt        DateTime?
+   
+  // Auditoria
+  logs              TransactionLog[]
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([recipientEmail])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum TransferType {
+  CARD      // Cartão virtual
+  ACCOUNT   // Conta para conta
+}
+
+enum TransferStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELED
+  FAILED
+  REFUNDED
+}
+
+// ==========================================
+// CARTÕES VIRTUAIS (STRIPE ISSUING)
+// ==========================================
+
+model VirtualCard {
+  id              String   @id @default(cuid())
+  transferId      String   @unique
+  transfer        Transfer @relation(fields: [transferId], references: [id])
+  userId          String?  // Dono do cartão
+  user            User?    @relation(fields: [userId], references: [id])
+   
+  // Stripe
+  stripeCardId      String   @unique
+  stripeCardholderId String
+   
+  // Dados do Cartão (CRIPTOGRAFADOS no DB real)
+  last4           String
+  brand           String   @default("visa")
+  expMonth        Int
+  expYear         Int
+   
+  // Limites
+  amount          Decimal  @db.Decimal(12, 2)
+  currency        String
+  amountUsed      Decimal  @default(0) @db.Decimal(12, 2)
+   
+  // Status
+  status          CardStatus @default(ACTIVE)
+   
+  // Ativação
+  activationToken String?  @unique
+  activatedAt     DateTime?
+   
+  // Timestamps
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+  lastUsedAt      DateTime?
+  canceledAt      DateTime?
+   
+  // Gastos (privados do remetente)
+  spendTransactions SpendTransaction[]
+  activationTokens  CardActivationToken[]
+
+  @@index([stripeCardId])
+  @@index([userId])
+  @@index([status])
+}
+
+enum CardStatus {
+  ACTIVE
+  INACTIVE
+  CANCELED
+  EXPIRED
+}
+
+// ==========================================
+// GASTOS DO CARTÃO (PRIVADO!)
+// ==========================================
+
+model SpendTransaction {
+  id              String      @id @default(cuid())
+  cardId          String
+  card            VirtualCard @relation(fields: [cardId], references: [id])
+   
+  // Stripe
+  stripeAuthId    String      @unique
+  stripeTxId      String?     @unique
+   
+  // Transação
+  amount          Decimal     @db.Decimal(12, 2)
+  currency        String
+  merchantName    String?
+  merchantCategory String?
+  merchantCity    String?
+  merchantCountry String?
+   
+  // Status
+  status          String      // approved, declined, pending
+   
+  createdAt       DateTime    @default(now())
+
+  @@index([cardId])
+  @@index([createdAt])
+}
+
+// ==========================================
+// TOKEN DE ATIVAÇÃO DO CARTÃO
+// ==========================================
+
+model CardActivationToken {
+  id        String      @id @default(cuid())
+  token     String      @unique
+  cardId    String
+  card      VirtualCard @relation(fields: [cardId], references: [id])
+  expiresAt DateTime
+  used      Boolean     @default(false)
+  usedAt    DateTime?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  @@index([token])
+  @@index([cardId])
+}
+
+// ==========================================
+// KYC DOCUMENTOS (GDPR Compliant)
+// ==========================================
+
+model KYCDocument {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+   
+  documentType    String    // passport, id_card, driver_license
+  documentNumber  String
+  issuingCountry  String    // Código ISO
+   
+  // URLs dos arquivos (Vercel Blob ou S3)
+  frontImageUrl   String
+  backImageUrl    String?
+  selfieUrl       String?
+   
+  status          KYCStatus @default(PENDING)
+  rejectionReason String?
+  verifiedAt      DateTime?
+   
+  createdAt       DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ==========================================
+// SESSÕES E SEGURANÇA
+// ==========================================
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?
+  country      String?  // GeoIP
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  @@index([userId])
+  @@index([token])
+}
+
+model OTP {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([phone, code])
+}
+
+// ==========================================
+// LOGS DE AUDITORIA (COMPLIANCE)
+// ==========================================
+
+model TransactionLog {
+  id         String   @id @default(cuid())
+  transferId String
+  transfer   Transfer @relation(fields: [transferId], references: [id])
+  type       String   // CREATE, APPROVE, VIEW, CANCEL
+  metadata   Json?
+  actorId    String?  // Quem fez a ação
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([transferId])
+  @@index([createdAt])
+}
+
+// ==========================================
+// NOTIFICAÇÕES
+// ==========================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
+}
