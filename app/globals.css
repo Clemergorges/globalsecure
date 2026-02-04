@@ -1,82 +1,51 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #06B6D4;
+  --color-primary-hover: #0891B2;
+  --color-primary-active: #067E8D;
+  
+  --color-success: #10B981;
+  --color-alert: #F59E0B;
+  --color-error: #EF4444;
+  
+  --color-background: #ffffff;
+  --color-foreground: #1F2937;
+  
+  --color-card: #ffffff;
+  --color-card-foreground: #1F2937;
+  
+  --color-muted: #F3F4F6;
+  --color-muted-foreground: #6B7280;
+  
+  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
 
 @layer base {
-  :root {
-    /* "Neo-Future" Dark Theme Palette */
-    --background: 222.2 84% 4.9%; /* Slate 950 */
-    --foreground: 210 40% 98%; /* Slate 50 */
- 
-    --card: 222.2 84% 6.9%; /* Slate 900/950 hybrid */
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    /* Electric Violet/Indigo Gradient Base */
-    --primary: 252 100% 68%; /* Bright Violet */
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 217.2 32.6% 17.5%; /* Muted Slate */
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 252 100% 68%; /* Same as primary for consistency in glows */
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 252 100% 68%; /* Violet Ring */
- 
-    --radius: 1rem; /* More rounded, modern feel */
-  }
-}
- 
-@layer base {
-  * {
-    border-color: var(--border);
-  }
   body {
-    background-color: var(--background);
-    color: var(--foreground);
-    /* Subtle noise texture for premium feel */
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-  }
-}
-
-/* Custom Utilities - Simplified manually or removed to avoid @apply issues with opacity syntax */
-@layer utilities {
-  .text-glow {
-    text-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
+    background-color: #F9FAFB; /* Gray 50 */
+    color: var(--color-foreground);
+    font-family: 'Inter', sans-serif;
   }
   
-  .border-glow {
-    box-shadow: 0 0 10px rgba(167, 139, 250, 0.2), inset 0 0 10px rgba(167, 139, 250, 0.1);
+  .dark body {
+    background-color: #111827; /* Gray 900 */
+    color: #F9FAFB;
   }
 }
 
-/* Animations */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+@layer utilities {
+  .card-premium {
+    background-color: var(--color-card);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-subtle);
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  .dark .card-premium {
+    background-color: #1F2937;
+    border-color: rgba(255,255,255,0.05);
+    box-shadow: none;
+  }
 }

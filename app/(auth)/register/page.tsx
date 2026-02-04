@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, Loader2, Check, X, AlertCircle } from 'lucide-react';
+import { Globe, Loader2, AlertCircle } from 'lucide-react';
 import { z } from 'zod';
 
 // Schema de validação
@@ -86,20 +86,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4 relative overflow-hidden">
-      {/* Background Effect */}
-      <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
-
-      <Card className="w-full max-w-md border-white/10 bg-slate-900/50 backdrop-blur-xl text-slate-100 shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-md border-gray-200 bg-white shadow-xl">
         <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 mr-2">
-               <Globe className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-10 h-10 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md">
+               G
             </div>
-            <span className="text-xl font-bold tracking-tight">GlobalSecure<span className="text-indigo-400">Send</span></span>
           </div>
-          <CardTitle className="text-2xl text-center">Criar Conta</CardTitle>
-          <CardDescription className="text-center text-slate-400">
+          <CardTitle className="text-2xl text-center font-bold text-gray-900">Criar Conta</CardTitle>
+          <CardDescription className="text-center text-gray-500">
             Comece a enviar dinheiro globalmente hoje
           </CardDescription>
         </CardHeader>
@@ -107,7 +103,7 @@ export default function RegisterPage() {
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Nome Completo</Label>
+                <Label htmlFor="fullName" className="text-gray-700">Nome Completo</Label>
                 <Input 
                   id="fullName" 
                   name="fullName" 
@@ -115,11 +111,11 @@ export default function RegisterPage() {
                   required 
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="bg-slate-950/50 border-white/10 focus:border-indigo-500" 
+                  className="bg-white border-gray-300 focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]" 
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="country">País</Label>
+                <Label htmlFor="country" className="text-gray-700">País</Label>
                 <Input 
                   id="country" 
                   name="country" 
@@ -128,13 +124,13 @@ export default function RegisterPage() {
                   required 
                   value={formData.country}
                   onChange={handleChange}
-                  className="bg-slate-950/50 border-white/10 focus:border-indigo-500 uppercase" 
+                  className="bg-white border-gray-300 focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)] uppercase" 
                 />
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-gray-700">Email</Label>
               <Input 
                 id="email" 
                 name="email" 
@@ -143,12 +139,12 @@ export default function RegisterPage() {
                 required 
                 value={formData.email}
                 onChange={handleChange}
-                className="bg-slate-950/50 border-white/10 focus:border-indigo-500" 
+                className="bg-white border-gray-300 focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]" 
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-gray-700">Senha</Label>
               <Input 
                 id="password" 
                 name="password" 
@@ -156,7 +152,7 @@ export default function RegisterPage() {
                 required 
                 value={formData.password}
                 onChange={handleChange}
-                className="bg-slate-950/50 border-white/10 focus:border-indigo-500" 
+                className="bg-white border-gray-300 focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]" 
               />
               {/* Password Strength Meter */}
               {formData.password && (
@@ -168,12 +164,12 @@ export default function RegisterPage() {
                         className={`flex-1 rounded-full transition-all duration-300 ${
                           passwordStrength >= level 
                             ? (passwordStrength <= 2 ? 'bg-red-500' : passwordStrength === 3 ? 'bg-yellow-500' : 'bg-emerald-500') 
-                            : 'bg-slate-800'
+                            : 'bg-gray-200'
                         }`}
                       />
                     ))}
                   </div>
-                  <p className="text-[10px] text-right text-slate-400">
+                  <p className="text-[10px] text-right text-gray-500">
                     {passwordStrength < 2 ? 'Fraca' : passwordStrength < 4 ? 'Média' : 'Forte'}
                   </p>
                 </div>
@@ -181,13 +177,13 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mainCurrency">Moeda Principal</Label>
+              <Label htmlFor="mainCurrency" className="text-gray-700">Moeda Principal</Label>
               <select 
                 id="mainCurrency" 
                 name="mainCurrency" 
                 value={formData.mainCurrency}
                 onChange={handleChange}
-                className="flex h-10 w-full rounded-md border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)]"
                 required
               >
                 <option value="EUR">EUR (Euro)</option>
@@ -197,22 +193,22 @@ export default function RegisterPage() {
             </div>
             
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 text-red-400 text-sm border border-red-500/20">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-100">
                 <AlertCircle className="w-4 h-4" />
                 {error}
               </div>
             )}
             
-            <Button className="w-full bg-indigo-600 hover:bg-indigo-500 font-bold h-11 shadow-[0_0_20px_rgba(99,102,241,0.3)]" type="submit" disabled={loading}>
+            <Button className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-semibold h-11 shadow-sm" type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar Conta
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex justify-center">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-gray-500">
             Já tem uma conta?{' '}
-            <Link href="/login" className="text-indigo-400 hover:text-indigo-300 hover:underline">
+            <Link href="/login" className="text-[var(--color-primary)] hover:underline font-medium">
               Entrar
             </Link>
           </p>
