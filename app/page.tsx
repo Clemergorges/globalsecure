@@ -27,7 +27,7 @@ export default function Home() {
           
           <nav className="hidden md:flex items-center gap-8">
             {['Features', 'Business', 'Crypto', 'Security'].map((item) => (
-              <Link href="#" className="text-sm font-medium text-slate-400 hover:text-white transition-all duration-300">
+              <Link key={item} href="#" className="text-sm font-medium text-slate-400 hover:text-white transition-all duration-300">
                 {item}
               </Link>
             ))}
