@@ -59,7 +59,12 @@ export default function LoginPage() {
               <Input id="email" name="email" type="email" placeholder="m@example.com" required className="bg-slate-800 border-slate-700" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link href="/forgot-password" className="text-xs text-blue-400 hover:text-blue-300">
+                  Forgot password?
+                </Link>
+              </div>
               <Input id="password" name="password" type="password" required className="bg-slate-800 border-slate-700" />
             </div>
             {error && <p className="text-sm text-red-500 text-center">{error}</p>}
