@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight, ArrowDownLeft, Wallet, Plus, MoreHorizontal, ArrowRight, History, Globe } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Plus, ArrowRight, History, Globe, MoreHorizontal, CreditCard, Send } from 'lucide-react';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
@@ -44,200 +44,205 @@ export default async function DashboardPage() {
   const wallet = data.user.wallet;
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-8 max-w-6xl mx-auto pt-6">
+      {/* Welcome & Actions Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-slate-100">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Welcome back, {data.user.firstName}
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+            Overview
           </h2>
-          <p className="text-slate-500 dark:text-slate-400">
-            Here's what's happening with your accounts today.
+          <p className="text-slate-500 mt-1">
+            Welcome back, {data.user.firstName}
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="gap-2">
+        <div className="flex gap-3 w-full md:w-auto">
+          <Button variant="outline" className="gap-2 flex-1 md:flex-none border-slate-200 hover:bg-slate-50 text-slate-700">
             <Plus className="w-4 h-4" /> Add Money
           </Button>
-          <Link href="/dashboard/send">
-            <Button className="gap-2 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-              <ArrowUpRight className="w-4 h-4" /> Send Money
+          <Link href="/dashboard/send" className="flex-1 md:flex-none">
+            <Button className="gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white shadow-sm">
+              <Send className="w-4 h-4" /> Send Money
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Accounts & Cards Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Primary Wallet Card */}
-        <Card className="bg-gradient-to-br from-blue-600 to-blue-700 border-none text-white shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
-            <Wallet className="w-32 h-32 transform rotate-12 translate-x-8 -translate-y-8" />
-          </div>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
-            <CardTitle className="text-sm font-medium text-blue-100">Total Balance</CardTitle>
-            <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
-              <Wallet className="w-4 h-4 text-white" />
-            </div>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-3xl font-bold mb-1">
-              {formatCurrency(Number(wallet?.balanceEUR || 0), 'EUR')}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-blue-100">
-              <span className="bg-green-400/20 text-green-300 px-2 py-0.5 rounded text-xs font-medium flex items-center gap-1">
-                <ArrowUpRight className="w-3 h-3" /> +2.4%
-              </span>
-              <span>vs last month</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Secondary Account (USD) - Simulated for MVP */}
-        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">USD Account</CardTitle>
-            <img src="https://flagcdn.com/w20/us.png" alt="USD" className="w-6 h-4 rounded-sm shadow-sm" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-              {formatCurrency(Number(wallet?.balanceUSD || 0), 'USD')}
-            </div>
-            <p className="text-xs text-slate-500">Available to spend</p>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions / Promo */}
-        <Card className="bg-slate-900 dark:bg-slate-950 border-slate-800 text-slate-300 shadow-sm flex flex-col justify-center items-center text-center p-6">
-          <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-4">
-            <Plus className="w-6 h-6 text-white" />
-          </div>
-          <h3 className="font-semibold text-white mb-1">Open New Account</h3>
-          <p className="text-sm text-slate-500 mb-4">Get local bank details in 10+ currencies.</p>
-          <Button variant="outline" size="sm" className="border-slate-700 hover:bg-slate-800 hover:text-white w-full">
-            Explore
-          </Button>
-        </Card>
-      </div>
-
-      {/* Main Content Area: Transactions */}
-      <div className="grid gap-6 md:grid-cols-7">
-        {/* Transaction History */}
-        <Card className="md:col-span-4 lg:col-span-5 border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Recent Activity</CardTitle>
-              <CardDescription>Your last 5 transactions</CardDescription>
-            </div>
-            <Link href="/dashboard/activity">
-              <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 hover:bg-primary/5">
-                View All <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              {data.recentTransfers.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                    {/* @ts-ignore */}
-                    <History className="w-8 h-8 text-slate-400" />
+      <div className="grid gap-8 md:grid-cols-3">
+        {/* Left Column: Balances & Cards */}
+        <div className="md:col-span-2 space-y-8">
+          
+          {/* Total Balance Section */}
+          <section>
+            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Your Accounts</h3>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {/* EUR Main Account */}
+              <div className="p-6 rounded-2xl bg-slate-900 text-white shadow-xl relative overflow-hidden group transition-transform hover:-translate-y-1 duration-300">
+                <div className="absolute top-0 right-0 p-6 opacity-10">
+                  <Globe className="w-24 h-24 transform translate-x-4 -translate-y-4" />
+                </div>
+                <div className="relative z-10 flex flex-col h-full justify-between min-h-[140px]">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                       <img src="https://flagcdn.com/w40/eu.png" alt="EUR" className="w-6 h-6 rounded-full border-2 border-slate-800" />
+                       <span className="font-medium text-slate-300">Euro</span>
+                    </div>
+                    <MoreHorizontal className="w-5 h-5 text-slate-500 cursor-pointer hover:text-white transition-colors" />
                   </div>
-                  <h3 className="text-slate-900 dark:text-white font-medium">No transactions yet</h3>
-                  <p className="text-slate-500 text-sm mt-1">Send money to get started.</p>
+                  <div>
+                    <div className="text-3xl font-bold tracking-tight">
+                      {formatCurrency(Number(wallet?.balanceEUR || 0), 'EUR')}
+                    </div>
+                    <div className="text-sm text-slate-400 mt-1">Main Account</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* USD Secondary Account */}
+              <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm relative overflow-hidden group transition-all hover:border-blue-200 hover:shadow-md">
+                <div className="flex flex-col h-full justify-between min-h-[140px]">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                       <img src="https://flagcdn.com/w40/us.png" alt="USD" className="w-6 h-6 rounded-full border border-slate-100" />
+                       <span className="font-medium text-slate-600">US Dollar</span>
+                    </div>
+                    <MoreHorizontal className="w-5 h-5 text-slate-400 cursor-pointer hover:text-slate-900 transition-colors" />
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold tracking-tight text-slate-900">
+                      {formatCurrency(Number(wallet?.balanceUSD || 0), 'USD')}
+                    </div>
+                    <div className="text-sm text-slate-500 mt-1">Multi-currency</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Recent Activity Section */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Recent Activity</h3>
+              <Link href="/dashboard/activity" className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                View all <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
+              {data.recentTransfers.length === 0 ? (
+                <div className="p-12 text-center">
+                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
+                    <History className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-slate-900 font-medium">No transactions yet</h3>
+                  <p className="text-slate-500 text-sm mt-1">Your recent activity will appear here.</p>
                 </div>
               ) : (
                 data.recentTransfers.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-slate-800">
+                  <div key={t.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors group">
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border ${
                         t.senderId === data.userId 
-                          ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' 
-                          : 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+                          ? 'bg-slate-50 border-slate-100 text-slate-600' 
+                          : 'bg-green-50 border-green-100 text-green-600'
                       }`}>
                         {t.senderId === data.userId ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownLeft className="w-5 h-5" />}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                        <p className="text-sm font-semibold text-slate-900">
                           {t.senderId === data.userId 
                             ? (t.recipientName || t.recipientEmail || 'Unknown Recipient') 
                             : 'Received Funds'}
                         </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {new Date(t.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        <p className="text-xs text-slate-500">
+                          {new Date(t.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • {new Date(t.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className={`text-sm font-bold ${
-                        t.senderId === data.userId ? 'text-slate-900 dark:text-white' : 'text-green-600 dark:text-green-400'
+                        t.senderId === data.userId ? 'text-slate-900' : 'text-green-600'
                       }`}>
                         {t.senderId === data.userId ? '-' : '+'}{formatCurrency(Number(t.amountSent), t.currencySent)}
                       </p>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                        t.status === 'COMPLETED' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                        t.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                        'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full inline-block mt-1 ${
+                        t.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                        t.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                        'bg-slate-100 text-slate-600'
                       }`}>
-                        {t.status.replace(/_/g, ' ')}
+                        {t.status}
                       </span>
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </CardContent>
-        </Card>
+          </section>
+        </div>
 
-        {/* Side Widgets */}
-        <div className="md:col-span-3 lg:col-span-2 space-y-6">
+        {/* Right Column: Widgets */}
+        <div className="space-y-6">
           {/* Quick Transfer Widget */}
-          <Card className="border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
-            <CardHeader>
-              <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Quick Transfer</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 border border-slate-200 dark:border-slate-800 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center text-slate-500 font-bold">
-                    AB
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <Send className="w-4 h-4 text-blue-600" /> Quick Send
+            </h3>
+            <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+               {/* Mock Quick Contacts */}
+               <div className="flex flex-col items-center gap-2 min-w-[60px] cursor-pointer group">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 group-hover:border-blue-400 group-hover:text-blue-600 transition-all">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-medium text-slate-600">New</span>
+               </div>
+               <div className="flex flex-col items-center gap-2 min-w-[60px] cursor-pointer opacity-50">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs border border-transparent">
+                    JS
+                  </div>
+                  <span className="text-xs font-medium text-slate-600">John</span>
+               </div>
+            </div>
+            <div className="mt-2 pt-4 border-t border-slate-100">
+               <p className="text-xs text-slate-400 text-center">No recent contacts found.</p>
+            </div>
+          </div>
+
+          {/* Cards Widget */}
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
+             <div className="relative z-10">
+               <div className="flex justify-between items-center mb-6">
+                 <h3 className="text-sm font-bold flex items-center gap-2">
+                   <CreditCard className="w-4 h-4" /> My Cards
+                 </h3>
+                 <Button size="sm" variant="ghost" className="h-6 px-2 text-xs text-slate-300 hover:text-white hover:bg-white/10">
+                   Manage
+                 </Button>
+               </div>
+               
+               <div className="aspect-[1.586/1] bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10 mb-4 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                     <div className="text-xs font-mono text-white/70">Virtual Debit</div>
+                     <span className="font-bold italic text-lg tracking-wider">VISA</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">Alice Brown</p>
-                    <p className="text-xs text-slate-500">Last sent 2 days ago</p>
+                    <div className="flex gap-2 mb-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                      <span className="text-sm font-mono ml-1">4242</span>
+                    </div>
+                    <div className="flex justify-between items-end">
+                       <span className="text-xs text-white/70">Exp 12/28</span>
+                       <span className="text-xs font-medium uppercase">{data.user.firstName} {data.user.lastName}</span>
+                    </div>
                   </div>
-                </div>
-                <Button className="w-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700">
-                  Send to New Recipient
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Exchange Rate Widget */}
-          <Card className="border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Globe className="w-4 h-4 text-blue-500" /> Live Rates
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500">EUR <ArrowRight className="w-3 h-3 inline mx-1" /> USD</span>
-                  <span className="font-mono font-medium text-slate-900 dark:text-white">1.0842</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500">EUR <ArrowRight className="w-3 h-3 inline mx-1" /> GBP</span>
-                  <span className="font-mono font-medium text-slate-900 dark:text-white">0.8541</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500">EUR <ArrowRight className="w-3 h-3 inline mx-1" /> BRL</span>
-                  <span className="font-mono font-medium text-slate-900 dark:text-white">5.4210</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+               </div>
+               
+               <Button className="w-full bg-white text-slate-900 hover:bg-slate-100 border-none">
+                 Create Virtual Card
+               </Button>
+             </div>
+          </div>
         </div>
       </div>
     </div>
