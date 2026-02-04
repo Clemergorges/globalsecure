@@ -12,7 +12,7 @@ export async function GET() {
   const user = await prisma.user.findUnique({
     // @ts-ignore
     where: { id: session.userId },
-    include: { accounts: true }
+    include: { wallet: true }
   });
 
   if (!user) {

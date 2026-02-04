@@ -2,24 +2,29 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   // @ts-ignore
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const { id } = await params;
+
   try {
     const card = await prisma.virtualCard.findUnique({
-      where: { id: params.id },
-      include: { transfer: true, account: true }
+      where: { id },
+      include: { 
+        transfer: true,
+        user: true // Check relation to User (card holder)
+      }
     });
 
     if (!card) return NextResponse.json({ error: 'Card not found' }, { status: 404 });
 
     // Verify ownership (Receiver or Account Holder)
     // @ts-ignore
-    const isReceiver = card.transfer?.receiverId === session.userId;
+    const isReceiver = card.transfer?.recipientId === session.userId;
     // @ts-ignore
-    const isAccountHolder = card.account?.userId === session.userId;
+    const isAccountHolder = card.userId === session.userId;
 
     if (!isReceiver && !isAccountHolder) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

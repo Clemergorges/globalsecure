@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      user: { id: user.id, email: user.email, fullName: user.fullName } 
+      user: { id: user.id, email: user.email, fullName: `${user.firstName} ${user.lastName}`.trim() } 
     });
 
   } catch (error) {

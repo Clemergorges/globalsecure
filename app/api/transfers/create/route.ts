@@ -40,15 +40,19 @@ export async function POST(req: Request) {
       data: {
         // @ts-ignore
         senderId: session.userId,
-        receiverId,
-        mode,
-        amountSource: Number(amountSource),
-        currencySource,
-        amountTarget: calculation.amountReceived,
-        currencyTarget,
-        fxRateUsed: calculation.exchangeRate,
-        feePercent: calculation.feePercentage,
-        status: mode === 'CARD_EMAIL' ? 'WAITING_SENDER_APPROVAL' : 'PENDING_RECEIVER_ACCOUNT',
+        recipientId: receiverId, // Correct field name
+        recipientEmail: receiverEmail || 'unknown', // Required field
+        recipientName: receiverName,
+        // mode: mode, // Removed as per new schema
+        type: mode === 'CARD_EMAIL' ? 'CARD' : 'ACCOUNT',
+        amountSent: Number(amountSource), // Correct field name
+        currencySent: currencySource,
+        amountReceived: calculation.amountReceived, // Correct field name
+        currencyReceived: currencyTarget,
+        exchangeRate: calculation.exchangeRate,
+        feePercentage: calculation.feePercentage,
+        fee: calculation.fee, // Changed from feeAmount to fee
+        status: 'PENDING', // Default valid status
         logs: {
           create: {
             type: 'CREATE_TRANSFER',
@@ -71,12 +75,16 @@ export async function POST(req: Request) {
       await prisma.virtualCard.create({
         data: {
           transferId: transfer.id,
-          cardToken: cardData.cardId, 
+          stripeCardId: cardData.cardId, 
+          stripeCardholderId: 'temp_holder_id', // Placeholder for MVP
           last4: cardData.last4,
           brand: cardData.brand,
-          expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 3)), // 3 years
-          spendingLimit: calculation.amountReceived,
-          status: 'PAUSED' // Waiting approval
+          expMonth: 12, // Placeholder
+          expYear: 2029, // Placeholder
+          expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 3)), 
+          amount: calculation.amountReceived,
+          currency: currencyTarget,
+          status: 'INACTIVE' 
         }
       });
     }

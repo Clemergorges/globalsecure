@@ -14,13 +14,13 @@ export async function GET(req: Request) {
           // @ts-ignore
           { senderId: session.userId },
           // @ts-ignore
-          { receiverId: session.userId }
+          { recipientId: session.userId }
         ]
       },
       include: {
-        sender: { select: { fullName: true, email: true } },
-        receiver: { select: { fullName: true, email: true } },
-        virtualCards: { select: { last4: true, status: true } }
+        sender: { select: { firstName: true, lastName: true, email: true } },
+        recipient: { select: { firstName: true, lastName: true, email: true } }, // Renamed from receiver
+        card: { select: { last4: true, status: true } } // Renamed from virtualCards
       },
       orderBy: { createdAt: 'desc' }
     });

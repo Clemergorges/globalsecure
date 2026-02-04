@@ -23,28 +23,35 @@ export async function POST(req: Request) {
 
     const passwordHash = await hashPassword(password);
 
+    // Split full name
+    const nameParts = fullName.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
     const user = await prisma.user.create({
       data: {
-        fullName,
+        firstName,
+        lastName,
         email,
         passwordHash,
         country,
-        mainCurrency,
-        accounts: {
+        // mainCurrency was removed from User model, stored in Wallet
+        wallet: {
           create: {
-            currency: mainCurrency,
-            balance: 0,
+            primaryCurrency: mainCurrency,
+            balanceEUR: 0,
+            balanceUSD: 0
           }
         }
       },
       include: {
-        accounts: true
+        wallet: true
       }
     });
 
     return NextResponse.json({ 
       success: true, 
-      user: { id: user.id, email: user.email, fullName: user.fullName } 
+      user: { id: user.id, email: user.email, fullName: `${user.firstName} ${user.lastName}`.trim() } 
     });
 
   } catch (error) {

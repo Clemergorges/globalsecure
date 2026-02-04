@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { Loader2, CheckCircle, Lock } from 'lucide-react';
-import QRCode from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 export default function ClaimPage() {
   const { id } = useParams();
@@ -60,7 +60,7 @@ export default function ClaimPage() {
               </div>
               
               <div className="flex justify-center py-4 bg-white rounded">
-                <QRCode value={`https://globalsecuresend.com/card/${card.id}`} size={128} />
+                <QRCodeCanvas value={`https://globalsecuresend.com/card/${card.id}`} size={128} />
               </div>
 
               <div className="text-center text-sm text-slate-400">
