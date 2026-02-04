@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Send, CreditCard, History, Shield, LogOut, X } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
 
 const links = [
   { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
@@ -28,12 +29,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
       {/* Sidebar */}
       <aside className={`fixed top-0 left-0 z-50 h-full w-64 transform bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-transform duration-300 md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex h-20 items-center justify-between px-6 border-b border-gray-100 dark:border-gray-800">
-          <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tighter flex items-center gap-2">
-            <div className="w-8 h-8 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-white">
-              G
-            </div>
-            GlobalSecure
-          </span>
+          <Logo className="w-8 h-8" textClassName="text-lg dark:text-white" />
           <button onClick={() => setMobileOpen(false)} className="md:hidden text-gray-500">
             <X className="w-6 h-6" />
           </button>

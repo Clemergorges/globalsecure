@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Globe, Shield, Zap, Check, Smartphone, CreditCard, Star } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
 
 export default function Home() {
   return (
@@ -9,12 +10,7 @@ export default function Home() {
       {/* Header */}
       <header className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-xl tracking-tight text-gray-900">
-            <div className="w-8 h-8 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-white">
-              G
-            </div>
-            GlobalSecure
-          </div>
+          <Logo />
           
           <nav className="hidden md:flex items-center gap-8">
             {['Funcionalidades', 'Para Empresas', 'Preços', 'Ajuda'].map((item) => (
@@ -48,15 +44,15 @@ export default function Home() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
                   </span>
-                  Agora disponível no Brasil
+                  Global Finance • Luxembourg Based
                 </div>
                 
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900 leading-[1.1]">
-                  O jeito inteligente de enviar dinheiro.
+                  A fronteira entre moedas desapareceu.
                 </h1>
                 
                 <p className="text-xl text-gray-500 max-w-lg leading-relaxed">
-                  Sem taxas ocultas. Câmbio comercial real. Cartões virtuais instantâneos na sua carteira digital.
+                  Contas multi-moeda com IBAN europeu. Envie, gaste e receba como um local em qualquer lugar do mundo.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -72,10 +68,10 @@ export default function Home() {
 
                 <div className="flex items-center gap-6 pt-6 text-sm font-medium text-gray-500">
                   <div className="flex items-center gap-2">
-                     <Check className="w-5 h-5 text-emerald-500" /> Regulado pelo Banco Central
+                     <Check className="w-5 h-5 text-emerald-500" /> Em conformidade com PSD2 (EU)
                   </div>
                   <div className="flex items-center gap-2">
-                     <Shield className="w-5 h-5 text-gray-400" /> Criptografia Ponta-a-Ponta
+                     <Shield className="w-5 h-5 text-gray-400" /> Proteção de Dados GDPR
                   </div>
                 </div>
               </div>
@@ -180,7 +176,7 @@ export default function Home() {
               Pronto para economizar?
             </h2>
             <p className="text-gray-400 text-xl mb-10 max-w-2xl mx-auto">
-              Junte-se a mais de 10 milhões de pessoas que já usam GlobalSecure.
+              Junte-se a mais de 10 milhões de pessoas que já usam GlobalTransfer.
             </p>
             <Link href="/register">
               <Button size="lg" className="h-16 px-10 rounded-xl text-lg font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none shadow-xl shadow-cyan-900/50">
@@ -193,18 +189,13 @@ export default function Home() {
 
       <footer className="bg-white border-t border-gray-100 py-12 text-gray-500">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2 font-bold text-gray-900">
-              <div className="w-6 h-6 bg-[var(--color-primary)] rounded-md flex items-center justify-center text-white text-xs">
-                G
-              </div>
-              GlobalSecure
-            </div>
+            <Logo showText={true} className="w-6 h-6" textClassName="text-base" />
             <div className="flex gap-8 text-sm">
               <Link href="/privacy" className="hover:text-[var(--color-primary)] transition-colors">Privacidade</Link>
               <Link href="/terms" className="hover:text-[var(--color-primary)] transition-colors">Termos</Link>
               <Link href="#" className="hover:text-[var(--color-primary)] transition-colors">Twitter</Link>
             </div>
-            <p className="text-xs">© 2026 GlobalSecure Inc.</p>
+            <p className="text-xs">© 2026 GlobalTransfer Inc.</p>
         </div>
       </footer>
     </div>

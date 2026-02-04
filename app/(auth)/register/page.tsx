@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Globe, Loader2, AlertCircle } from 'lucide-react';
 import { z } from 'zod';
+import { Logo } from '@/components/ui/logo';
 
 // Schema de validação
 const registerSchema = z.object({
@@ -90,9 +91,7 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md border-gray-200 bg-white shadow-xl">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-6">
-            <div className="w-10 h-10 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md">
-               G
-            </div>
+            <Logo showText={false} className="w-16 h-16" />
           </div>
           <CardTitle className="text-2xl text-center font-bold text-gray-900">Criar Conta</CardTitle>
           <CardDescription className="text-center text-gray-500">

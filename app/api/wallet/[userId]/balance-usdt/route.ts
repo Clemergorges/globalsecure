@@ -1,0 +1,38 @@
+import { NextResponse } from 'next/server';
+import { getUserBalanceUsdt, getUsdtPriceUsd, deriveUserAddress } from '@/lib/services/polygon';
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  try {
+    const { userId } = await params;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+    }
+
+    const address = deriveUserAddress(userId);
+    
+    // Run in parallel for speed
+    const [balanceUsdt, priceUsd] = await Promise.all([
+      getUserBalanceUsdt(address),
+      getUsdtPriceUsd()
+    ]);
+
+    const balanceFloat = parseFloat(balanceUsdt);
+    const balanceUsd = (balanceFloat * priceUsd).toFixed(2);
+
+    return NextResponse.json({
+      userId,
+      address,
+      balanceUsdt,
+      balanceUsd,
+      priceUsd
+    });
+
+  } catch (error: any) {
+    console.error('Balance check error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

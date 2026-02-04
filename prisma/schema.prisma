@@ -46,6 +46,7 @@ model User {
   oTPs                OTP[]
   sessions            Session[]
   notifications       Notification[]
+  cryptoDeposits      CryptoDeposit[]
 
   @@index([email])
   @@index([phone])
@@ -370,4 +371,39 @@ model Notification {
 
   @@index([userId])
   @@index([read])
+}
+
+// ==========================================
+// CRYPTO DEPOSITS
+// ==========================================
+
+model CryptoDeposit {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  
+  txHash      String        @unique
+  network     String        @default("POLYGON") // POLYGON, ETHEREUM, etc
+  token       String        @default("USDT")
+  
+  amount      Decimal       @db.Decimal(18, 6) // Crypto amount (more precision)
+  
+  status      CryptoStatus  @default(PENDING)
+  
+  walletTxId  String?       @unique // Link to the wallet credit transaction
+  
+  detectedAt  DateTime      @default(now())
+  confirmedAt DateTime?
+  creditedAt  DateTime?
+
+  @@index([userId])
+  @@index([txHash])
+  @@index([status])
+}
+
+enum CryptoStatus {
+  PENDING
+  CONFIRMED
+  CREDITED
+  FAILED
 }
