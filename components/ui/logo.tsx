@@ -29,7 +29,7 @@ export function Logo({ className = "w-10 h-10", showText = true, textClassName =
                     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                     textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                   }}>
-              GT
+              GSS
             </span>
         </div>
         
@@ -42,7 +42,7 @@ export function Logo({ className = "w-10 h-10", showText = true, textClassName =
       
       {showText && (
         <span className={`font-bold text-gray-900 tracking-tight ${textClassName}`}>
-          GlobalTransfer
+          GlobalSecureSend
         </span>
       )}
     </div>

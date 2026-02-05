@@ -11,12 +11,12 @@ export async function GET(req: Request) {
     const cards = await prisma.virtualCard.findMany({
       where: {
         OR: [
-          // Cards linked to user's transfers
+          // Cards linked to user's transfers (as recipient)
           // @ts-ignore
-          { transfer: { receiverId: session.userId } },
-          // Cards linked to user's account
+          { transfer: { recipientId: session.userId } },
+          // Cards linked to user's account directly
           // @ts-ignore
-          { account: { userId: session.userId } }
+          { userId: session.userId }
         ]
       },
       include: {

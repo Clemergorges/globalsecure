@@ -36,6 +36,7 @@ export async function createVirtualCard(
     const cardholder = await stripe.issuing.cardholders.create({
       name: params.recipientName,
       email: params.recipientEmail,
+      phone_number: '+352691123456', // Required for 3DS/SCA in EU
       type: 'individual',
       status: 'active',
       billing: {
@@ -58,7 +59,7 @@ export async function createVirtualCard(
       cardholder: cardholder.id,
       currency: params.currency.toLowerCase(),
       type: 'virtual',
-      status: 'active',
+      status: 'inactive', // Start inactive until transfer is approved
       spending_controls: {
         spending_limits: [
           {
@@ -68,7 +69,7 @@ export async function createVirtualCard(
         ],
         // Permitir apenas compras online (mais seguro)
         // allowed_categories: null, // null = todas categorias
-        // blocked_categories: ['gambling_establishments'] // Commented out as it causes TS error with current SDK version
+        // blocked_categories: ['gambling_establishments'] as any, // TODO: Find correct category enum for API 2024-12-18
       },
       metadata: {
         transferId: params.transferId,

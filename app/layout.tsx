@@ -5,8 +5,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'GlobalTransfer - Fast International Transfers',
-  description: 'Send money globally in seconds with virtual cards and secure transfers.',
+  title: 'GlobalSecureSend - Fast International Transfers',
+  description: 'Send money globally in seconds with virtual cards and bank transfers.',
 };
 
 export default function RootLayout({

@@ -69,8 +69,8 @@ export default function CardsPage() {
                 <div className="text-xl font-mono tracking-widest flex items-center gap-2">
                   {revealedCard === card.id ? (
                     <>
-                      {cardDetails?.pan} 
-                      <Copy className="w-4 h-4 cursor-pointer hover:text-blue-300" onClick={() => navigator.clipboard.writeText(cardDetails?.pan)} />
+                      {cardDetails?.fullPan || cardDetails?.pan} 
+                      <Copy className="w-4 h-4 cursor-pointer hover:text-blue-300" onClick={() => navigator.clipboard.writeText(cardDetails?.fullPan || cardDetails?.pan)} />
                     </>
                   ) : (
                     `•••• •••• •••• ${card.last4}`
@@ -106,7 +106,7 @@ export default function CardsPage() {
             </div>
             
             <div className="mt-2 flex justify-between text-sm text-slate-400 px-1">
-              <span>Limit: {formatCurrency(Number(card.spendingLimit), 'USD')}</span> {/* Assuming converted to USD for display or fetch real currency */}
+              <span>Limit: {formatCurrency(Number(card.amount), card.currency || 'USD')}</span>
               <span className={`px-2 py-0.5 rounded-full text-xs ${card.status === 'ACTIVE' ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
                 {card.status}
               </span>

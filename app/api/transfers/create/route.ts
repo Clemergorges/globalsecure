@@ -21,6 +21,26 @@ export async function POST(req: Request) {
       receiverName 
     } = body;
 
+    // 0. KYC Check
+    // @ts-ignore
+    const user = await prisma.user.findUnique({ where: { id: session.userId } });
+    
+    // Limits based on KYC Level
+    // Level 0 (Unverified): Max 100 EUR
+    // Level 1 (Pending): Max 500 EUR
+    // Level 2 (Verified): Max 10,000 EUR
+    
+    const amount = Number(amountSource);
+    // @ts-ignore
+    const kycLevel = user?.kycLevel || 0;
+
+    if (kycLevel === 0 && amount > 100) {
+      return NextResponse.json({ error: 'Unverified account limit exceeded. Please complete KYC to send more than €100.' }, { status: 403 });
+    }
+    if (kycLevel === 1 && amount > 500) {
+      return NextResponse.json({ error: 'Pending verification limit exceeded. Please wait for approval to send more than €500.' }, { status: 403 });
+    }
+
     // 1. Calculate Amounts
     const calculation = await calculateTransferAmounts(
       Number(amountSource),

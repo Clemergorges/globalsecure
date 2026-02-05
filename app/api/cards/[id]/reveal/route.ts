@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { getCardDetails } from '@/lib/services/stripe';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -30,16 +31,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // In a real app, we would fetch sensitive details from Stripe/PCI Vault here
-    // For MVP/Mock, we return the stored token or a mock PAN
+    // Fetch sensitive details from Stripe Issuing
+    const stripeDetails = await getCardDetails(card.stripeCardId);
+
     return NextResponse.json({
-      pan: '4242 4242 4242 ' + card.last4,
-      cvc: '123',
-      exp: new Date(card.expiresAt).toLocaleDateString('en-US', { month: '2-digit', year: '2-digit' }),
-      cardholderName: 'VALUED CUSTOMER' // Or user name
+      pan: '**** **** **** ' + stripeDetails.last4, // Masked for safety in logs, but UI might need full PAN. 
+      // ACTUALLY: The UI expects full PAN to display when revealed. 
+      // Stripe returns full number in 'number' field when expanded.
+      // Let's return the real number if available, otherwise fallback.
+      fullPan: stripeDetails.number, 
+      cvc: stripeDetails.cvc,
+      exp: `${String(stripeDetails.exp_month).padStart(2, '0')}/${String(stripeDetails.exp_year).slice(-2)}`,
+      cardholderName: card.user?.firstName ? `${card.user.firstName} ${card.user.lastName}`.toUpperCase() : 'VALUED CUSTOMER'
     });
 
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to reveal card' }, { status: 500 });
+    console.error('Card reveal error:', error);
+    return NextResponse.json({ error: 'Failed to reveal card details' }, { status: 500 });
   }
 }

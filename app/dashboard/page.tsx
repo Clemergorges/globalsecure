@@ -1,52 +1,79 @@
-import { getSession } from '@/lib/auth';
-import { prisma } from '@/lib/db';
-import { MOCK_TRANSACTIONS, MOCK_CARDS } from '@/lib/mock-data';
+"use client";
+
+import { useState, useEffect } from 'react';
 import { BalanceCard } from './components/BalanceCard';
 import { QuickActionsGrid } from './components/QuickActionsGrid';
-import { TransactionsList } from './components/TransactionsList';
+import { TransactionsList, TransactionItem } from './components/TransactionsList';
 import { CardVirtualItem } from './components/CardVirtualItem';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
+import { pusherClient } from '@/lib/pusher-client';
 
-async function getData() {
-  const session = await getSession();
-  if (!session) return null;
+export default function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [balance, setBalance] = useState<number>(0);
+  const [currency, setCurrency] = useState('EUR');
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [cards, setCards] = useState<any[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // @ts-ignore
-  const user = await prisma.user.findUnique({
-    // @ts-ignore
-    where: { id: session.userId },
-    include: { wallet: true }
-  });
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const dbTransfers = await prisma.transfer.findMany({
-    where: {
-      OR: [
-        // @ts-ignore
-        { senderId: session.userId },
-        // @ts-ignore
-        { recipientId: session.userId }
-      ]
-    },
-    take: 5,
-    orderBy: { createdAt: 'desc' }
-  });
+  // Setup Real-time Listeners
+  useEffect(() => {
+    if (!userId) return;
 
-  const transfers = dbTransfers.length > 0 ? dbTransfers : MOCK_TRANSACTIONS;
-  const cards = MOCK_CARDS; 
+    const channelName = `user-${userId}`;
+    const channel = pusherClient.subscribe(channelName);
 
-  // @ts-ignore
-  return { user, transfers, cards, userId: session.userId };
-}
+    const handleDataUpdate = () => {
+      fetchDashboardData();
+    };
+    
+    channel.bind('transfer:received', handleDataUpdate);
+    channel.bind('transfer:sent', handleDataUpdate);
+    channel.bind('card-update', handleDataUpdate);
 
-export default async function DashboardPage() {
-  const data = await getData();
+    return () => {
+      channel.unbind_all();
+      pusherClient.unsubscribe(channelName);
+    };
+  }, [userId]);
 
-  if (!data || !data.user) {
-    return <div className="p-8 text-center text-gray-500">Sessão expirada. Por favor faça login novamente.</div>;
+  async function fetchDashboardData() {
+    try {
+      // Parallel Fetching
+      const [walletRes, transactionsRes, cardsRes] = await Promise.all([
+        fetch('/api/wallet/balance'),
+        fetch('/api/wallet/transactions'),
+        fetch('/api/cards')
+      ]);
+
+      const walletData = await walletRes.json();
+      const transactionsData = await transactionsRes.json();
+      const cardsData = await cardsRes.json();
+
+      setBalance(Number(walletData.balance) || 0);
+      setCurrency(walletData.currency || 'EUR');
+      setTransactions(transactionsData.transactions || []);
+      setCards(cardsData.cards ? cardsData.cards.slice(0, 3) : []); // Show max 3 cards
+      setUserId(walletData.userId); 
+
+    } catch (error) {
+      console.error('Dashboard load failed:', error);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const wallet = data.user.wallet;
-  const balance = wallet?.balanceEUR || 1250.50;
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-20">
@@ -55,7 +82,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Zone 1: Hero/Balance - Takes 2/3 on large screens */}
         <div className="lg:col-span-2 h-full">
-          <BalanceCard balance={Number(balance)} currency="EUR" />
+          <BalanceCard balance={balance} currency={currency} />
         </div>
 
         {/* Zone 2: Quick Actions - Takes 1/3 */}
@@ -68,7 +95,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Zone 3: Recent Transactions - Takes 2/3 */}
         <div className="lg:col-span-2">
-          <TransactionsList transactions={data.transfers} currentUserId={data.userId} />
+          <TransactionsList transactions={transactions} />
         </div>
 
         {/* Zone 4: Active Cards - Takes 1/3 */}
@@ -79,7 +106,7 @@ export default async function DashboardPage() {
           </div>
           
           <div className="grid gap-4">
-            {data.cards.map((card) => (
+            {cards.map((card) => (
               <CardVirtualItem key={card.id} card={card} />
             ))}
             

@@ -44,7 +44,7 @@ export default function Home() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
                   </span>
-                  Global Finance • Luxembourg Based
+                  Global Banking • Luxembourg Based
                 </div>
                 
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900 leading-[1.1]">
@@ -176,7 +176,7 @@ export default function Home() {
               Pronto para economizar?
             </h2>
             <p className="text-gray-400 text-xl mb-10 max-w-2xl mx-auto">
-              Junte-se a mais de 10 milhões de pessoas que já usam GlobalTransfer.
+              Junte-se a mais de 10 milhões de pessoas que já usam GlobalSecure.
             </p>
             <Link href="/register">
               <Button size="lg" className="h-16 px-10 rounded-xl text-lg font-bold bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white border-none shadow-xl shadow-cyan-900/50">
@@ -195,7 +195,7 @@ export default function Home() {
               <Link href="/terms" className="hover:text-[var(--color-primary)] transition-colors">Termos</Link>
               <Link href="#" className="hover:text-[var(--color-primary)] transition-colors">Twitter</Link>
             </div>
-            <p className="text-xs">© 2026 GlobalTransfer Inc.</p>
+            <p className="text-xs">© 2026 GlobalSecure Inc.</p>
         </div>
       </footer>
     </div>

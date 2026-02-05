@@ -4,13 +4,15 @@ interface Card {
   id: string;
   last4: string;
   brand: string;
-  expiry: string;
+  expMonth: number;
+  expYear: number;
   status: string;
-  alias: string;
+  // alias removed as it's not in the schema yet, can be added later or computed
 }
 
 export function CardVirtualItem({ card }: { card: Card }) {
   const isActive = card.status === 'ACTIVE';
+  const expiry = `${String(card.expMonth).padStart(2, '0')}/${String(card.expYear).slice(-2)}`;
   
   return (
     <div className="card-premium p-5 bg-white border border-gray-100 hover:border-gray-300 transition-all group relative">
@@ -24,7 +26,7 @@ export function CardVirtualItem({ card }: { card: Card }) {
       </div>
       
       <div className="mb-4">
-        <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">{card.alias}</p>
+        <p className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wider">Virtual Card</p>
         <div className="flex items-center gap-2">
           <p className="text-lg font-mono font-bold text-gray-900 tracking-widest">
             •••• {card.last4}
@@ -38,7 +40,7 @@ export function CardVirtualItem({ card }: { card: Card }) {
       <div className="flex justify-between items-end border-t border-gray-50 pt-3 mt-2">
         <div>
           <p className="text-[10px] text-gray-400 uppercase">Expira</p>
-          <p className="text-xs font-medium text-gray-700">{card.expiry}</p>
+          <p className="text-xs font-medium text-gray-700">{expiry}</p>
         </div>
         <p className="text-xs font-bold text-gray-900 italic">{card.brand}</p>
       </div>

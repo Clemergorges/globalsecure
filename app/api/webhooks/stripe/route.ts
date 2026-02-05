@@ -84,11 +84,12 @@ async function handleAuthorizationRequest(
 async function handleAuthorizationCreated(
   authorization: Stripe.Issuing.Authorization
 ) {
-  // @ts-ignore
-  const stripeCardId = authorization.card.id || authorization.card; // Pode vir expandido ou ID
+  const stripeCardId = typeof authorization.card === 'string' 
+    ? authorization.card 
+    : authorization.card.id;
 
-  if (typeof stripeCardId !== 'string') {
-    console.error('Invalid stripe card ID type');
+  if (!stripeCardId) {
+    console.error('Missing stripe card ID in authorization');
     return;
   }
 
@@ -99,7 +100,6 @@ async function handleAuthorizationCreated(
   if (!card) return;
 
   // Notificar via Pusher
-  // @ts-ignore
   await pusherService.trigger(`card-${card.id}`, 'authorization-update', {
     status: authorization.status,
     amount: authorization.amount,
@@ -113,11 +113,12 @@ async function handleAuthorizationCreated(
 async function handleTransactionCreated(
   transaction: Stripe.Issuing.Transaction
 ) {
-  // @ts-ignore
-  const stripeCardId = transaction.card.id || transaction.card;
+  const stripeCardId = typeof transaction.card === 'string'
+    ? transaction.card
+    : transaction.card.id;
 
-  if (typeof stripeCardId !== 'string') {
-    console.error('Invalid stripe card ID type in transaction');
+  if (!stripeCardId) {
+    console.error('Missing stripe card ID in transaction');
     return;
   }
 
@@ -150,8 +151,71 @@ async function handleTransactionCreated(
 
 async function handleCardCreated(card: Stripe.Issuing.Card) {
   console.log('Card created on Stripe:', card.id);
+
+  const transferId = card.metadata.transferId;
+  if (!transferId) {
+    console.log('Card created without transferId metadata, skipping sync');
+    return;
+  }
+
+  const existing = await prisma.virtualCard.findUnique({
+    where: { stripeCardId: card.id }
+  });
+
+  if (existing) return;
+
+  const holderId = typeof card.cardholder === 'string' 
+    ? card.cardholder 
+    : card.cardholder.id;
+
+  const statusMap: Record<string, 'ACTIVE' | 'INACTIVE' | 'CANCELED'> = {
+    'active': 'ACTIVE',
+    'inactive': 'INACTIVE',
+    'canceled': 'CANCELED'
+  };
+
+  try {
+    await prisma.virtualCard.create({
+      data: {
+        stripeCardId: card.id,
+        transferId: transferId,
+        stripeCardholderId: holderId,
+        last4: card.last4,
+        brand: card.brand,
+        expMonth: card.exp_month,
+        expYear: card.exp_year,
+        // Calculate expiration date (last day of the month)
+        expiresAt: new Date(card.exp_year, card.exp_month, 0),
+        amount: 0, // Value unknown from webhook event alone
+        currency: card.currency,
+        status: statusMap[card.status] || 'INACTIVE'
+      }
+    });
+    console.log('Synced new Stripe card to DB:', card.id);
+  } catch (error) {
+    console.error('Failed to sync new card:', error);
+  }
 }
 
 async function handleCardUpdated(card: Stripe.Issuing.Card) {
   console.log('Card updated on Stripe:', card.id);
+
+  const statusMap: Record<string, 'ACTIVE' | 'INACTIVE' | 'CANCELED'> = {
+    'active': 'ACTIVE',
+    'inactive': 'INACTIVE',
+    'canceled': 'CANCELED'
+  };
+
+  const newStatus = statusMap[card.status];
+  if (!newStatus) return;
+
+  try {
+    await prisma.virtualCard.update({
+      where: { stripeCardId: card.id },
+      data: { status: newStatus }
+    });
+    console.log('Updated card status in DB:', card.id, newStatus);
+  } catch (error) {
+    console.error('Failed to update card status:', error);
+  }
 }

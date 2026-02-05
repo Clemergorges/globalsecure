@@ -30,7 +30,8 @@ export async function generateSecureCardLink(
   });
 
   // 3. Gerar URL de claim
-  const claimUrl = `${process.env.NEXT_PUBLIC_URL}/claim/${token}`;
+  const baseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
+  const claimUrl = `${baseUrl}/claim/${token}`;
 
   // 4. Gerar QR Code
   const qrCodeDataUrl = await QRCode.toDataURL(claimUrl, {
@@ -64,15 +65,17 @@ async function sendCardEmail(
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.sendgrid.net',
     port: Number(process.env.SMTP_PORT) || 587,
-    secure: false,
+    secure: false, // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
     }
   });
 
+  const fromEmail = process.env.FROM_EMAIL || 'noreply@globalsecuresend.com';
+
   const mailOptions = {
-    from: '"GlobalSecureSend" <noreply@globalsecuresend.com>',
+    from: `"GlobalSecureSend" <${fromEmail}>`,
     to: recipientEmail,
     subject: '💳 Você recebeu um cartão virtual GlobalSecureSend!',
     html: `
