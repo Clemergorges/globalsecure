@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { getCardDetails } from '@/lib/services/stripe';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   // @ts-ignore
