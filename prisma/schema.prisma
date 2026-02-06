@@ -75,6 +75,9 @@ model Wallet {
   balanceUSD    Decimal  @default(0) @db.Decimal(12, 2)
   balanceGBP    Decimal  @default(0) @db.Decimal(12, 2)
   primaryCurrency String @default("EUR")
+  
+  // Relacionamento com a nova tabela de saldos dinâmicos
+  balances      Balance[]
    
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -82,6 +85,18 @@ model Wallet {
   transactions  WalletTransaction[]
 
   @@index([userId])
+}
+
+model Balance {
+  id        String   @id @default(cuid())
+  walletId  String
+  wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  currency  String   // ISO Code: EUR, USD, BRL, JPY
+  amount    Decimal  @default(0) @db.Decimal(12, 2)
+  updatedAt DateTime @updatedAt
+
+  @@unique([walletId, currency]) // Garante apenas 1 saldo por moeda por carteira
+  @@index([walletId])
 }
 
 model WalletTransaction {
