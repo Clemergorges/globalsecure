@@ -28,7 +28,9 @@ export async function sendOTP(
     await prisma.oTP.create({
       data: {
         userId,
-        phone,
+        target: phone,
+        type: 'PHONE',
+        channel: 'sms',
         code,
         expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min
         used: false

@@ -26,11 +26,13 @@ export async function POST(req: Request) {
     // Store OTP in DB
     await prisma.oTP.create({
       data: {
-        userId: user.id,
-        phone: user.phone,
-        code: code,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 mins expiry
-      }
+          userId: user.id,
+          target: user.phone!,
+          type: 'PHONE',
+          channel: 'sms',
+          code: code,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000) // Expira em 10 minutos
+        }
     });
 
     // Send SMS

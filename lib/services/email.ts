@@ -67,8 +67,8 @@ export const templates = {
   `,
 
   verificationCode: (code: string) => `
-    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-      <h2 style="color: #2563eb;">Verifique seu Email 🔒</h2>
+    <div style="font-family: sans-serif; color: #423e3eff; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+      <h2 style="color: #2564eb9f;">Verifique seu Email 🔒</h2>
       <p>Use o código abaixo para confirmar sua conta na GlobalSecure:</p>
       
       <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
