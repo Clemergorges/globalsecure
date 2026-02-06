@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { z } from 'zod';
+import crypto from 'crypto';
+import { sendEmail, templates } from '@/lib/services/email';
 
 const registerSchema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
+  phone: z.string().min(8), // Basic phone validation
   password: z.string().min(6),
   country: z.string().length(2),
   mainCurrency: z.string().length(3),
@@ -25,11 +28,23 @@ export async function POST(req: Request) {
       );
     }
 
-    const { fullName, email, password, country, mainCurrency } = parsed.data;
+    const { fullName, email, phone, password, country, mainCurrency } = parsed.data;
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    // Check if email or phone already exists
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { phone }
+        ]
+      }
+    });
+
     if (existingUser) {
-      return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 });
+      if (existingUser.email === email) {
+        return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 });
+      }
+      return NextResponse.json({ error: 'Telefone já cadastrado' }, { status: 400 });
     }
 
     const passwordHash = await hashPassword(password);
@@ -39,11 +54,15 @@ export async function POST(req: Request) {
     const firstName = nameParts[0];
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
+    // Create user (Unverified)
     const user = await prisma.user.create({
       data: {
         firstName,
         lastName,
         email,
+        phone,
+        emailVerified: false,
+        phoneVerified: false,
         passwordHash,
         country,
         wallet: {
@@ -60,9 +79,35 @@ export async function POST(req: Request) {
       }
     });
 
+    // Generate 6-digit OTP
+    const otpCode = crypto.randomInt(100000, 999999).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Store OTP
+    await prisma.oTP.create({
+      data: {
+        userId: user.id,
+        type: 'EMAIL',
+        channel: 'email',
+        target: email,
+        code: otpCode,
+        expiresAt
+      }
+    });
+
+    // Send Email
+    await sendEmail({
+      to: email,
+      subject: 'Código de Verificação - GlobalSecure',
+      html: templates.verificationCode(otpCode)
+    });
+
     return NextResponse.json({ 
       success: true, 
-      user: { id: user.id, email: user.email, fullName: `${user.firstName} ${user.lastName}`.trim() } 
+      requireVerification: true,
+      userId: user.id,
+      email: user.email,
+      phone: user.phone
     });
 
   } catch (error) {

@@ -16,6 +16,7 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
+  emailVerified Boolean   @default(false)
   passwordHash  String
   firstName     String?
   lastName      String?
@@ -333,14 +334,17 @@ model OTP {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  phone     String
+  type      String   @default("EMAIL") // EMAIL, PHONE, LOGIN_2FA
+  channel   String?  // email, sms
+  target    String?  // O email ou telefone alvo
   code      String
   expiresAt DateTime
   used      Boolean  @default(false)
   usedAt    DateTime?
   createdAt DateTime @default(now())
 
-  @@index([phone, code])
+  @@index([target, code])
+  @@index([userId])
 }
 
 // ==========================================

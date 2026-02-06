@@ -16,6 +16,7 @@ const registerSchema = z.object({
   fullName: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   country: z.string().length(2, "Use o código de 2 letras (ex: BR, PT, US)"),
   email: z.string().email("Email inválido"),
+  phone: z.string().min(8, "Telefone inválido"),
   password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres")
     .regex(/[A-Z]/, "Deve conter uma letra maiúscula")
     .regex(/[0-9]/, "Deve conter um número")
@@ -33,6 +34,7 @@ export default function RegisterPage() {
     fullName: '',
     country: '',
     email: '',
+    phone: '',
     password: '',
     mainCurrency: 'EUR'
   });
@@ -68,12 +70,17 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' }
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error || 'Falha no registro');
+        throw new Error(data.error || 'Falha no registro');
       }
       
-      router.push('/login?registered=true');
+      if (data.requireVerification) {
+        router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
+      } else {
+        router.push('/login?registered=true');
+      }
     } catch (err: any) {
       if (err instanceof z.ZodError) {
         // @ts-ignore
@@ -137,6 +144,20 @@ export default function RegisterPage() {
                 placeholder="seu@email.com" 
                 required 
                 value={formData.email}
+                onChange={handleChange}
+                className="bg-white border-gray-300 focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-gray-700">Telefone</Label>
+              <Input 
+                id="phone" 
+                name="phone" 
+                type="tel" 
+                placeholder="+55 11 99999-9999" 
+                required 
+                value={formData.phone}
                 onChange={handleChange}
                 className="bg-white border-gray-300 focus:border-[var(--color-primary)] focus:ring-[var(--color-primary)]" 
               />
