@@ -7,7 +7,7 @@ import { z } from 'zod';
 const transferSchema = z.object({
   recipientEmail: z.string().email(),
   amount: z.number().positive(),
-  currency: z.enum(['EUR', 'USD', 'GBP']),
+  currency: z.string().length(3), // Now supports any 3-letter currency code (e.g. BRL, JPY)
 });
 
 export async function POST(req: Request) {
@@ -73,37 +73,56 @@ export async function POST(req: Request) {
     const feePercentage = 1.8;
     const feeAmount = Number((amount * feePercentage / 100).toFixed(2));
     const totalDeduction = amount + feeAmount;
-    const balanceField = `balance${currency}` as keyof typeof senderWallet;
 
-    // 2. ATOMIC TRANSACTION (RACE CONDITION FIX)
-    // We use updateMany with a WHERE clause that checks balance >= amount
-    // This ensures that even if 2 requests come in at the same time,
-    // only one will succeed in updating the row.
+    // 2. ATOMIC TRANSACTION (MULTI-CURRENCY SUPPORT)
+    // We now update the 'Balance' table instead of 'Wallet' columns
     const transfer = await prisma.$transaction(async (tx) => {
       
       // 2.1 Atomic Debit (Check Balance + Deduct in one go)
-      // updateMany returns { count: number }
-      const debitResult = await tx.wallet.updateMany({
+      // We look for a Balance record for this wallet AND currency
+      // And ensure amount >= totalDeduction
+      const debitResult = await tx.balance.updateMany({
         where: { 
-          userId: senderId,
-          [balanceField]: { gte: totalDeduction } // Crucial: WHERE balance >= total
+          walletId: senderWallet.id,
+          currency: currency,
+          amount: { gte: totalDeduction } // Crucial: WHERE balance >= total
         },
         data: {
-          [balanceField]: { decrement: totalDeduction }
+          amount: { decrement: totalDeduction }
         }
       });
 
       if (debitResult.count === 0) {
+        // Fallback: Check if balance record exists at all to give better error
+        const balanceExists = await tx.balance.findUnique({
+            where: { walletId_currency: { walletId: senderWallet.id, currency } }
+        });
+        if (!balanceExists) {
+             throw new Error(`Saldo em ${currency} não encontrado.`);
+        }
         throw new Error('Insufficient funds or concurrent transaction conflict');
       }
 
       // 2.2 Credit Recipient
-      await tx.wallet.update({
-        where: { userId: recipient.id },
-        data: {
-          [balanceField]: { increment: amount }
-        }
+      // We use upsert to ensure the balance row exists
+      const recipientBalance = await tx.balance.findUnique({
+        where: { walletId_currency: { walletId: recipient.wallet!.id, currency } }
       });
+
+      if (recipientBalance) {
+        await tx.balance.update({
+            where: { id: recipientBalance.id },
+            data: { amount: { increment: amount } }
+        });
+      } else {
+        await tx.balance.create({
+            data: {
+                walletId: recipient.wallet!.id,
+                currency: currency,
+                amount: amount
+            }
+        });
+      }
 
       // 2.3 Create Transfer Record
       const newTransfer = await tx.transfer.create({
