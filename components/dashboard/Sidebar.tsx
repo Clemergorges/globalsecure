@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Send, CreditCard, History, Shield, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, Send, CreditCard, History, Shield, LogOut, X, Lock } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
+import { useEffect, useState } from 'react';
 
 const links = [
   { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
@@ -15,6 +16,19 @@ const links = [
 
 export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobileOpen: (open: boolean) => void }) {
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    // Check if user is admin from cookie or fetch
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user?.email === 'clemergorges@hotmail.com') {
+          setIsAdmin(true);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   return (
     <>
@@ -55,6 +69,17 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
               </Link>
             );
           })}
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all text-indigo-600 hover:bg-indigo-50 mt-4`}
+            >
+              <Lock className="w-5 h-5" />
+              Painel Admin
+            </Link>
+          )}
         </nav>
 
         <div className="p-4 border-t border-gray-100 dark:border-gray-800">

@@ -37,12 +37,17 @@ export async function POST(req: Request) {
           upsert: true
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error(`Supabase Upload Error (${prefix}):`, error);
+        throw new Error(`Storage upload failed: ${error.message}`);
+      }
       return data.path; // Store the path, not the public URL
     };
 
     // Upload Files
+    console.log('Starting uploads...');
     const frontPath = await uploadToSupabase(frontImage, 'front');
+    console.log('Front uploaded:', frontPath);
     
     let backPath = null;
     if (backImage) {
@@ -55,6 +60,7 @@ export async function POST(req: Request) {
     }
 
     // Save metadata to DB
+    console.log('Saving to DB...');
     // Note: We are storing PATHS now, not public URLs.
     // The field names in Prisma are still '...Url', but we will treat them as paths for Supabase.
     await prisma.kYCDocument.create({
