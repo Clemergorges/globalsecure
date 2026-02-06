@@ -67,7 +67,9 @@ export async function verifyOTP(
 ): Promise<boolean> {
   const otpRecord = await prisma.oTP.findFirst({
     where: {
-      phone,
+      target: phone,
+      type: 'PHONE',
+      channel: 'sms',
       code,
       expiresAt: { gt: new Date() },
       used: false

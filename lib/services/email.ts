@@ -67,11 +67,11 @@ export const templates = {
   `,
 
   verificationCode: (code: string) => `
-    <div style="font-family: sans-serif; color: #423e3eff; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+    <div style="font-family: sans-serif; color: #4d4646ff; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
       <h2 style="color: #2564eb9f;">Verifique seu Email 🔒</h2>
       <p>Use o código abaixo para confirmar sua conta na GlobalSecure:</p>
       
-      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+      <div style="background: #dae2e9ff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
         <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b;">${code}</span>
       </div>
 
