@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
@@ -14,7 +13,8 @@ const transferSchema = z.object({
 export async function POST(req: Request) {
   try {
     const session = await getSession();
-    if (!session || !(session as any).userId) {
+    // @ts-ignore
+    if (!session || !session.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -26,10 +26,12 @@ export async function POST(req: Request) {
     }
 
     const { recipientEmail, amount, currency } = result.data;
-    const senderId = (session as any).userId;
+    // @ts-ignore
+    const senderId = session.userId;
 
     // 0. KYC Check
-    const user = await prisma.user.findUnique({ where: { id: (session as any).userId } });
+    // @ts-ignore
+    const user = await prisma.user.findUnique({ where: { id: session.userId } });
     const kycLevel = (user as any)?.kycLevel || 0;
 
     // Internal transfers have stricter limits for unverified users
@@ -67,30 +69,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Sender wallet not found' }, { status: 404 });
     }
 
-    // Check balance (Simple check, simplified for MVP assuming single currency wallets or auto-conversion logic handled elsewhere)
-    // For MVP we assume EUR as base or exact currency match.
-    // Dynamic field access for balance: balanceEUR, balanceUSD, etc.
-    const balanceField = `balance${currency}` as keyof typeof senderWallet;
-    const currentBalance = Number((senderWallet as any)[balanceField] || 0);
-
-    // Fee Calculation (1.8%)
+    // Calculate Fees
     const feePercentage = 1.8;
     const feeAmount = Number((amount * feePercentage / 100).toFixed(2));
     const totalDeduction = amount + feeAmount;
+    const balanceField = `balance${currency}` as keyof typeof senderWallet;
 
-    if (currentBalance < totalDeduction) {
-      return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
-    }
-
-    // 2. Atomic Transaction
+    // 2. ATOMIC TRANSACTION (RACE CONDITION FIX)
+    // We use updateMany with a WHERE clause that checks balance >= amount
+    // This ensures that even if 2 requests come in at the same time,
+    // only one will succeed in updating the row.
     const transfer = await prisma.$transaction(async (tx) => {
-      // 2.1 Debit Sender
-      await tx.wallet.update({
-        where: { userId: senderId },
+      
+      // 2.1 Atomic Debit (Check Balance + Deduct in one go)
+      // updateMany returns { count: number }
+      const debitResult = await tx.wallet.updateMany({
+        where: { 
+          userId: senderId,
+          [balanceField]: { gte: totalDeduction } // Crucial: WHERE balance >= total
+        },
         data: {
           [balanceField]: { decrement: totalDeduction }
         }
       });
+
+      if (debitResult.count === 0) {
+        throw new Error('Insufficient funds or concurrent transaction conflict');
+      }
 
       // 2.2 Credit Recipient
       await tx.wallet.update({
@@ -110,10 +115,10 @@ export async function POST(req: Request) {
           amountSent: amount,
           currencySent: currency,
           amountReceived: amount,
-          currencyReceived: currency, // Assuming same currency for internal transfer MVP
+          currencyReceived: currency,
           fee: feeAmount,
           feePercentage: feePercentage,
-          exchangeRate: 1.0, // Same currency
+          exchangeRate: 1.0,
           type: 'ACCOUNT',
           status: 'COMPLETED',
           completedAt: new Date(),
@@ -160,7 +165,7 @@ export async function POST(req: Request) {
           type: 'CREDIT',
           amount: amount,
           currency: currency,
-          // @ts-expect-error Session email access
+          // @ts-ignore
           description: `Received from ${session.email || 'GlobalSecureSend User'}`,
           transferId: newTransfer.id
         }
@@ -182,20 +187,23 @@ export async function POST(req: Request) {
           id: transfer.id,
           amount: amount,
           currency: currency,
-          // @ts-expect-error Session email access
+          // @ts-ignore
           sender: session.email
         })
       ]);
     } catch (pushError) {
       console.error('Pusher notification failed:', pushError);
-      // Don't fail the request if notification fails
     }
 
     return NextResponse.json({ success: true, transfer });
 
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Internal transfer error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: 'Internal transfer failed', details: errorMessage }, { status: 500 });
+    
+    if (error.message === 'Insufficient funds or concurrent transaction conflict') {
+      return NextResponse.json({ error: 'Saldo insuficiente.' }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: 'Internal transfer failed', details: error.message }, { status: 500 });
   }
 }
