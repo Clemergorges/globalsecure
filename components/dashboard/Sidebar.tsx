@@ -7,10 +7,10 @@ import { Logo } from '@/components/ui/logo';
 
 const links = [
   { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
-  { href: '/dashboard/transfers', label: 'Envios', icon: Send },
+  { href: '/dashboard/send', label: 'Enviar Dinheiro', icon: Send },
   { href: '/dashboard/cards', label: 'Cartões', icon: CreditCard },
   { href: '/dashboard/activity', label: 'Histórico', icon: History },
-  { href: '/dashboard/security', label: 'Segurança', icon: Shield },
+  { href: '/dashboard/settings/security', label: 'Segurança', icon: Shield },
 ];
 
 export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobileOpen: (open: boolean) => void }) {

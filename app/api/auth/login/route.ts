@@ -12,16 +12,25 @@ const loginSchema = z.object({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, password } = loginSchema.parse(body);
+    const parsed = loginSchema.safeParse(body);
+    
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: parsed.error.flatten().fieldErrors }, 
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
     }
 
     const isValid = await comparePassword(password, user.passwordHash);
     if (!isValid) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
     }
 
     // Generate JWT
@@ -42,6 +51,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error) {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    console.error('Login error:', error);
+    return NextResponse.json({ error: 'Erro interno no servidor' }, { status: 500 });
   }
 }

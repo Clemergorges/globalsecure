@@ -4,7 +4,8 @@ import { prisma } from '@/lib/db';
 import { pusherService } from '@/lib/services/pusher';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy', {
-  apiVersion: '2024-12-18.acacia' as any, // Bypass TS check for version mismatch
+  // @ts-expect-error Stripe version mismatch
+  apiVersion: '2024-12-18.acacia', // Bypass TS check for version mismatch
 });
 
 export async function POST(req: NextRequest) {
@@ -20,8 +21,9 @@ export async function POST(req: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    console.error('Webhook signature verification failed:', errorMessage);
     return NextResponse.json(
       { error: 'Webhook signature verification failed' },
       { status: 400 }
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   // Processar evento
   try {
-    switch (event.type) {
+    switch (event.type as any) {
       case 'issuing_authorization.request':
         await handleAuthorizationRequest(event.data.object as Stripe.Issuing.Authorization);
         break;
@@ -49,6 +51,19 @@ export async function POST(req: NextRequest) {
 
       case 'issuing_card.updated':
         await handleCardUpdated(event.data.object as Stripe.Issuing.Card);
+        break;
+
+      case 'checkout.session.completed':
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+
+      case 'identity.verification_session.verified':
+        await handleIdentityVerified(event.data.object as Stripe.Identity.VerificationSession);
+        break;
+
+      case 'identity.verification_session.requires_action':
+        // @ts-expect-error Accessing dynamic property
+        console.log('Identity verification requires action:', (event.data.object).id);
         break;
 
       default:
@@ -217,5 +232,121 @@ async function handleCardUpdated(card: Stripe.Issuing.Card) {
     console.log('Updated card status in DB:', card.id, newStatus);
   } catch (error) {
     console.error('Failed to update card status:', error);
+  }
+}
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  if (session.metadata?.type !== 'WALLET_TOPUP') return;
+
+  try {
+    // 1. Mark TopUp as Completed
+    // We try to update. If it fails (race condition or not found), we log but continue credit logic if userId exists
+    try {
+       await prisma.topUp.update({
+        where: { stripeSessionId: session.id },
+        data: { status: 'COMPLETED' },
+      });
+    } catch (e) {
+      console.log('TopUp record update skipped (might be missing or already updated)');
+    }
+
+    const userId = session.metadata.userId;
+    if (!userId) return;
+
+    const amount = Number(session.amount_total!) / 100;
+    const currency = session.currency!.toUpperCase();
+
+    // 2. Find Wallet
+    const wallet = await prisma.wallet.findUnique({ where: { userId } });
+    
+    if (wallet) {
+      // 3. Update Balance
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: any = {};
+      if (currency === 'EUR') {
+         updateData.balanceEUR = { increment: amount };
+      } else if (currency === 'USD') {
+         updateData.balanceUSD = { increment: amount };
+      } else if (currency === 'GBP') {
+         updateData.balanceGBP = { increment: amount };
+      }
+
+      await prisma.wallet.update({
+        where: { id: wallet.id },
+        data: updateData
+      });
+
+      // 4. Create Transaction Record
+      await prisma.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: 'DEPOSIT',
+          amount: amount,
+          currency: currency,
+          description: `Recarga via Cartão (Stripe)`
+        }
+      });
+      
+      // 5. Notify User
+      const { createNotification } = await import('@/lib/notifications');
+      await createNotification({
+        userId,
+        title: 'Depósito Confirmado',
+        body: `Sua recarga de ${currency} ${amount.toFixed(2)} foi creditada com sucesso.`,
+        type: 'SUCCESS'
+      });
+      
+      console.log(`TopUp success: ${amount} ${currency} for user ${userId}`);
+    }
+  } catch (error) {
+    console.error('Error handling checkout completion:', error);
+  }
+}
+
+async function handleIdentityVerified(session: Stripe.Identity.VerificationSession) {
+  console.log('Identity verified:', session.id);
+  const userId = session.metadata?.userId;
+
+  if (!userId) {
+    console.error('No userId in metadata for identity session');
+    return;
+  }
+
+  // 1. Find the KYCDocument linked to this session
+  const doc = await prisma.kYCDocument.findUnique({
+    where: { stripeVerificationId: session.id }
+  });
+
+  if (doc) {
+    // 2. Update Document Status
+    await prisma.kYCDocument.update({
+      where: { id: doc.id },
+      data: {
+        status: 'APPROVED',
+        verifiedAt: new Date(),
+        documentType: 'STRIPE_IDENTITY_PASSPORT', // Or fetch from session.last_verification_report
+        issuingCountry: 'UNKNOWN' // Could fetch from report
+      }
+    });
+
+    // 3. Upgrade User Level
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        kycStatus: 'APPROVED',
+        kycLevel: 2 // Max Level
+      }
+    });
+
+    // 4. Notify User
+    const { createNotification } = await import('@/lib/notifications');
+    await createNotification({
+      userId,
+      title: 'Identidade Verificada',
+      body: 'Sua verificação foi concluída com sucesso! Seus limites foram aumentados.',
+      type: 'SUCCESS'
+    });
+  } else {
+    console.warn('KYC Document not found for session:', session.id);
   }
 }

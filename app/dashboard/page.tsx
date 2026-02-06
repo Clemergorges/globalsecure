@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const [balance, setBalance] = useState<number>(0);
   const [currency, setCurrency] = useState('EUR');
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [cards, setCards] = useState<any[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 

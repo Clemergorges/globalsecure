@@ -27,6 +27,7 @@ export async function POST(req: Request) {
     console.log('Received crypto webhook:', body);
 
     const { toAddress, value, hash, asset } = body; // Adjust based on provider payload structure
+    console.log('Parsed data:', { toAddress, value, hash, asset });
 
     // 2. Process logic (Do not credit immediately!)
     // - Log the event to a 'WebhookEvent' table
@@ -35,8 +36,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ received: true });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Webhook error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

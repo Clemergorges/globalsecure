@@ -14,11 +14,22 @@ const registerSchema = z.object({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { fullName, email, password, country, mainCurrency } = registerSchema.parse(body);
+    console.log('[Register] Body received:', body);
+
+    const parsed = registerSchema.safeParse(body);
+    if (!parsed.success) {
+      console.error('[Register] Validation error:', parsed.error.format());
+      return NextResponse.json(
+        { error: 'Dados inválidos', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { fullName, email, password, country, mainCurrency } = parsed.data;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+      return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 });
     }
 
     const passwordHash = await hashPassword(password);
@@ -35,12 +46,12 @@ export async function POST(req: Request) {
         email,
         passwordHash,
         country,
-        // mainCurrency was removed from User model, stored in Wallet
         wallet: {
           create: {
             primaryCurrency: mainCurrency,
             balanceEUR: 0,
-            balanceUSD: 0
+            balanceUSD: 0,
+            balanceGBP: 0
           }
         }
       },
@@ -56,6 +67,6 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error('Registration error:', error);
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    return NextResponse.json({ error: 'Erro interno no servidor' }, { status: 500 });
   }
 }

@@ -193,7 +193,7 @@ export default function KYCPage() {
               </div>
               
               <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
-                * Nota: Como este é um ambiente de demonstração, nenhum arquivo real será enviado. Apenas clique em "Enviar" para simular o processo.
+                * Nota: Como este é um ambiente de demonstração, nenhum arquivo real será enviado. Apenas clique em &quot;Enviar&quot; para simular o processo.
               </p>
             </div>
           )}

@@ -105,6 +105,7 @@ enum WalletTxType {
   WITHDRAW  // Saque
   REFUND    // Estorno
   FEE       // Taxa
+  DEPOSIT   // Depósito via Stripe
 }
 
 // ==========================================
@@ -287,15 +288,19 @@ model KYCDocument {
   userId          String
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
    
-  documentType    String    // passport, id_card, driver_license
+  // documentType    String    // passport, id_card, driver_license
+  documentType    String?    // Tornando opcional para compatibilidade
   documentNumber  String
   issuingCountry  String    // Código ISO
    
   // URLs dos arquivos (Vercel Blob ou S3)
-  frontImageUrl   String
+  frontImageUrl   String?
   backImageUrl    String?
   selfieUrl       String?
    
+  // Stripe Identity
+  stripeVerificationId String? @unique
+
   status          KYCStatus @default(PENDING)
   rejectionReason String?
   verifiedAt      DateTime?
@@ -367,6 +372,7 @@ model Notification {
   title     String
   body      String
   read      Boolean  @default(false)
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
   createdAt DateTime @default(now())
 
   @@index([userId])
@@ -406,4 +412,22 @@ enum CryptoStatus {
   CONFIRMED
   CREDITED
   FAILED
+}
+
+// ==========================================
+// TOP UPS (DEPOSITS VIA STRIPE)
+// ==========================================
+
+model TopUp {
+  id              String   @id @default(cuid())
+  userId          String
+  amount          Decimal  @db.Decimal(12, 2)
+  currency        String
+  stripeSessionId String   @unique
+  status          String   // PENDING, COMPLETED, FAILED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeSessionId])
 }

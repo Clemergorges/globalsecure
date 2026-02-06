@@ -14,8 +14,7 @@ const transferSchema = z.object({
 export async function POST(req: Request) {
   try {
     const session = await getSession();
-    // @ts-ignore
-    if (!session || !session.userId) {
+    if (!session || !(session as any).userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -27,14 +26,11 @@ export async function POST(req: Request) {
     }
 
     const { recipientEmail, amount, currency } = result.data;
-    // @ts-ignore
-    const senderId = session.userId;
+    const senderId = (session as any).userId;
 
     // 0. KYC Check
-    // @ts-ignore
-    const user = await prisma.user.findUnique({ where: { id: session.userId } });
-    // @ts-ignore
-    const kycLevel = user?.kycLevel || 0;
+    const user = await prisma.user.findUnique({ where: { id: (session as any).userId } });
+    const kycLevel = (user as any)?.kycLevel || 0;
 
     // Internal transfers have stricter limits for unverified users
     if (kycLevel < 2 && amount > 50) {
@@ -75,8 +71,7 @@ export async function POST(req: Request) {
     // For MVP we assume EUR as base or exact currency match.
     // Dynamic field access for balance: balanceEUR, balanceUSD, etc.
     const balanceField = `balance${currency}` as keyof typeof senderWallet;
-    // @ts-ignore
-    const currentBalance = Number(senderWallet[balanceField] || 0);
+    const currentBalance = Number((senderWallet as any)[balanceField] || 0);
 
     // Fee Calculation (1.8%)
     const feePercentage = 1.8;
@@ -165,7 +160,7 @@ export async function POST(req: Request) {
           type: 'CREDIT',
           amount: amount,
           currency: currency,
-          // @ts-ignore
+          // @ts-expect-error Session email access
           description: `Received from ${session.email || 'GlobalSecureSend User'}`,
           transferId: newTransfer.id
         }
@@ -187,7 +182,7 @@ export async function POST(req: Request) {
           id: transfer.id,
           amount: amount,
           currency: currency,
-          // @ts-ignore
+          // @ts-expect-error Session email access
           sender: session.email
         })
       ]);
@@ -198,8 +193,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, transfer });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Internal transfer error:', error);
-    return NextResponse.json({ error: 'Internal transfer failed', details: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Internal transfer failed', details: errorMessage }, { status: 500 });
   }
 }

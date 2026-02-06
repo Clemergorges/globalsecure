@@ -3,15 +3,14 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
   const session = await getSession();
-  // @ts-ignore
+  
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const wallet = await prisma.wallet.findUnique({
-      // @ts-ignore
-      where: { userId: session.userId }
+      where: { userId: (session as any).userId }
     });
 
     if (!wallet) {
@@ -21,14 +20,13 @@ export async function GET(req: Request) {
     // Default to primary currency or EUR
     const currency = wallet.primaryCurrency || 'EUR';
     // Dynamic access to balance field e.g. balanceEUR
-    // @ts-ignore
+    // @ts-expect-error Dynamic balance access
     const balance = wallet[`balance${currency}`] || 0;
 
     return NextResponse.json({
       balance: Number(balance),
       currency: currency,
-      // @ts-ignore
-      userId: session.userId
+      userId: (session as any).userId
     });
   } catch (error) {
     console.error('Failed to fetch balance:', error);

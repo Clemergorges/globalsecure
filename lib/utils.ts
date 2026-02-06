@@ -1,20 +1,22 @@
-import { type ClassValue, clsx } from "clsx"
+
+import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number | string, currency: string) {
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(amount: number, currency: string = 'EUR') {
+  return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: currency,
-  }).format(Number(amount));
+  }).format(amount);
 }
 
-export function formatDate(date: Date | string) {
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
+export function formatDate(date: string | Date) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   }).format(new Date(date));
 }

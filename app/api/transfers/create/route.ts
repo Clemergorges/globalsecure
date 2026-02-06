@@ -7,7 +7,7 @@ import { pusherService } from '@/lib/services/pusher';
 
 export async function POST(req: Request) {
   const session = await getSession();
-  // @ts-ignore
+  
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
@@ -22,8 +22,7 @@ export async function POST(req: Request) {
     } = body;
 
     // 0. KYC Check
-    // @ts-ignore
-    const user = await prisma.user.findUnique({ where: { id: session.userId } });
+    const user = await prisma.user.findUnique({ where: { id: (session as any).userId } });
     
     // Limits based on KYC Level
     // Level 0 (Unverified): Max 100 EUR
@@ -31,8 +30,7 @@ export async function POST(req: Request) {
     // Level 2 (Verified): Max 10,000 EUR
     
     const amount = Number(amountSource);
-    // @ts-ignore
-    const kycLevel = user?.kycLevel || 0;
+    const kycLevel = (user as any)?.kycLevel || 0;
 
     if (kycLevel === 0 && amount > 100) {
       return NextResponse.json({ error: 'Unverified account limit exceeded. Please complete KYC to send more than €100.' }, { status: 403 });
@@ -58,8 +56,7 @@ export async function POST(req: Request) {
     // 3. Create Transfer
     const transfer = await prisma.transfer.create({
       data: {
-        // @ts-ignore
-        senderId: session.userId,
+        senderId: (session as any).userId,
         recipientId: receiverId, // Correct field name
         recipientEmail: receiverEmail || 'unknown', // Required field
         recipientName: receiverName,
@@ -84,34 +81,72 @@ export async function POST(req: Request) {
 
     // 4. If Card Mode, create Virtual Card
     if (mode === 'CARD_EMAIL') {
+      const supportedCurrencies = ['eur', 'usd', 'gbp'];
+      let issueCurrency = currencyTarget.toLowerCase();
+      let issueAmount = calculation.amountReceived;
+
+      // Auto-convert to EUR (Stripe Issuing Native Currency) if currency not supported
+      if (!supportedCurrencies.includes(issueCurrency)) {
+         console.log(`Currency ${issueCurrency} not supported for card issuing. Converting to EUR.`);
+         
+         // Get rate from original currency to EUR
+          const { getExchangeRate } = await import('@/lib/services/exchange');
+          const exchangeData = await getExchangeRate(currencyTarget, 'EUR');
+          const rateToEUR = exchangeData.rate;
+          
+          issueAmount = calculation.amountReceived * rateToEUR;
+          issueCurrency = 'eur';
+       }
+
       const cardData = await createVirtualCard({
-        amount: calculation.amountReceived,
-        currency: currencyTarget,
-        recipientEmail: receiverEmail || 'no-email@example.com',
-        recipientName: receiverName || 'Beneficiary',
+        amount: Number(issueAmount),
+        currency: issueCurrency,
+        recipientEmail: receiverEmail,
+        recipientName: receiverName,
         transferId: transfer.id
+      });
+
+      // Send Email with Card Details
+      const { sendEmail, templates } = await import('@/lib/services/email');
+      await sendEmail({
+        to: receiverEmail,
+        subject: '🎁 Você recebeu um Cartão Virtual GlobalSecure',
+        html: templates.cardCreated(
+          receiverName || 'Cliente',
+          cardData.last4,
+          Number(issueAmount).toFixed(2),
+          issueCurrency.toUpperCase()
+        )
       });
       
       await prisma.virtualCard.create({
         data: {
           transferId: transfer.id,
           stripeCardId: cardData.cardId, 
-          stripeCardholderId: 'temp_holder_id', // Placeholder for MVP
+          stripeCardholderId: cardData.cardholderId, 
           last4: cardData.last4,
           brand: cardData.brand,
-          expMonth: 12, // Placeholder
-          expYear: 2029, // Placeholder
+          expMonth: cardData.exp_month,
+          expYear: cardData.exp_year,
           expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 3)), 
           amount: calculation.amountReceived,
           currency: currencyTarget,
-          status: 'INACTIVE' 
+          status: 'ACTIVE' 
         }
       });
     }
 
-    // 5. Notify Sender
-    // @ts-ignore
-    await pusherService.trigger(`user-${session.userId}`, 'transfer-created', { transferId: transfer.id });
+    // 5. Notify Sender (Pusher + DB Notification)
+    await pusherService.trigger(`user-${(session as any).userId}`, 'transfer-created', { transferId: transfer.id });
+    
+    // Create Persistent Notification
+    const { createNotification } = await import('@/lib/notifications');
+    await createNotification({
+      userId: (session as any).userId,
+      title: 'Transferência Enviada',
+      body: `Você enviou ${currencySource} ${amountSource} para ${receiverName || receiverEmail}.`,
+      type: 'SUCCESS'
+    });
 
     return NextResponse.json({ success: true, transferId: transfer.id });
   } catch (error) {

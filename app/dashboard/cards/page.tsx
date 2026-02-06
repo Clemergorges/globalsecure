@@ -1,16 +1,32 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+// Removed unused imports
 import { Button } from '@/components/ui/button';
 import { Eye, EyeOff, CreditCard, Copy, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
+interface CardData {
+  id: string;
+  brand: string;
+  last4: string;
+  amount: number;
+  currency: string;
+  status: string;
+}
+
+interface CardDetails {
+  fullPan?: string;
+  pan?: string;
+  cardholderName?: string;
+  exp?: string;
+}
+
 export default function CardsPage() {
-  const [cards, setCards] = useState<any[]>([]);
+  const [cards, setCards] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [revealedCard, setRevealedCard] = useState<string | null>(null);
-  const [cardDetails, setCardDetails] = useState<any>(null);
+  const [cardDetails, setCardDetails] = useState<CardDetails | null>(null);
 
   useEffect(() => {
     fetchCards();
@@ -42,6 +58,7 @@ export default function CardsPage() {
       setCardDetails(data);
       setRevealedCard(cardId);
     } catch (e) {
+      console.error(e); // Log error
       alert('Failed to reveal card details');
     }
   }
@@ -69,8 +86,8 @@ export default function CardsPage() {
                 <div className="text-xl font-mono tracking-widest flex items-center gap-2">
                   {revealedCard === card.id ? (
                     <>
-                      {cardDetails?.fullPan || cardDetails?.pan} 
-                      <Copy className="w-4 h-4 cursor-pointer hover:text-blue-300" onClick={() => navigator.clipboard.writeText(cardDetails?.fullPan || cardDetails?.pan)} />
+                      {cardDetails?.fullPan || cardDetails?.pan}
+                      <Copy className="w-4 h-4 cursor-pointer hover:text-blue-300" onClick={() => navigator.clipboard.writeText(cardDetails?.fullPan || cardDetails?.pan || '')} />
                     </>
                   ) : (
                     `•••• •••• •••• ${card.last4}`

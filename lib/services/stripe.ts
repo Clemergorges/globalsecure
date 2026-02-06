@@ -1,7 +1,8 @@
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy', {
-  apiVersion: '2024-12-18.acacia' as any, // Bypass TS check for version mismatch
+  // @ts-expect-error Stripe version mismatch
+  apiVersion: '2024-12-18.acacia', // Bypass TS check for version mismatch
 });
 
 // Interface para parâmetros
