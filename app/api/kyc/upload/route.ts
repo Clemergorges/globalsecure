@@ -1,19 +1,7 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { z } from 'zod';
-
-const kycSchema = z.object({
-  documentType: z.enum(['passport', 'id_card', 'driver_license']),
-  documentNumber: z.string().min(5),
-  issuingCountry: z.string().length(2),
-  // In a real app, these would be presigned URLs or file blobs
-  // For MVP simulation, we accept base64 or mock URLs
-  frontImageUrl: z.string().url().or(z.string().min(10)), 
-  backImageUrl: z.string().url().or(z.string().min(10)).optional(),
-  selfieUrl: z.string().url().or(z.string().min(10)).optional(),
-});
+import { put } from '@vercel/blob';
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -21,16 +9,44 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const body = await req.json();
-    const result = kycSchema.safeParse(body);
+    const formData = await req.formData();
+    const documentType = formData.get('documentType') as string;
+    const documentNumber = formData.get('documentNumber') as string;
+    const issuingCountry = formData.get('issuingCountry') as string;
+    
+    const frontImage = formData.get('frontImage') as File;
+    const backImage = formData.get('backImage') as File | null;
+    const selfieImage = formData.get('selfieImage') as File | null;
 
-    if (!result.success) {
-      return NextResponse.json({ error: 'Invalid input', details: result.error }, { status: 400 });
+    if (!frontImage || !documentNumber || !issuingCountry) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const { documentType, documentNumber, issuingCountry, frontImageUrl, backImageUrl, selfieUrl } = result.data;
+    // Upload Front Image (Secure Blob)
+    // access: 'public' is required for Vercel Blob free tier, 
+    // but the URL is random and hard to guess. 
+    // For stricter security, we would use S3 presigned URLs, but Vercel Blob is good for MVP.
+    const frontBlob = await put(`kyc/${session.userId}/front-${frontImage.name}`, frontImage, {
+      access: 'public',
+    });
 
-    // Create KYC Document Record
+    let backBlobUrl = null;
+    if (backImage) {
+      const backBlob = await put(`kyc/${session.userId}/back-${backImage.name}`, backImage, {
+        access: 'public',
+      });
+      backBlobUrl = backBlob.url;
+    }
+
+    let selfieBlobUrl = null;
+    if (selfieImage) {
+      const selfieBlob = await put(`kyc/${session.userId}/selfie-${selfieImage.name}`, selfieImage, {
+        access: 'public',
+      });
+      selfieBlobUrl = selfieBlob.url;
+    }
+
+    // Save metadata to DB
     await prisma.kYCDocument.create({
       data: {
         // @ts-ignore
@@ -38,20 +54,20 @@ export async function POST(req: Request) {
         documentType,
         documentNumber,
         issuingCountry,
-        frontImageUrl,
-        backImageUrl,
-        selfieUrl,
+        frontImageUrl: frontBlob.url,
+        backImageUrl: backBlobUrl,
+        selfieUrl: selfieBlobUrl,
         status: 'PENDING'
       }
     });
 
-    // Update User Status to PENDING
+    // Update User Status
     await prisma.user.update({
       // @ts-ignore
       where: { id: session.userId },
       data: {
         kycStatus: 'PENDING',
-        kycLevel: 0 // Reset level until approved
+        kycLevel: 1 // Level 1 Submitted
       }
     });
 

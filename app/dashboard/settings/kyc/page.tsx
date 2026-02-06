@@ -60,9 +60,9 @@ export default function KYCPage() {
       data.append('issuingCountry', formData.issuingCountry);
       
       // Arquivos
-      if (files.front) data.append('front', files.front);
-      if (files.back) data.append('back', files.back);
-      if (files.selfie) data.append('selfie', files.selfie);
+      if (files.front) data.append('frontImage', files.front);
+      if (files.back) data.append('backImage', files.back);
+      if (files.selfie) data.append('selfieImage', files.selfie);
 
       const res = await fetch('/api/kyc/submit', {
         method: 'POST',
