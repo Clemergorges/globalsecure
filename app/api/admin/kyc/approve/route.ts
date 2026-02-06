@@ -1,74 +1,54 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth';
-import { z } from 'zod';
-
-const approveSchema = z.object({
-  targetUserId: z.string(),
-  action: z.enum(['APPROVE', 'REJECT']),
-  reason: z.string().optional()
-});
+import { checkAdmin } from '@/lib/auth';
+import { createNotification } from '@/lib/notifications';
 
 export async function POST(req: Request) {
-  const session = await getSession();
-  // @ts-ignore
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  // In a real app, check for ADMIN role
-  // if (session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const isAdmin = await checkAdmin();
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
 
   try {
-    const body = await req.json();
-    const { targetUserId, action, reason } = approveSchema.parse(body);
+    const { userId, status, rejectionReason } = await req.json();
 
-    if (action === 'APPROVE') {
-      await prisma.user.update({
-        where: { id: targetUserId },
-        data: {
-          kycStatus: 'APPROVED',
-          kycLevel: 2 // Full access
-        }
-      });
-      
-      // Update latest document status
-      const lastDoc = await prisma.kYCDocument.findFirst({
-        where: { userId: targetUserId },
-        orderBy: { createdAt: 'desc' }
-      });
-
-      if (lastDoc) {
-        await prisma.kYCDocument.update({
-          where: { id: lastDoc.id },
-          data: { status: 'APPROVED', verifiedAt: new Date() }
-        });
-      }
-
-    } else {
-      await prisma.user.update({
-        where: { id: targetUserId },
-        data: {
-          kycStatus: 'REJECTED',
-          kycLevel: 0
-        }
-      });
-
-      const lastDoc = await prisma.kYCDocument.findFirst({
-        where: { userId: targetUserId },
-        orderBy: { createdAt: 'desc' }
-      });
-
-      if (lastDoc) {
-        await prisma.kYCDocument.update({
-          where: { id: lastDoc.id },
-          data: { status: 'REJECTED', rejectionReason: reason || 'Documents do not match criteria' }
-        });
-      }
+    if (!userId || !['APPROVED', 'REJECTED'].includes(status)) {
+        return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, action });
+    // Update User
+    const user = await prisma.user.update({
+        where: { id: userId },
+        data: {
+            kycStatus: status,
+            kycLevel: status === 'APPROVED' ? 2 : 0,
+        }
+    });
+
+    // Update Documents
+    await prisma.kYCDocument.updateMany({
+        where: { userId, status: 'PENDING' },
+        data: {
+            status: status,
+            rejectionReason: status === 'REJECTED' ? rejectionReason : null,
+            verifiedAt: new Date()
+        }
+    });
+
+    // Notify User
+    await createNotification({
+        userId,
+        title: status === 'APPROVED' ? 'Conta Verificada! 🎉' : 'Verificação Falhou ⚠️',
+        body: status === 'APPROVED' 
+            ? 'Sua conta foi verificada com sucesso. Seus limites foram aumentados.'
+            : `Sua verificação foi rejeitada. Motivo: ${rejectionReason || 'Documentos ilegíveis'}. Tente novamente.`,
+        type: status === 'APPROVED' ? 'SUCCESS' : 'ERROR'
+    });
+
+    return NextResponse.json({ success: true });
 
   } catch (error) {
-    return NextResponse.json({ error: 'Admin action failed' }, { status: 500 });
+    console.error('Admin KYC Error:', error);
+    return NextResponse.json({ error: 'Failed to update KYC' }, { status: 500 });
   }
 }
