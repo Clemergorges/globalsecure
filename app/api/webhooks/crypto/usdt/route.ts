@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { prisma } from '@/lib/db';
+import { getUsdtPriceUsd } from '@/lib/services/polygon';
 
-// Webhook to receive deposit notifications from Alchemy/Infura
+// Webhook to receive deposit notifications from Alchemy
 export async function POST(req: Request) {
   try {
     const bodyText = await req.text(); // Get raw body for HMAC
@@ -24,15 +26,110 @@ export async function POST(req: Request) {
     }
 
     const body = JSON.parse(bodyText);
-    console.log('Received crypto webhook:', body);
+    console.log('Received crypto webhook:', JSON.stringify(body));
 
-    const { toAddress, value, hash, asset } = body; // Adjust based on provider payload structure
-    console.log('Parsed data:', { toAddress, value, hash, asset });
+    // Alchemy Notify payload structure
+    const activity = body.event?.activity?.[0];
+    if (!activity) {
+      console.log('No activity found in payload');
+      return NextResponse.json({ received: true });
+    }
 
-    // 2. Process logic (Do not credit immediately!)
-    // - Log the event to a 'WebhookEvent' table
-    // - Trigger an async job to confirm transaction on-chain (wait for confirmations)
-    // - Match 'toAddress' -> userId (via deterministic check or lookup table)
+    // Extract relevant data
+    // category: 'token' (for ERC20)
+    // fromAddress, toAddress, value, asset, hash
+    const { toAddress, fromAddress, value, asset, hash, category, rawContract } = activity;
+
+    // Filter only USDT transactions (Contract Address Check)
+    const USDT_CONTRACT = process.env.USDT_CONTRACT_ADDRESS?.toLowerCase();
+    const contractAddress = rawContract?.address?.toLowerCase();
+
+    // Relaxed check for Dev/Testnet (if contract matches OR asset is USDT)
+    const isUsdt = (contractAddress === USDT_CONTRACT) || (asset === 'USDT');
+
+    if (category === 'token' && isUsdt) {
+        console.log(`Processing USDT Deposit: ${value} to ${toAddress}`);
+
+        // Check if tx already processed
+        const existing = await prisma.cryptoDeposit.findUnique({
+            where: { txHash: hash }
+        });
+
+        if (existing) {
+            console.log('Transaction already processed:', hash);
+            return NextResponse.json({ received: true });
+        }
+
+        // 2. Find User by Deposit Address (Reverse lookup)
+        // Now we use the persisted address in Wallet model
+        const wallet = await prisma.wallet.findFirst({
+            where: { cryptoAddress: toAddress },
+            include: { user: true }
+        });
+
+        if (!wallet) {
+            console.warn(`[ORPHANED] Deposit to unknown address: ${toAddress}`);
+            // TODO: Log to OrphanedDeposits table for manual review
+            return NextResponse.json({ received: true, status: 'orphaned' });
+        }
+
+        const userId = wallet.userId;
+        const amount = parseFloat(value);
+
+        // 3. Process Deposit Transaction (Atomic)
+        await prisma.$transaction(async (tx) => {
+            // A. Create Deposit Record
+            const deposit = await tx.cryptoDeposit.create({
+                data: {
+                    userId: userId,
+                    txHash: hash,
+                    network: 'POLYGON',
+                    token: 'USDT',
+                    amount: amount,
+                    status: 'CREDITED', // Auto-confirming for MVP
+                    confirmedAt: new Date(),
+                    creditedAt: new Date(),
+                }
+            });
+
+            // B. Get USD Price for history/conversion (Optional)
+            const usdtPrice = await getUsdtPriceUsd();
+            const amountUsd = amount * usdtPrice;
+
+            // C. Update Wallet Balance (USDT)
+            await tx.wallet.update({
+                where: { userId: userId },
+                data: {
+                    balanceUSD: { increment: amountUsd }, // Converting to USD for main balance or keep separate
+                    // For MVP, we are adding to balanceUSD since USDT ~ USD
+                }
+            });
+
+            // D. Create Wallet Transaction Log
+            await tx.walletTransaction.create({
+                data: {
+                    walletId: wallet.id,
+                    type: 'DEPOSIT', // Using existing enum
+                    amount: amountUsd,
+                    currency: 'USD',
+                    description: `Crypto Deposit (${amount} USDT)`,
+                    // transferId: deposit.id // If we linked it
+                }
+            });
+
+            // E. Create Notification
+            await tx.notification.create({
+                data: {
+                    userId: userId,
+                    title: 'Deposit Received',
+                    body: `You received ${amount} USDT (~$${amountUsd.toFixed(2)}).`,
+                    type: 'SUCCESS'
+                }
+            });
+        });
+
+        console.log(`[SUCCESS] Credited ${amount} USDT to User ${userId}`);
+    }
 
     return NextResponse.json({ received: true });
 

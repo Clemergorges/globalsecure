@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GlobalSecureSend (MVP)
 
-## Getting Started
+> ⚠️ **DISCLAIMER: AMBIENTE DE DEMONSTRAÇÃO**
+> Este projeto é um **MVP (Minimum Viable Product)** apenas para fins de demonstração técnica e educacional.
+> - **NENHUM DINHEIRO REAL** é processado. Todas as transações usam moedas fictícias ou redes de teste (Testnet).
+> - **NÃO É UM BANCO** nem uma instituição financeira licenciada.
+> - Não insira dados pessoais reais ou cartões de crédito válidos.
 
-First, run the development server:
+Plataforma financeira híbrida que une serviços bancários tradicionais (Fiat) com a eficiência da blockchain (Crypto), focada em nômades digitais e empresas globais.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 📚 Documentação Pública
+- [Termos de Uso](./TERMS.md)
+- [Política de Privacidade](./PRIVACY.md)
+- [Whitepaper Técnico](./WHITEPAPER.md)
+
+## 🚀 Funcionalidades Principais
+- **Contas Multi-moeda:** EUR, USD, GBP.
+- **Cartões Virtuais:** Integração com Stripe Issuing.
+- **Cripto (Polygon):** Depósitos em USDT com conciliação automática.
+- **Compliance:** KYC/AML automatizado e seguro.
+- **Segurança:** Autenticação 2FA, Sessões seguras, Logs de auditoria.
+
+## 🛠️ Stack Tecnológica
+- **Framework:** Next.js 15 (App Router)
+- **Database:** PostgreSQL (Supabase) + Prisma ORM
+- **UI:** TailwindCSS + ShadcnUI
+- **Blockchain:** Ethers.js + Polygon Amoy (Testnet)
+- **Infra:** Vercel (Serverless + Cron Jobs)
+
+## 🏗️ Arquitetura do Sistema
+
+```mermaid
+graph TD
+    User[Cliente] --> Frontend[Next.js 15 App]
+    Frontend --> API[API Routes / Server Actions]
+    
+    subgraph "Core Backend"
+        API --> Prisma[Prisma ORM]
+        Prisma --> DB[(Supabase PostgreSQL)]
+        API --> Queue[Vercel Cron / Jobs]
+    end
+    
+    subgraph "Serviços Externos"
+        API --> Stripe[Stripe API (Fiat)]
+        API --> Polygon[Alchemy RPC (Crypto)]
+        API --> Pusher[Pusher (Realtime)]
+        API --> Storage[Supabase Storage (KYC)]
+    end
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🔐 Segurança & Compliance
+Implementamos práticas de segurança de nível bancário desde o MVP:
+- **Ledger Atômico (ACID):** Todas as transações financeiras usam `prisma.$transaction` para garantir consistência total.
+- **Zero-Trust Storage:** Documentos de KYC são armazenados em buckets privados com URLs assinadas temporárias (15 min).
+- **Autenticação Robusta:** Sessões seguras via Cookies HttpOnly e suporte a 2FA.
+- **Auditoria:** Logs imutáveis de todas as operações sensíveis.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🗺️ Roadmap (2026)
+- [x] **Q1:** MVP Sandbox (Web)
+    - [x] Contas Multi-moeda & Câmbio
+    - [x] Integração Cripto (Depósito Polygon)
+    - [x] KYC Seguro
+- [ ] **Q2:** Expansão Técnica
+    - [ ] Saques Cripto Automatizados
+    - [ ] KYC Automatizado (Stripe Identity)
+    - [ ] App Mobile (React Native)
+- [ ] **Q3:** Operação Real
+    - [ ] Parceria com EMI/PI Licenciada
+    - [ ] Lançamento Beta Fechado (Friends & Family)
+- [ ] **Q4:** Escala Global
+    - [ ] Lançamento Público
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ⚡ Como Rodar Localmente
 
-## Learn More
+1. **Instalar dependências:**
+```bash
+npm install
+```
 
-To learn more about Next.js, take a look at the following resources:
+2. **Configurar variáveis de ambiente:**
+Copie o arquivo `.env.example` para `.env` e preencha as chaves (Supabase, Stripe, etc).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Configurar Banco de Dados:**
+```bash
+npx prisma db push
+npx prisma db seed
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. **Rodar o servidor:**
+```bash
+npm run dev
+```
 
-## Deploy on Vercel
+Acesse [http://localhost:3000](http://localhost:3000).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🤝 Contribuição & Feedback
+Este é um projeto de código fechado (proprietário), mas estamos abertos a feedback de investidores e parceiros tecnológicos.
+Entre em contato para solicitar acesso ao ambiente de demonstração ou para discutir parcerias.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+**Status:** MVP Pronto para Testes (Fevereiro 2026)

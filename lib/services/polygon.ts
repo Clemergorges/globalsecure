@@ -1,12 +1,13 @@
 import { ethers } from 'ethers';
 import crypto from 'crypto';
+import { prisma } from '@/lib/db';
 
 // Configuration
 // Default to public RPC if not set
-const RPC_URL = process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com';
+const RPC_URL = process.env.POLYGON_RPC_URL || 'https://rpc-amoy.polygon.technology';
 
 // Official USDT Polygon Contract
-const USDT_ADDRESS = process.env.USDT_CONTRACT_ADDRESS || '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
+const USDT_ADDRESS = process.env.USDT_CONTRACT_ADDRESS || '0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582';
 
 const PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY;
 const MASTER_XPUB = process.env.WALLET_MASTER_XPUB;
@@ -58,37 +59,54 @@ const getDecimals = async (contract: ethers.Contract): Promise<number> => {
 
 /**
  * Derives a deterministic deposit address for a user based on their ID.
- * Uses a hash of the userId to generate a unique index for HD Wallet derivation.
- * Path: m/44'/60'/0'/0/{index} (assuming XPUB is at account level m/44'/60'/0')
- * 
- * Note: If MASTER_XPUB is not set (dev mode), returns a random address.
+ * Persists the address in the Wallet model for reverse lookup.
  */
-export const deriveUserAddress = (userId: string | number): string => {
-  if (!MASTER_XPUB) {
-    console.warn('WALLET_MASTER_XPUB not set, generating random address (unsafe for prod)');
-    // Fallback: Generate a random wallet if XPUB is missing. 
-    // WARNING: Users will get a different address every time if they reload!
-    return ethers.Wallet.createRandom().address;
+export const deriveUserAddress = async (userId: string): Promise<string> => {
+  // 1. Check if user already has an address stored
+  const existingWallet = await prisma.wallet.findUnique({
+    where: { userId },
+    select: { cryptoAddress: true, cryptoAddressIndex: true }
+  });
+
+  if (existingWallet?.cryptoAddress) {
+    return existingWallet.cryptoAddress;
   }
 
-  try {
-    const userIdStr = userId.toString();
-    // Generate a deterministic index from userId (0 to 2^31 - 1)
-    // MD5 (128 bits) -> Take first 8 chars (32 bits) -> Parse Hex -> Modulo Max Int32
-    const hash = crypto.createHash('md5').update(userIdStr).digest('hex');
-    const index = parseInt(hash.substring(0, 8), 16) % 2147483647;
+  // 2. Generate new address
+  let address: string;
+  let index: number | null = null;
 
-    // Derive address from XPUB
-    // Assumes XPUB is for path m/44'/60'/0' (Account level)
-    // We derive child 0/index (External chain, index)
-    const hdNode = ethers.HDNodeWallet.fromExtendedKey(MASTER_XPUB);
-    const childNode = hdNode.derivePath(`0/${index}`);
-    
-    return childNode.address;
-  } catch (error) {
-    console.error('Error deriving address:', error);
-    throw new Error('Failed to derive wallet address');
+  if (!MASTER_XPUB || MASTER_XPUB.includes('CHANGE_ME')) {
+    console.warn('WALLET_MASTER_XPUB not set or invalid, generating random address (TESTNET/DEV)');
+    const randomWallet = ethers.Wallet.createRandom();
+    address = randomWallet.address;
+    // index remains null for random wallets
+  } else {
+    try {
+      // Generate a deterministic index from userId
+      const hash = crypto.createHash('md5').update(userId).digest('hex');
+      index = parseInt(hash.substring(0, 8), 16) % 2147483647;
+
+      // Derive address from XPUB
+      const hdNode = ethers.HDNodeWallet.fromExtendedKey(MASTER_XPUB);
+      const childNode = hdNode.derivePath(`0/${index}`);
+      address = childNode.address;
+    } catch (error) {
+      console.error('Error deriving address:', error);
+      throw new Error('Failed to derive wallet address');
+    }
   }
+
+  // 3. Save to Database
+  await prisma.wallet.update({
+    where: { userId },
+    data: {
+      cryptoAddress: address,
+      cryptoAddressIndex: index
+    }
+  });
+
+  return address;
 };
 
 /**

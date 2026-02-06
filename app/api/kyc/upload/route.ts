@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { put } from '@vercel/blob';
+import { supabase, KYC_BUCKET } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -23,31 +23,40 @@ export async function POST(req: Request) {
     }
 
     const userId = (session as any).userId;
-    // Upload Front Image (Secure Blob)
-    // access: 'public' is required for Vercel Blob free tier, 
-    // but the URL is random and hard to guess. 
-    // For stricter security, we would use S3 presigned URLs, but Vercel Blob is good for MVP.
-    const frontBlob = await put(`kyc/${userId}/front-${frontImage.name}`, frontImage, {
-      access: 'public',
-    });
 
-    let backBlobUrl = null;
+    // Helper to upload to Supabase Storage
+    const uploadToSupabase = async (file: File, prefix: string) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${prefix}-${Date.now()}.${fileExt}`;
+      const buffer = await file.arrayBuffer();
+
+      const { data, error } = await supabase.storage
+        .from(KYC_BUCKET)
+        .upload(fileName, buffer, {
+          contentType: file.type,
+          upsert: true
+        });
+
+      if (error) throw error;
+      return data.path; // Store the path, not the public URL
+    };
+
+    // Upload Files
+    const frontPath = await uploadToSupabase(frontImage, 'front');
+    
+    let backPath = null;
     if (backImage) {
-      const backBlob = await put(`kyc/${userId}/back-${backImage.name}`, backImage, {
-        access: 'public',
-      });
-      backBlobUrl = backBlob.url;
+      backPath = await uploadToSupabase(backImage, 'back');
     }
 
-    let selfieBlobUrl = null;
+    let selfiePath = null;
     if (selfieImage) {
-      const selfieBlob = await put(`kyc/${userId}/selfie-${selfieImage.name}`, selfieImage, {
-        access: 'public',
-      });
-      selfieBlobUrl = selfieBlob.url;
+      selfiePath = await uploadToSupabase(selfieImage, 'selfie');
     }
 
     // Save metadata to DB
+    // Note: We are storing PATHS now, not public URLs.
+    // The field names in Prisma are still '...Url', but we will treat them as paths for Supabase.
     await prisma.kYCDocument.create({
       data: {
         // @ts-ignore
@@ -55,9 +64,9 @@ export async function POST(req: Request) {
         documentType,
         documentNumber,
         issuingCountry,
-        frontImageUrl: frontBlob.url,
-        backImageUrl: backBlobUrl,
-        selfieUrl: selfieBlobUrl,
+        frontImageUrl: frontPath, // Storing PATH
+        backImageUrl: backPath,   // Storing PATH
+        selfieUrl: selfiePath,    // Storing PATH
         status: 'PENDING'
       }
     });
