@@ -22,17 +22,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const userId = (session as any).userId;
     // Upload Front Image (Secure Blob)
     // access: 'public' is required for Vercel Blob free tier, 
     // but the URL is random and hard to guess. 
     // For stricter security, we would use S3 presigned URLs, but Vercel Blob is good for MVP.
-    const frontBlob = await put(`kyc/${session.userId}/front-${frontImage.name}`, frontImage, {
+    const frontBlob = await put(`kyc/${userId}/front-${frontImage.name}`, frontImage, {
       access: 'public',
     });
 
     let backBlobUrl = null;
     if (backImage) {
-      const backBlob = await put(`kyc/${session.userId}/back-${backImage.name}`, backImage, {
+      const backBlob = await put(`kyc/${userId}/back-${backImage.name}`, backImage, {
         access: 'public',
       });
       backBlobUrl = backBlob.url;
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
 
     let selfieBlobUrl = null;
     if (selfieImage) {
-      const selfieBlob = await put(`kyc/${session.userId}/selfie-${selfieImage.name}`, selfieImage, {
+      const selfieBlob = await put(`kyc/${userId}/selfie-${selfieImage.name}`, selfieImage, {
         access: 'public',
       });
       selfieBlobUrl = selfieBlob.url;
