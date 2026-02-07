@@ -29,19 +29,20 @@ export async function POST(req: Request) {
     }
 
     const { fullName, email, phone, password, country, mainCurrency } = parsed.data;
+    const normalizedEmail = email.toLowerCase();
 
     // Check if email or phone already exists
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
-          { email },
+          { email: normalizedEmail },
           { phone }
         ]
       }
     });
 
     if (existingUser) {
-      if (existingUser.email === email) {
+      if (existingUser.email === normalizedEmail) {
         return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 });
       }
       return NextResponse.json({ error: 'Telefone já cadastrado' }, { status: 400 });
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
       data: {
         firstName,
         lastName,
-        email,
+        email: normalizedEmail,
         phone,
         emailVerified: false,
         phoneVerified: false,
@@ -89,7 +90,7 @@ export async function POST(req: Request) {
         userId: user.id,
         type: 'EMAIL',
         channel: 'email',
-        target: email,
+        target: normalizedEmail,
         code: otpCode,
         expiresAt
       }
@@ -97,7 +98,7 @@ export async function POST(req: Request) {
 
     // Send Email
     await sendEmail({
-      to: email,
+      to: normalizedEmail,
       subject: 'Código de Verificação - GlobalSecure',
       html: templates.verificationCode(otpCode)
     });

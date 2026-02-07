@@ -22,8 +22,9 @@ export async function POST(req: Request) {
     }
 
     const { email, password } = parsed.data;
+    const normalizedEmail = email.toLowerCase();
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
       return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
     }
