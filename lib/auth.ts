@@ -1,3 +1,4 @@
+
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
@@ -30,6 +31,12 @@ export async function getSession() {
   const token = cookieStore.get('token')?.value;
   if (!token) return null;
   return verifyToken(token);
+}
+
+export async function checkAuth() {
+  const session = await getSession();
+  if (!session) return null;
+  return session;
 }
 
 export async function checkAdmin() {
