@@ -26,12 +26,36 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
-      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
+      // DEBUG: Retornando detalhes para identificar o problema em produção
+      const dbUrl = process.env.DATABASE_URL || '';
+      const dbHost = dbUrl.includes('@') ? dbUrl.split('@')[1] : 'unknown';
+      
+      console.error(`Login failed: User ${normalizedEmail} not found in DB ${dbHost}`);
+      
+      return NextResponse.json({ 
+        error: 'Credenciais inválidas',
+        debug: {
+          reason: 'User not found',
+          email: normalizedEmail,
+          dbHost: dbHost
+        }
+      }, { status: 401 });
     }
 
     const isValid = await comparePassword(password, user.passwordHash);
     if (!isValid) {
-      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
+      const dbUrl = process.env.DATABASE_URL || '';
+      const dbHost = dbUrl.includes('@') ? dbUrl.split('@')[1] : 'unknown';
+      
+      console.error(`Login failed: Invalid password for ${normalizedEmail} in DB ${dbHost}`);
+
+      return NextResponse.json({ 
+        error: 'Credenciais inválidas',
+        debug: {
+          reason: 'Invalid password',
+          dbHost: dbHost
+        }
+      }, { status: 401 });
     }
 
     // Generate JWT
