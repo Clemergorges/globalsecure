@@ -27,24 +27,46 @@ export async function POST(req: Request) {
 
     // Atomic TopUp
     await prisma.$transaction(async (tx) => {
-        // 1. Update Balance
-        const balance = await tx.balance.findUnique({
-            where: { walletId_currency: { walletId: user.wallet!.id, currency } }
+        // 1. Update Wallet Balance directly (matching the current app structure)
+        const wallet = await tx.wallet.findUnique({
+             where: { id: user.wallet!.id }
         });
 
-        if (balance) {
-            await tx.balance.update({
-                where: { id: balance.id },
-                data: { amount: { increment: amount } }
-            });
-        } else {
-            await tx.balance.create({
+        if (!wallet) throw new Error("Wallet not found");
+
+        const balanceField = 
+            currency === 'EUR' ? 'balanceEUR' :
+            currency === 'USD' ? 'balanceUSD' :
+            currency === 'GBP' ? 'balanceGBP' : null;
+
+        if (balanceField) {
+             // @ts-ignore
+            await tx.wallet.update({
+                where: { id: wallet.id },
                 data: {
-                    walletId: user.wallet!.id,
-                    currency,
-                    amount
+                    [balanceField]: { increment: amount }
                 }
             });
+        } else {
+            // Fallback to Balance table if it's a new currency
+             const balance = await tx.balance.findUnique({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency } }
+            });
+    
+            if (balance) {
+                await tx.balance.update({
+                    where: { id: balance.id },
+                    data: { amount: { increment: amount } }
+                });
+            } else {
+                await tx.balance.create({
+                    data: {
+                        walletId: user.wallet!.id,
+                        currency,
+                        amount
+                    }
+                });
+            }
         }
 
         // 2. Create Transaction Record

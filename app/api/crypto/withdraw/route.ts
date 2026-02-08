@@ -45,6 +45,21 @@ export async function POST(req: Request) {
         throw new Error('Insufficient USDT/USD balance');
       }
 
+      // Debit Ledger with Atomic Check
+      const debitResult = await tx.wallet.updateMany({
+        where: { 
+            userId: (auth as any).userId,
+            balanceUSD: { gte: amount }
+        },
+        data: {
+          balanceUSD: { decrement: amount }
+        }
+      });
+
+      if (debitResult.count === 0) {
+          throw new Error('Insufficient USDT/USD balance (Concurrency Check)');
+      }
+
       // Create Withdraw Record
       const withdraw = await tx.cryptoWithdraw.create({
         data: {
@@ -53,14 +68,6 @@ export async function POST(req: Request) {
           amount: amount,
           toAddress: toAddress,
           status: 'PENDING'
-        }
-      });
-
-      // Debit Ledger
-      await tx.wallet.update({
-        where: { userId: (auth as any).userId },
-        data: {
-          balanceUSD: { decrement: amount }
         }
       });
 
@@ -77,6 +84,9 @@ export async function POST(req: Request) {
       });
 
       return withdraw;
+    }, {
+      maxWait: 10000,
+      timeout: 10000
     });
 
     // 3. Queue Async Job

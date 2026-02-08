@@ -40,7 +40,25 @@ export function BalanceCard({ balance, currency }: BalanceCardProps) {
   };
 
   const handleCryptoDeposit = async () => {
-    // ... existing logic
+    setShowDepositModal(true);
+    setLoading(true); // Re-using loading state or create a specific one
+    try {
+        const res = await fetch('/api/crypto/address');
+        const data = await res.json();
+        if (res.ok) {
+            setCryptoData({
+                address: data.address,
+                qrCode: data.address, // Or a URI like ethereum:0x...
+                network: data.network
+            });
+        } else {
+            console.error(data.error);
+        }
+    } catch (e) {
+        console.error('Failed to fetch address');
+    } finally {
+        setLoading(false);
+    }
   };
 
   const handleWithdraw = async () => {

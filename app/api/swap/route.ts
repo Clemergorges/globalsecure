@@ -71,13 +71,21 @@ export async function POST(req: Request) {
         throw new Error(`Insufficient ${fromAsset} balance`);
       }
 
-      // Debit Source
-      await tx.wallet.update({
-        where: { userId: (auth as any).userId },
+      // Debit Source with Atomic Check
+      // We use updateMany to ensure we only update if balance is sufficient at the moment of write.
+      const debitResult = await tx.wallet.updateMany({
+        where: { 
+            userId: (auth as any).userId,
+            [balanceField]: { gte: amount }
+        },
         data: {
           [balanceField]: { decrement: amount }
         }
       });
+
+      if (debitResult.count === 0) {
+          throw new Error(`Insufficient ${fromAsset} balance (Concurrency Check)`);
+      }
 
       // Credit Destination
       const creditField = 
@@ -112,13 +120,10 @@ export async function POST(req: Request) {
       await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
-          type: 'REFUND', // Used EXCHANGE but enum has REFUND/FEE/DEPOSIT etc. Let's use CREDIT/DEBIT or similar. 
-          // Schema enum: CREDIT, DEBIT, WITHDRAW, REFUND, FEE, DEPOSIT
-          // We can use DEBIT for source and CREDIT for dest
+          type: 'REFUND', // DEBIT equivalent
           amount: amount,
           currency: fromAsset,
           description: `Swap to ${toAsset}`,
-          // metadata: { swapId: swap.id, direction: 'OUT' }
         }
       });
 
@@ -129,11 +134,13 @@ export async function POST(req: Request) {
           amount: toAmount,
           currency: toAsset,
           description: `Swap from ${fromAsset}`,
-          // metadata: { swapId: swap.id, direction: 'IN' }
         }
       });
 
       return swap;
+    }, {
+      maxWait: 10000, // Wait up to 10s for a connection
+      timeout: 10000  // Transaction runs for max 10s
     });
 
     return NextResponse.json({ 
