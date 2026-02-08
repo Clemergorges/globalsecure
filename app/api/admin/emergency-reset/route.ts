@@ -18,13 +18,14 @@ export async function POST(req: Request) {
   try {
     // 2. Protection by Admin Authentication
     const session = await getSession();
+    const userEmail = (session as any)?.email;
 
-    if (!session || !session.user || session.user.email !== process.env.ADMIN_EMAIL) {
-      console.warn(`[ADMIN_RESET_UNAUTHORIZED] User: ${session?.user?.email || 'Guest'}, IP: ${ip}`);
+    if (!userEmail || userEmail !== process.env.ADMIN_EMAIL) {
+      console.warn(`[ADMIN_RESET_UNAUTHORIZED] User: ${userEmail || 'Guest'}, IP: ${ip}`);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    console.log(`[ADMIN_RESET_AUTHORIZED] Admin: ${session.user.email} initiated reset.`);
+    console.log(`[ADMIN_RESET_AUTHORIZED] Admin: ${userEmail} initiated reset.`);
 
     const email = process.env.ADMIN_EMAIL || 'clemergorges@hotmail.com';
     const password = 'admin123';
