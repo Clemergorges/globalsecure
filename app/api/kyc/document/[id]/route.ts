@@ -21,11 +21,11 @@ async function getSignedUrl(path: string | null) {
   return data.signedUrl;
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const documentId = params.id;
+  const { id: documentId } = await params;
   const isAdmin = await checkAdmin();
   const userId = (session as any).userId;
 

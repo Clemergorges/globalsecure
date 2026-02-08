@@ -37,7 +37,8 @@ export async function POST(req: Request) {
         debug: {
           reason: 'User not found',
           email: normalizedEmail,
-          dbHost: dbHost
+          dbHost: dbHost,
+          env: process.env.NODE_ENV
         }
       }, { status: 401 });
     }
@@ -53,7 +54,8 @@ export async function POST(req: Request) {
         error: 'Credenciais inválidas',
         debug: {
           reason: 'Invalid password',
-          dbHost: dbHost
+          dbHost: dbHost,
+          env: process.env.NODE_ENV
         }
       }, { status: 401 });
     }

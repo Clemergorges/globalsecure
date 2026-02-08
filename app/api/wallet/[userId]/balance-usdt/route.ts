@@ -12,7 +12,7 @@ export async function GET(
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
     }
 
-    const address = deriveUserAddress(userId);
+    const address = await deriveUserAddress(userId);
     
     // Run in parallel for speed
     const [balanceUsdt, priceUsd] = await Promise.all([

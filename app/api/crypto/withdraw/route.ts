@@ -11,7 +11,7 @@ function isValidAddress(address: string) {
 
 export async function POST(req: Request) {
   try {
-    const auth = await checkAuth(req);
+    const auth = await checkAuth();
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -38,17 +38,17 @@ export async function POST(req: Request) {
     const result = await prisma.$transaction(async (tx) => {
       // Lock wallet
       const wallet = await tx.wallet.findUnique({
-        where: { userId: auth.userId }
+        where: { userId: (auth as any).userId }
       });
 
-      if (!wallet || wallet.balanceUsdt.toNumber() < amount) {
-        throw new Error('Insufficient USDT balance');
+      if (!wallet || wallet.balanceUSD.toNumber() < amount) {
+        throw new Error('Insufficient USDT/USD balance');
       }
 
       // Create Withdraw Record
       const withdraw = await tx.cryptoWithdraw.create({
         data: {
-          userId: auth.userId,
+          userId: (auth as any).userId,
           asset: 'USDT_POLYGON_TESTNET',
           amount: amount,
           toAddress: toAddress,
@@ -58,36 +58,28 @@ export async function POST(req: Request) {
 
       // Debit Ledger
       await tx.wallet.update({
-        where: { userId: auth.userId },
+        where: { userId: (auth as any).userId },
         data: {
-          balanceUsdt: { decrement: amount }
+          balanceUSD: { decrement: amount }
         }
       });
 
       // Create Ledger Entry
-      await tx.transaction.create({
+      await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
           type: 'WITHDRAW',
           amount: amount,
-          currency: 'USDT',
-          status: 'PENDING',
+          currency: 'USD',
           description: `Withdraw to ${toAddress.slice(0, 6)}...`,
-          metadata: { withdrawId: withdraw.id }
+          // metadata: { withdrawId: withdraw.id } // Metadata not in schema yet for WalletTransaction
         }
       });
 
       return withdraw;
     });
 
-    // 3. Queue Async Job (Simulated here, but ideally via Queue)
-    // For MVP, we'll trigger the worker immediately but don't wait for it in the response if it was a real queue.
-    // However, since we don't have a separate worker process running, we'll rely on the Cron Job we created earlier to pick this up,
-    // OR we can trigger a "process-withdraw" endpoint.
-    // Let's rely on the CRON JOB created in Priority 2 (`/api/cron/process-queue`) to pick up PENDING withdrawals if we add logic there,
-    // OR we can just return success and let the user wait.
-    
-    // BETTER FOR DEMO: Let's create a Job record so our Cron/Worker picks it up.
+    // 3. Queue Async Job
     await prisma.job.create({
       data: {
         type: 'PROCESS_WITHDRAW',

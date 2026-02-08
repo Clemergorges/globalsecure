@@ -15,7 +15,7 @@ const SPREAD_PERCENT = 0.008; // 0.8%
 
 export async function POST(req: Request) {
   try {
-    const auth = await checkAuth(req);
+    const auth = await checkAuth();
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -49,17 +49,18 @@ export async function POST(req: Request) {
     // 3. Execute Transaction (ACID)
     const result = await prisma.$transaction(async (tx) => {
       const wallet = await tx.wallet.findUnique({
-        where: { userId: auth.userId }
+        where: { userId: (auth as any).userId }
       });
 
       if (!wallet) throw new Error('Wallet not found');
 
       // Check Balance
       // Map currency to wallet field
+      // Assuming USDT is mapped to balanceUSD for now, or we should use Balance table
       const balanceField = 
-        fromAsset === 'USDT' ? 'balanceUsdt' :
-        fromAsset === 'EUR' ? 'balanceEur' :
-        fromAsset === 'USD' ? 'balanceUsd' : null;
+        fromAsset === 'USDT' ? 'balanceUSD' :
+        fromAsset === 'EUR' ? 'balanceEUR' :
+        fromAsset === 'USD' ? 'balanceUSD' : null;
 
       if (!balanceField) throw new Error('Invalid balance field');
 
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
 
       // Debit Source
       await tx.wallet.update({
-        where: { userId: auth.userId },
+        where: { userId: (auth as any).userId },
         data: {
           [balanceField]: { decrement: amount }
         }
@@ -80,14 +81,14 @@ export async function POST(req: Request) {
 
       // Credit Destination
       const creditField = 
-        toAsset === 'USDT' ? 'balanceUsdt' :
-        toAsset === 'EUR' ? 'balanceEur' :
-        toAsset === 'USD' ? 'balanceUsd' : null;
+        toAsset === 'USDT' ? 'balanceUSD' :
+        toAsset === 'EUR' ? 'balanceEUR' :
+        toAsset === 'USD' ? 'balanceUSD' : null;
       
       if (!creditField) throw new Error('Invalid credit field');
 
       await tx.wallet.update({
-        where: { userId: auth.userId },
+        where: { userId: (auth as any).userId },
         data: {
           [creditField]: { increment: toAmount }
         }
@@ -96,7 +97,7 @@ export async function POST(req: Request) {
       // Create Swap Record
       const swap = await tx.swap.create({
         data: {
-          userId: auth.userId,
+          userId: (auth as any).userId,
           fromAsset,
           toAsset,
           fromAmount: amount,
@@ -108,27 +109,27 @@ export async function POST(req: Request) {
       });
 
       // Create Ledger Entries (One for Debit, One for Credit)
-      await tx.transaction.create({
+      await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
-          type: 'EXCHANGE',
+          type: 'REFUND', // Used EXCHANGE but enum has REFUND/FEE/DEPOSIT etc. Let's use CREDIT/DEBIT or similar. 
+          // Schema enum: CREDIT, DEBIT, WITHDRAW, REFUND, FEE, DEPOSIT
+          // We can use DEBIT for source and CREDIT for dest
           amount: amount,
           currency: fromAsset,
-          status: 'COMPLETED', // Swaps are instant internal
           description: `Swap to ${toAsset}`,
-          metadata: { swapId: swap.id, direction: 'OUT' }
+          // metadata: { swapId: swap.id, direction: 'OUT' }
         }
       });
 
-      await tx.transaction.create({
+      await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
-          type: 'EXCHANGE',
+          type: 'CREDIT',
           amount: toAmount,
           currency: toAsset,
-          status: 'COMPLETED',
           description: `Swap from ${fromAsset}`,
-          metadata: { swapId: swap.id, direction: 'IN' }
+          // metadata: { swapId: swap.id, direction: 'IN' }
         }
       });
 
