@@ -1,0 +1,18 @@
+PASS  tests/ledger/double-spend.test.ts (7.734 s)
+PASS  tests/failure/resilience.test.ts
+PASS  tests/compliance/kyc-guards.test.ts
+PASS  tests/ledger/acid-consistency.test.ts
+PASS  tests/webhooks/stripe-webhooks.test.ts
+PASS  tests/webhooks/crypto-webhooks.test.ts
+PASS  tests/auth/session-security.test.ts
+PASS  tests/e2e/transfers.test.ts
+PASS  tests/e2e/deposits.test.ts
+PASS  tests/failure/network-failure.test.ts
+PASS  tests/failure/webhook-failure.test.ts
+PASS  tests/e2e/audit.test.ts
+
+Test Suites: 12 passed, 12 total
+Tests:       64 passed, 64 total
+Snapshots:   0 total
+Time:        15.676 s, estimated 36 s
+Ran all test suites.

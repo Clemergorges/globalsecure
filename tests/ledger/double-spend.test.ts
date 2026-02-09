@@ -31,50 +31,74 @@ describe('Double Spend Prevention Tests', () => {
             // Create two concurrent transfer operations
             const transfer1 = async () => {
                 return await prisma.$transaction(async (tx) => {
-                    const wallet = await tx.wallet.findUnique({
-                        where: { userId: sender.id },
-                    });
-
-                    if (!wallet || Number(wallet.balanceEUR) < transferAmount) {
-                        throw new Error('Insufficient balance');
+                    const ids = [sender.id, receiver1.id].sort();
+                    if (ids[0] === sender.id) {
+                        const debitResult = await tx.wallet.updateMany({
+                            where: { userId: sender.id, balanceEUR: { gte: transferAmount } },
+                            data: { balanceEUR: { decrement: transferAmount } },
+                        });
+                        if (debitResult.count !== 1) {
+                            throw new Error('Insufficient balance');
+                        }
+                        await tx.wallet.update({
+                            where: { userId: receiver1.id },
+                            data: { balanceEUR: { increment: transferAmount } },
+                        });
+                    } else {
+                        // Canonical ordering: Lock receiver first (since receiver.id < sender.id)
+                        await tx.wallet.update({
+                            where: { userId: receiver1.id },
+                            data: { balanceEUR: { increment: transferAmount } },
+                        });
+                        
+                        // Then lock sender
+                        const debitResult = await tx.wallet.updateMany({
+                            where: { userId: sender.id, balanceEUR: { gte: transferAmount } },
+                            data: { balanceEUR: { decrement: transferAmount } },
+                        });
+                        if (debitResult.count !== 1) {
+                            throw new Error('Insufficient balance');
+                        }
                     }
 
-                    await tx.wallet.update({
-                        where: { userId: sender.id },
-                        data: { balanceEUR: { decrement: transferAmount } },
-                    });
-
-                    await tx.wallet.update({
-                        where: { userId: receiver1.id },
-                        data: { balanceEUR: { increment: transferAmount } },
-                    });
-
                     return { success: true, receiver: receiver1.email };
-                });
+                }, { isolationLevel: 'Serializable' });
             };
 
             const transfer2 = async () => {
                 return await prisma.$transaction(async (tx) => {
-                    const wallet = await tx.wallet.findUnique({
-                        where: { userId: sender.id },
-                    });
-
-                    if (!wallet || Number(wallet.balanceEUR) < transferAmount) {
-                        throw new Error('Insufficient balance');
+                    const ids = [sender.id, receiver2.id].sort();
+                    if (ids[0] === sender.id) {
+                        const debitResult = await tx.wallet.updateMany({
+                            where: { userId: sender.id, balanceEUR: { gte: transferAmount } },
+                            data: { balanceEUR: { decrement: transferAmount } },
+                        });
+                        if (debitResult.count !== 1) {
+                            throw new Error('Insufficient balance');
+                        }
+                        await tx.wallet.update({
+                            where: { userId: receiver2.id },
+                            data: { balanceEUR: { increment: transferAmount } },
+                        });
+                    } else {
+                        // Canonical ordering: Lock receiver first
+                        await tx.wallet.update({
+                            where: { userId: receiver2.id },
+                            data: { balanceEUR: { increment: transferAmount } },
+                        });
+                        
+                        // Then lock sender
+                        const debitResult = await tx.wallet.updateMany({
+                            where: { userId: sender.id, balanceEUR: { gte: transferAmount } },
+                            data: { balanceEUR: { decrement: transferAmount } },
+                        });
+                        if (debitResult.count !== 1) {
+                            throw new Error('Insufficient balance');
+                        }
                     }
 
-                    await tx.wallet.update({
-                        where: { userId: sender.id },
-                        data: { balanceEUR: { decrement: transferAmount } },
-                    });
-
-                    await tx.wallet.update({
-                        where: { userId: receiver2.id },
-                        data: { balanceEUR: { increment: transferAmount } },
-                    });
-
                     return { success: true, receiver: receiver2.email };
-                });
+                }, { isolationLevel: 'Serializable' });
             };
 
             // Execute both transfers simultaneously
@@ -115,18 +139,13 @@ describe('Double Spend Prevention Tests', () => {
             // Create two concurrent withdrawal operations
             const withdrawal1 = async () => {
                 return await prisma.$transaction(async (tx) => {
-                    const wallet = await tx.wallet.findUnique({
-                        where: { userId: user.id },
-                    });
-
-                    if (!wallet || Number(wallet.balanceEUR) < withdrawAmount) {
-                        throw new Error('Insufficient balance');
-                    }
-
-                    await tx.wallet.update({
-                        where: { userId: user.id },
+                    const debitResult = await tx.wallet.updateMany({
+                        where: { userId: user.id, balanceEUR: { gte: withdrawAmount } },
                         data: { balanceEUR: { decrement: withdrawAmount } },
                     });
+                    if (debitResult.count !== 1) {
+                        throw new Error('Insufficient balance');
+                    }
 
                     await tx.cryptoWithdraw.create({
                         data: {
@@ -139,23 +158,18 @@ describe('Double Spend Prevention Tests', () => {
                     });
 
                     return { success: true };
-                });
+                }, { isolationLevel: 'Serializable' });
             };
 
             const withdrawal2 = async () => {
                 return await prisma.$transaction(async (tx) => {
-                    const wallet = await tx.wallet.findUnique({
-                        where: { userId: user.id },
-                    });
-
-                    if (!wallet || Number(wallet.balanceEUR) < withdrawAmount) {
-                        throw new Error('Insufficient balance');
-                    }
-
-                    await tx.wallet.update({
-                        where: { userId: user.id },
+                    const debitResult = await tx.wallet.updateMany({
+                        where: { userId: user.id, balanceEUR: { gte: withdrawAmount } },
                         data: { balanceEUR: { decrement: withdrawAmount } },
                     });
+                    if (debitResult.count !== 1) {
+                        throw new Error('Insufficient balance');
+                    }
 
                     await tx.cryptoWithdraw.create({
                         data: {
@@ -168,7 +182,7 @@ describe('Double Spend Prevention Tests', () => {
                     });
 
                     return { success: true };
-                });
+                }, { isolationLevel: 'Serializable' });
             };
 
             // Execute both withdrawals simultaneously
@@ -206,20 +220,16 @@ describe('Double Spend Prevention Tests', () => {
             // Swap operation
             const swapOperation = async () => {
                 return await prisma.$transaction(async (tx) => {
-                    const wallet = await tx.wallet.findUnique({
-                        where: { userId: user.id },
+                    const debitResult = await tx.wallet.updateMany({
+                        where: { userId: user.id, balanceEUR: { gte: amount } },
+                        data: { balanceEUR: { decrement: amount } },
                     });
-
-                    if (!wallet || Number(wallet.balanceEUR) < amount) {
+                    if (debitResult.count !== 1) {
                         throw new Error('Insufficient balance');
                     }
-
                     await tx.wallet.update({
                         where: { userId: user.id },
-                        data: {
-                            balanceEUR: { decrement: amount },
-                            balanceUSD: { increment: amount * 1.1 },
-                        },
+                        data: { balanceUSD: { increment: amount * 1.1 } },
                     });
 
                     await tx.swap.create({
@@ -236,32 +246,41 @@ describe('Double Spend Prevention Tests', () => {
                     });
 
                     return { success: true, type: 'swap' };
-                });
+                }, { isolationLevel: 'Serializable' });
             };
 
             // Transfer operation
             const transferOperation = async () => {
                 return await prisma.$transaction(async (tx) => {
-                    const wallet = await tx.wallet.findUnique({
-                        where: { userId: user.id },
-                    });
-
-                    if (!wallet || Number(wallet.balanceEUR) < amount) {
-                        throw new Error('Insufficient balance');
+                    const ids = [user.id, receiver.id].sort();
+                    if (ids[0] === user.id) {
+                        const debitResult = await tx.wallet.updateMany({
+                            where: { userId: user.id, balanceEUR: { gte: amount } },
+                            data: { balanceEUR: { decrement: amount } },
+                        });
+                        if (debitResult.count !== 1) {
+                            throw new Error('Insufficient balance');
+                        }
+                        await tx.wallet.update({
+                            where: { userId: receiver.id },
+                            data: { balanceEUR: { increment: amount } },
+                        });
+                    } else {
+                        const debitResult = await tx.wallet.updateMany({
+                            where: { userId: user.id, balanceEUR: { gte: amount } },
+                            data: { balanceEUR: { decrement: amount } },
+                        });
+                        if (debitResult.count !== 1) {
+                            throw new Error('Insufficient balance');
+                        }
+                        await tx.wallet.update({
+                            where: { userId: receiver.id },
+                            data: { balanceEUR: { increment: amount } },
+                        });
                     }
 
-                    await tx.wallet.update({
-                        where: { userId: user.id },
-                        data: { balanceEUR: { decrement: amount } },
-                    });
-
-                    await tx.wallet.update({
-                        where: { userId: receiver.id },
-                        data: { balanceEUR: { increment: amount } },
-                    });
-
                     return { success: true, type: 'transfer' };
-                });
+                }, { isolationLevel: 'Serializable' });
             };
 
             // Execute both operations simultaneously
@@ -332,18 +351,21 @@ describe('Double Spend Prevention Tests', () => {
                 return await prisma.$transaction(async (tx) => {
                     const currentCard = await tx.virtualCard.findUnique({
                         where: { id: card.id },
+                        select: { amountUsed: true, amount: true }
                     });
-
-                    const availableAmount = Number(currentCard!.amount) - Number(currentCard!.amountUsed);
-
+                    const prevAmountUsed = Number(currentCard!.amountUsed);
+                    const maxAllowed = Number(currentCard!.amount);
+                    const availableAmount = maxAllowed - prevAmountUsed;
                     if (availableAmount < authAmount) {
                         throw new Error('Insufficient card balance');
                     }
-
-                    await tx.virtualCard.update({
-                        where: { id: card.id },
+                    const updateRes = await tx.virtualCard.updateMany({
+                        where: { id: card.id, amountUsed: prevAmountUsed },
                         data: { amountUsed: { increment: authAmount } },
                     });
+                    if (updateRes.count !== 1) {
+                        throw new Error('Insufficient card balance');
+                    }
 
                     await tx.spendTransaction.create({
                         data: {
@@ -357,25 +379,28 @@ describe('Double Spend Prevention Tests', () => {
                     });
 
                     return { success: true };
-                });
+                }, { isolationLevel: 'Serializable' });
             };
 
             const auth2 = async () => {
                 return await prisma.$transaction(async (tx) => {
                     const currentCard = await tx.virtualCard.findUnique({
                         where: { id: card.id },
+                        select: { amountUsed: true, amount: true }
                     });
-
-                    const availableAmount = Number(currentCard!.amount) - Number(currentCard!.amountUsed);
-
+                    const prevAmountUsed = Number(currentCard!.amountUsed);
+                    const maxAllowed = Number(currentCard!.amount);
+                    const availableAmount = maxAllowed - prevAmountUsed;
                     if (availableAmount < authAmount) {
                         throw new Error('Insufficient card balance');
                     }
-
-                    await tx.virtualCard.update({
-                        where: { id: card.id },
+                    const updateRes = await tx.virtualCard.updateMany({
+                        where: { id: card.id, amountUsed: prevAmountUsed },
                         data: { amountUsed: { increment: authAmount } },
                     });
+                    if (updateRes.count !== 1) {
+                        throw new Error('Insufficient card balance');
+                    }
 
                     await tx.spendTransaction.create({
                         data: {
@@ -389,7 +414,7 @@ describe('Double Spend Prevention Tests', () => {
                     });
 
                     return { success: true };
-                });
+                }, { isolationLevel: 'Serializable' });
             };
 
             // Execute both authorizations simultaneously

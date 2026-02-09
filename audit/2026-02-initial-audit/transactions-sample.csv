@@ -1,0 +1,5 @@
+id,walletId,type,amount,currency,status,reference,createdAt
+tx_1,wallet_1,DEPOSIT,1000.00,EUR,COMPLETED,stripe_sess_1,2026-02-09T10:00:00Z
+tx_2,wallet_1,TRANSFER,50.00,EUR,COMPLETED,transfer_1,2026-02-09T10:05:00Z
+tx_3,wallet_2,DEPOSIT,50.00,EUR,COMPLETED,transfer_1,2026-02-09T10:05:00Z
+tx_4,wallet_1,WITHDRAWAL,200.00,EUR,PENDING,crypto_tx_1,2026-02-09T10:10:00Z

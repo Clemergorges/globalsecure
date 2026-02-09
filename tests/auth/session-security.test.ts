@@ -45,6 +45,7 @@ describe('Session Security and Authentication Tests', () => {
                     userId: foundUser!.id,
                     email: foundUser!.email,
                     role: 'USER',
+                    nonce: Math.random(), // Ensure uniqueness
                 },
                 JWT_SECRET,
                 { expiresIn: '7d' }
@@ -79,7 +80,7 @@ describe('Session Security and Authentication Tests', () => {
 
             // Create session
             const token = jwt.sign(
-                { userId: user.id, email: user.email, role: 'USER' },
+                { userId: user.id, email: user.email, role: 'USER', nonce: Math.random() },
                 JWT_SECRET,
                 { expiresIn: '7d' }
             );
@@ -143,7 +144,7 @@ describe('Session Security and Authentication Tests', () => {
             const user = await getTestUser(1);
 
             const token = jwt.sign(
-                { userId: user.id, email: user.email, role: 'USER' },
+                { userId: user.id, email: user.email, role: 'USER', nonce: Math.random() },
                 JWT_SECRET,
                 { expiresIn: '7d' }
             );
@@ -195,7 +196,7 @@ describe('Session Security and Authentication Tests', () => {
 
             // Create valid token
             const validToken = jwt.sign(
-                { userId: user.id, email: user.email, role: 'USER' },
+                { userId: user.id, email: user.email, role: 'USER', nonce: Math.random() },
                 JWT_SECRET,
                 { expiresIn: '7d' }
             );
@@ -239,7 +240,7 @@ describe('Session Security and Authentication Tests', () => {
             const user = await getTestUser(1);
 
             const token = jwt.sign(
-                { userId: user.id, email: user.email, role: 'USER' },
+                { userId: user.id, email: user.email, role: 'USER', nonce: Math.random() },
                 JWT_SECRET,
                 { expiresIn: '7d' }
             );
@@ -273,7 +274,7 @@ describe('Session Security and Authentication Tests', () => {
             const user = await getTestUser(1);
 
             const token = jwt.sign(
-                { userId: user.id, email: user.email, role: 'USER' },
+                { userId: user.id, email: user.email, role: 'USER', nonce: Math.random() },
                 JWT_SECRET,
                 { expiresIn: '7d' }
             );

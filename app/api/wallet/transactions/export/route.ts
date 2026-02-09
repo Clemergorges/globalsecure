@@ -13,9 +13,7 @@ export async function GET(_req: Request) {
     const transfers = await prisma.transfer.findMany({
       where: {
         OR: [
-          // @ts-expect-error Session userId
           { senderId: session.userId },
-          // @ts-expect-error Session userId
           { recipientId: session.userId }
         ]
       },
@@ -26,9 +24,7 @@ export async function GET(_req: Request) {
     const cards = await prisma.virtualCard.findMany({
         where: {
           OR: [
-            // @ts-expect-error Session userId
             { transfer: { recipientId: session.userId } },
-            // @ts-expect-error Session userId
             { userId: session.userId }
           ]
         },
@@ -42,7 +38,7 @@ export async function GET(_req: Request) {
 
     // 3. Fees
     const wallet = await prisma.wallet.findUnique({
-        where: { userId: (session as any).userId }
+        where: { userId: session.userId }
     });
     const fees = wallet ? await prisma.walletTransaction.findMany({
         where: { walletId: wallet.id, type: 'FEE' },
@@ -54,7 +50,7 @@ export async function GET(_req: Request) {
       ...transfers.map(t => ({
         date: t.createdAt,
         type: 'TRANSFER',
-        description: t.senderId === (session as any).userId ? `Sent to ${t.recipientName}` : `Received from ${t.senderId}`,
+        description: t.senderId === session.userId ? `Sent to ${t.recipientName}` : `Received from ${t.senderId}`,
         amount: Number(t.amountSent),
         currency: t.currencySent,
         status: t.status

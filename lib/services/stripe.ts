@@ -90,16 +90,16 @@ export async function createVirtualCard(
       exp_year: card.exp_year,
       brand: card.brand
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Stripe Issuing Error:', error);
-    // Se o erro for de API Key ou permissão, detalha melhor
-    if (error.code === 'resource_missing') {
-       throw new Error(`Stripe Resource Missing: ${error.message}`);
+    const err = (error ?? {}) as { code?: string; message?: string; type?: string };
+    if (err.code === 'resource_missing') {
+       throw new Error(`Stripe Resource Missing: ${err.message ?? 'Unknown error'}`);
     }
-    if (error.type === 'StripeAuthenticationError') {
+    if (err.type === 'StripeAuthenticationError') {
        throw new Error('Stripe Authentication Failed. Check API Keys.');
     }
-    throw new Error(`Failed to create virtual card: ${error.message}`);
+    throw new Error(`Failed to create virtual card: ${err.message ?? 'Unknown error'}`);
   }
 }
 

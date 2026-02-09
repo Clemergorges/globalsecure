@@ -93,6 +93,43 @@ npm run dev
 
 Acesse [http://localhost:3000](http://localhost:3000).
 
+##  🧪 Running Failure Tests (Fase 4)
+```bash
+npm run test:failure
+```
+Cobertura:
+- duplicated webhooks
+- out-of-order blockchain events
+- external API timeouts
+- Stripe failures
+- crypto reverts
+- insufficient balance
+- KYC limit violations
+
+##  🧪 Running All Tests (Full EMI Validation)
+```bash
+npm run test:all
+```
+Executa:
+- Fase 1
+- Fase 2
+- Fase 3
+- Fase 4
+
+##  Por que isso importa para auditoria EMI
+- Comando único que valida o sistema
+- Logs consistentes
+- Execução determinística
+- Testes isolados por categoria
+- Documentação clara
+
+##  🚀 CI/CD Pipeline
+Este projeto utiliza GitHub Actions para integração contínua. A pipeline executa automaticamente todos os testes (Unitários, Integração, E2E e Falha) a cada push ou pull request na branch main.
+- **Workflow:** `.github/workflows/ci.yml`
+- **Ambiente:** Node.js 20 + PostgreSQL Service Container
+- **Validação:** Linting + Testes Automatizados (Fases 1-4)
+
+
 ##  Contribuição & Feedback
 Este é um projeto de código fechado (proprietário), mas estamos abertos a feedback de investidores e parceiros tecnológicos.
 Entre em contato para solicitar acesso ao ambiente de demonstração ou para discutir parcerias.

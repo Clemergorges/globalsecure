@@ -24,8 +24,14 @@ export async function comparePassword(password: string, hash: string): Promise<b
 /**
  * Sign JWT token with typed payload
  */
-export function signToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+export function signToken(payload: { userId: string; email: string; role?: 'USER' | 'ADMIN'; sessionId?: string }): string {
+  const base: Omit<JWTPayload, 'iat' | 'exp'> = {
+    userId: payload.userId,
+    email: payload.email,
+    role: payload.role ?? 'USER',
+    sessionId: payload.sessionId,
+  };
+  return jwt.sign(base, JWT_SECRET, { expiresIn: '7d' });
 }
 
 /**

@@ -5,12 +5,40 @@ const E2E_PREFIX = 'e2e_transfer_';
 
 describe('E2E: Transfer Flows', () => {
     beforeAll(async () => {
+        const users = await prisma.user.findMany({
+            where: { email: { startsWith: E2E_PREFIX } },
+            select: { id: true, email: true }
+        });
+        const ids = users.map(u => u.id);
+        await prisma.transfer.deleteMany({
+            where: {
+                OR: [
+                    { recipientEmail: { startsWith: E2E_PREFIX } },
+                    { senderId: { in: ids } },
+                    { recipientId: { in: ids } }
+                ]
+            }
+        });
         await prisma.user.deleteMany({
             where: { email: { startsWith: E2E_PREFIX } }
         });
     });
 
     afterAll(async () => {
+        const users = await prisma.user.findMany({
+            where: { email: { startsWith: E2E_PREFIX } },
+            select: { id: true, email: true }
+        });
+        const ids = users.map(u => u.id);
+        await prisma.transfer.deleteMany({
+            where: {
+                OR: [
+                    { recipientEmail: { startsWith: E2E_PREFIX } },
+                    { senderId: { in: ids } },
+                    { recipientId: { in: ids } }
+                ]
+            }
+        });
         await prisma.user.deleteMany({
             where: { email: { startsWith: E2E_PREFIX } }
         });
@@ -25,13 +53,12 @@ describe('E2E: Transfer Flows', () => {
         const sender = await prisma.user.create({
             data: {
                 email: senderEmail,
-                password: 'hashed',
+                passwordHash: 'hashed',
                 firstName: 'Sender',
                 lastName: 'E2E',
                 kycLevel: 2,
                 wallet: {
                     create: {
-                        currency: 'EUR',
                         balanceEUR: 100, // Initial balance
                         balanceUSD: 0,
                     }
@@ -43,13 +70,12 @@ describe('E2E: Transfer Flows', () => {
         const receiver = await prisma.user.create({
             data: {
                 email: receiverEmail,
-                password: 'hashed',
+                passwordHash: 'hashed',
                 firstName: 'Receiver',
                 lastName: 'E2E',
                 kycLevel: 2,
                 wallet: {
                     create: {
-                        currency: 'EUR',
                         balanceEUR: 0,
                         balanceUSD: 0,
                     }
@@ -103,12 +129,12 @@ describe('E2E: Transfer Flows', () => {
         const poorUser = await prisma.user.create({
             data: {
                 email: `${E2E_PREFIX}poor@test.com`,
-                password: 'hashed',
+                passwordHash: 'hashed',
                 firstName: 'Poor',
                 lastName: 'User',
                 kycLevel: 2,
                 wallet: {
-                    create: { currency: 'EUR', balanceEUR: 10 }
+                    create: { balanceEUR: 10 }
                 }
             },
             include: { wallet: true }

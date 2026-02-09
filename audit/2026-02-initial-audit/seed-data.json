@@ -1,0 +1,24 @@
+{
+  "users": [
+    {
+      "email": "admin@globalsecuresend.com",
+      "role": "ADMIN",
+      "kycLevel": 3
+    },
+    {
+      "email": "support@globalsecuresend.com",
+      "role": "SUPPORT",
+      "kycLevel": 3
+    }
+  ],
+  "configs": {
+    "defaultCurrency": "EUR",
+    "supportedCurrencies": ["EUR", "USD", "GBP", "USDT"],
+    "kycLimits": {
+      "level0": 100,
+      "level1": 1000,
+      "level2": 10000,
+      "level3": 100000
+    }
+  }
+}

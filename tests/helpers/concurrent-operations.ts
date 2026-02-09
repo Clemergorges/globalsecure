@@ -15,7 +15,11 @@ export async function executeConcurrently<T>(
 
     // Execute chunks sequentially, operations within chunk concurrently
     for (const chunk of chunks) {
-        const chunkResults = await Promise.all(chunk.map(op => op()));
+        const chunkResults = await Promise.all(
+            chunk.map(op =>
+                retryWithBackoff(op, 5, 50)
+            )
+        );
         results.push(...chunkResults);
     }
 
@@ -30,8 +34,8 @@ export async function executeWithRaceCondition<T>(
     operation2: () => Promise<T>
 ): Promise<[T | Error, T | Error]> {
     const results = await Promise.allSettled([
-        operation1(),
-        operation2(),
+        retryWithBackoff(operation1, 5, 50),
+        retryWithBackoff(operation2, 5, 50),
     ]);
 
     return results.map(result =>

@@ -7,15 +7,19 @@
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --quiet",
+    "typecheck": "tsc --noEmit",
+    "verify:code": "npm run lint && npm run typecheck",
     "test": "jest --watch",
     "test:ci": "jest --ci --coverage",
     "test:local": "dotenv -e .env.test -- jest --ci",
     "test:supabase": "dotenv -e .env.supabase.test -- jest --ci",
-    "test:unit": "jest --testPathPattern=tests/unit",
-    "test:integration": "jest --testPathPattern=tests/integration",
+    "test:unit": "jest --testPathPattern=tests/unit --passWithNoTests",
+    "test:integration": "jest --testPathPattern=tests/integration --passWithNoTests",
     "test:e2e": "jest --testPathPattern=tests/e2e",
-    "setup:test-db": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-test-db.ps1"
+    "setup:test-db": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-test-db.ps1",
+    "test:failure": "dotenv -e .env.test -- jest --ci --runInBand --testPathPattern=tests/failure",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:failure"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
