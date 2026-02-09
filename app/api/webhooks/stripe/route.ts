@@ -274,10 +274,27 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
          updateData.balanceGBP = { increment: baseAmount };
       }
 
-      await prisma.wallet.update({
-        where: { id: wallet.id },
-        data: updateData
-      });
+      if (Object.keys(updateData).length > 0) {
+        await prisma.wallet.update({
+          where: { id: wallet.id },
+          data: updateData
+        });
+      } else {
+        // Fallback para moedas dinâmicas (ex.: BRL)
+        const existing = await prisma.balance.findUnique({
+          where: { walletId_currency: { walletId: wallet.id, currency } }
+        });
+        if (existing) {
+          await prisma.balance.update({
+            where: { id: existing.id },
+            data: { amount: { increment: baseAmount } }
+          });
+        } else {
+          await prisma.balance.create({
+            data: { walletId: wallet.id, currency, amount: baseAmount }
+          });
+        }
+      }
 
       // 4. Create Transaction Record
       await prisma.walletTransaction.create({

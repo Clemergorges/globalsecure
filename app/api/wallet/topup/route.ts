@@ -10,8 +10,8 @@ const stripe = new Stripe((process.env.STRIPE_SECRET_KEY || 'sk_test_dummy').tri
 });
 
 const topUpSchema = z.object({
-  amount: z.number().positive().min(5), // Minimo 5 EUR/USD
-  currency: z.enum(['EUR', 'USD', 'GBP'])
+  amount: z.number().positive().min(5),
+  currency: z.enum(['EUR', 'USD', 'GBP', 'BRL'])
 });
 
 export async function POST(req: Request) {
