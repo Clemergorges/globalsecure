@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, Send, CreditCard, History, Shield, LogOut, X, Lock } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { useEffect, useState } from 'react';
@@ -16,6 +16,7 @@ const links = [
 
 export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobileOpen: (open: boolean) => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -29,6 +30,16 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
       })
       .catch(console.error);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <>
@@ -83,7 +94,10 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
         </nav>
 
         <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-          <button className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 rounded-lg transition-all">
+          <button 
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 rounded-lg transition-all"
+          >
             <LogOut className="w-5 h-5" />
             Sair
           </button>

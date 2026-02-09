@@ -137,20 +137,29 @@ export async function POST(req: Request) {
     }
 
     // 5. Notify Sender (Pusher + DB Notification)
-    await pusherService.trigger(`user-${(session as any).userId}`, 'transfer-created', { transferId: transfer.id });
+    try {
+      await pusherService.trigger(`user-${(session as any).userId}`, 'transfer-created', { transferId: transfer.id });
+    } catch (pusherError) {
+      console.warn('Pusher trigger failed:', pusherError);
+    }
     
     // Create Persistent Notification
-    const { createNotification } = await import('@/lib/notifications');
-    await createNotification({
-      userId: (session as any).userId,
-      title: 'Transferência Enviada',
-      body: `Você enviou ${currencySource} ${amountSource} para ${receiverName || receiverEmail}.`,
-      type: 'SUCCESS'
-    });
+    try {
+      const { createNotification } = await import('@/lib/notifications');
+      await createNotification({
+        userId: (session as any).userId,
+        title: 'Transferência Enviada',
+        body: `Você enviou ${currencySource} ${amountSource} para ${receiverName || receiverEmail}.`,
+        type: 'SUCCESS'
+      });
+    } catch (notificationError) {
+      console.warn('Notification creation failed:', notificationError);
+    }
 
     return NextResponse.json({ success: true, transferId: transfer.id });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Transfer creation failed' }, { status: 500 });
+    console.error('Transfer creation failed:', error);
+    // @ts-ignore
+    return NextResponse.json({ error: 'Transfer creation failed', details: error.message }, { status: 500 });
   }
 }

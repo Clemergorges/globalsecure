@@ -90,9 +90,16 @@ export async function createVirtualCard(
       exp_year: card.exp_year,
       brand: card.brand
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Stripe Issuing Error:', error);
-    throw new Error('Failed to create virtual card');
+    // Se o erro for de API Key ou permissão, detalha melhor
+    if (error.code === 'resource_missing') {
+       throw new Error(`Stripe Resource Missing: ${error.message}`);
+    }
+    if (error.type === 'StripeAuthenticationError') {
+       throw new Error('Stripe Authentication Failed. Check API Keys.');
+    }
+    throw new Error(`Failed to create virtual card: ${error.message}`);
   }
 }
 
