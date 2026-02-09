@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 import Stripe from 'stripe';
 import { z } from 'zod';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy', {
+const stripe = new Stripe((process.env.STRIPE_SECRET_KEY || 'sk_test_dummy').trim(), {
   // @ts-expect-error Stripe version mismatch
   apiVersion: '2024-12-18.acacia',
 });
@@ -24,6 +24,16 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { amount, currency } = topUpSchema.parse(body);
 
+    // Calculate Fees (3.5% + 0.30 fixed)
+    const fixedFee = 0.30;
+    const variableFeePercent = 0.035;
+    const feeAmount = (amount * variableFeePercent) + fixedFee;
+    const baseMinor = Math.round(amount * 100);
+    const feeMinor = Math.round(feeAmount * 100);
+    
+    // Total charge = Amount + Fees
+    // But we credit only 'amount' to the wallet.
+
     // Criar Sessão do Checkout
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -33,9 +43,20 @@ export async function POST(req: Request) {
             currency: currency.toLowerCase(),
             product_data: {
               name: 'GlobalSecure Top-up',
-              description: 'Adicionar saldo à carteira',
+              description: 'Crédito na Carteira',
             },
-            unit_amount: Math.round(amount * 100), // Centavos
+            unit_amount: baseMinor,
+          },
+          quantity: 1,
+        },
+        {
+          price_data: {
+            currency: currency.toLowerCase(),
+            product_data: {
+              name: 'Taxa de Processamento',
+              description: 'Taxa de cartão de crédito (3.5% + 0.30)',
+            },
+            unit_amount: feeMinor,
           },
           quantity: 1,
         },
@@ -45,7 +66,9 @@ export async function POST(req: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?payment=cancel`,
       metadata: {
         userId: session.userId as string,
-        type: 'WALLET_TOPUP'
+        type: 'WALLET_TOPUP',
+        base_amount_minor: String(baseMinor),
+        surcharge_minor: String(feeMinor)
       },
     });
 

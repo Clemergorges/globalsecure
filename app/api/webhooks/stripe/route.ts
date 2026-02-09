@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { prisma } from '@/lib/db';
 import { pusherService } from '@/lib/services/pusher';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy', {
+const stripe = new Stripe((process.env.STRIPE_SECRET_KEY || 'sk_test_dummy').trim(), {
   // @ts-expect-error Stripe version mismatch
   apiVersion: '2024-12-18.acacia', // Bypass TS check for version mismatch
 });
@@ -253,8 +253,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const userId = session.metadata.userId;
     if (!userId) return;
 
-    const amount = Number(session.amount_total!) / 100;
     const currency = session.currency!.toUpperCase();
+    const baseMinor = session.metadata?.base_amount_minor ? Number(session.metadata.base_amount_minor) : Math.round(Number(session.amount_total!) );
+    const surchargeMinor = session.metadata?.surcharge_minor ? Number(session.metadata.surcharge_minor) : 0;
+    const baseAmount = baseMinor / 100;
+    const surchargeAmount = surchargeMinor / 100;
 
     // 2. Find Wallet
     const wallet = await prisma.wallet.findUnique({ where: { userId } });
@@ -264,11 +267,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateData: any = {};
       if (currency === 'EUR') {
-         updateData.balanceEUR = { increment: amount };
+         updateData.balanceEUR = { increment: baseAmount };
       } else if (currency === 'USD') {
-         updateData.balanceUSD = { increment: amount };
+         updateData.balanceUSD = { increment: baseAmount };
       } else if (currency === 'GBP') {
-         updateData.balanceGBP = { increment: amount };
+         updateData.balanceGBP = { increment: baseAmount };
       }
 
       await prisma.wallet.update({
@@ -281,22 +284,34 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         data: {
           walletId: wallet.id,
           type: 'DEPOSIT',
-          amount: amount,
+          amount: baseAmount,
           currency: currency,
           description: `Recarga via Cartão (Stripe)`
         }
       });
+      
+      if (surchargeAmount > 0) {
+        await prisma.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            type: 'FEE',
+            amount: surchargeAmount,
+            currency: currency,
+            description: 'Taxa de processamento de recarga (cartão)'
+          }
+        });
+      }
       
       // 5. Notify User
       const { createNotification } = await import('@/lib/notifications');
       await createNotification({
         userId,
         title: 'Depósito Confirmado',
-        body: `Sua recarga de ${currency} ${amount.toFixed(2)} foi creditada com sucesso.`,
+        body: `Sua recarga de ${currency} ${baseAmount.toFixed(2)} foi creditada com sucesso.`,
         type: 'SUCCESS'
       });
       
-      console.log(`TopUp success: ${amount} ${currency} for user ${userId}`);
+      console.log(`TopUp success: ${baseAmount} ${currency} for user ${userId}`);
     }
   } catch (error) {
     console.error('Error handling checkout completion:', error);
