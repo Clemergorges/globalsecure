@@ -97,6 +97,10 @@ export async function POST(req: Request) {
           
           issueAmount = calculation.amountReceived * rateToEUR;
           issueCurrency = 'eur';
+       } else {
+         // Se a moeda já é suportada (ex: EUR), usamos o valor calculado diretamente.
+         // Isso evita a dupla taxação/spread.
+         issueAmount = calculation.amountReceived;
        }
 
       let cardData;
