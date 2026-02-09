@@ -81,13 +81,14 @@ export async function POST(req: Request) {
 
     // 4. If Card Mode, create Virtual Card
     if (mode === 'CARD_EMAIL') {
+      console.log('[Transfer] Mode is CARD_EMAIL. Initiating Stripe Card creation...');
       const supportedCurrencies = ['eur', 'usd', 'gbp'];
       let issueCurrency = currencyTarget.toLowerCase();
       let issueAmount = calculation.amountReceived;
 
       // Auto-convert to EUR (Stripe Issuing Native Currency) if currency not supported
       if (!supportedCurrencies.includes(issueCurrency)) {
-         console.log(`Currency ${issueCurrency} not supported for card issuing. Converting to EUR.`);
+         console.log(`[Transfer] Currency ${issueCurrency} not supported for card issuing. Converting to EUR.`);
          
          // Get rate from original currency to EUR
           const { getExchangeRate } = await import('@/lib/services/exchange');
@@ -98,26 +99,41 @@ export async function POST(req: Request) {
           issueCurrency = 'eur';
        }
 
-      const cardData = await createVirtualCard({
-        amount: Number(issueAmount),
-        currency: issueCurrency,
-        recipientEmail: receiverEmail,
-        recipientName: receiverName,
-        transferId: transfer.id
-      });
+      let cardData;
+      try {
+        cardData = await createVirtualCard({
+          amount: Number(issueAmount),
+          currency: issueCurrency,
+          recipientEmail: receiverEmail,
+          recipientName: receiverName,
+          transferId: transfer.id
+        });
+        console.log('[Transfer] Stripe Card created successfully:', cardData.cardId);
+      } catch (stripeError: any) {
+        console.error('[Transfer] Stripe Card Creation Failed:', stripeError);
+        // Clean up the transfer since card creation failed
+        await prisma.transfer.update({ where: { id: transfer.id }, data: { status: 'FAILED' } });
+        throw new Error(`Stripe Issuing Failed: ${stripeError.message}`);
+      }
 
       // Send Email with Card Details
-      const { sendEmail, templates } = await import('@/lib/services/email');
-      await sendEmail({
-        to: receiverEmail,
-        subject: '🎁 Você recebeu um Cartão Virtual GlobalSecure',
-        html: templates.cardCreated(
-          receiverName || 'Cliente',
-          cardData.last4,
-          Number(issueAmount).toFixed(2),
-          issueCurrency.toUpperCase()
-        )
-      });
+      try {
+        const { sendEmail, templates } = await import('@/lib/services/email');
+        console.log('[Transfer] Sending email to:', receiverEmail);
+        await sendEmail({
+          to: receiverEmail,
+          subject: '🎁 Você recebeu um Cartão Virtual GlobalSecure',
+          html: templates.cardCreated(
+            receiverName || 'Cliente',
+            cardData.last4,
+            Number(issueAmount).toFixed(2),
+            issueCurrency.toUpperCase()
+          )
+        });
+        console.log('[Transfer] Email sent successfully.');
+      } catch (emailError) {
+        console.error('[Transfer] Email sending failed (non-blocking):', emailError);
+      }
       
       await prisma.virtualCard.create({
         data: {
