@@ -7,28 +7,28 @@ import { pusherService } from '@/lib/services/pusher';
 
 export async function POST(req: Request) {
   const session = await getSession();
-  
+
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const body = await req.json();
-    const { 
-      mode, 
-      amountSource, 
-      currencySource, 
-      currencyTarget, 
-      receiverEmail, 
-      receiverName 
+    const {
+      mode,
+      amountSource,
+      currencySource,
+      currencyTarget,
+      receiverEmail,
+      receiverName
     } = body;
 
     // 0. KYC Check
     const user = await prisma.user.findUnique({ where: { id: (session as any).userId } });
-    
+
     // Limits based on KYC Level
     // Level 0 (Unverified): Max 100 EUR
     // Level 1 (Pending): Max 500 EUR
     // Level 2 (Verified): Max 10,000 EUR
-    
+
     const amount = Number(amountSource);
     const kycLevel = (user as any)?.kycLevel || 0;
 
@@ -88,20 +88,20 @@ export async function POST(req: Request) {
 
       // Auto-convert to EUR (Stripe Issuing Native Currency) if currency not supported
       if (!supportedCurrencies.includes(issueCurrency)) {
-         console.log(`[Transfer] Currency ${issueCurrency} not supported for card issuing. Converting to EUR.`);
-         
-         // Get rate from original currency to EUR
-          const { getExchangeRate } = await import('@/lib/services/exchange');
-          const exchangeData = await getExchangeRate(currencyTarget, 'EUR');
-          const rateToEUR = exchangeData.rate;
-          
-          issueAmount = calculation.amountReceived * rateToEUR;
-          issueCurrency = 'eur';
-       } else {
-         // Se a moeda já é suportada (ex: EUR), usamos o valor calculado diretamente.
-         // Isso evita a dupla taxação/spread.
-         issueAmount = calculation.amountReceived;
-       }
+        console.log(`[Transfer] Currency ${issueCurrency} not supported for card issuing. Converting to EUR.`);
+
+        // Get rate from original currency to EUR
+        const { getExchangeRate } = await import('@/lib/services/exchange');
+        const exchangeData = await getExchangeRate(currencyTarget, 'EUR');
+        const rateToEUR = exchangeData.rate;
+
+        issueAmount = calculation.amountReceived * rateToEUR;
+        issueCurrency = 'eur';
+      } else {
+        // Se a moeda já é suportada (ex: EUR), usamos o valor calculado diretamente.
+        // Isso evita a dupla taxação/spread.
+        issueAmount = calculation.amountReceived;
+      }
 
       let cardData;
       try {
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
         console.log('[Transfer] Sending email to:', receiverEmail);
         await sendEmail({
           to: receiverEmail,
-          subject: '🎁 Você recebeu um Cartão Virtual GlobalSecure',
+          subject: '🎁 You received a GlobalSecure Virtual Card',
           html: templates.cardCreated(
             receiverName || 'Cliente',
             cardData.last4,
@@ -138,20 +138,20 @@ export async function POST(req: Request) {
       } catch (emailError) {
         console.error('[Transfer] Email sending failed (non-blocking):', emailError);
       }
-      
+
       await prisma.virtualCard.create({
         data: {
           transferId: transfer.id,
-          stripeCardId: cardData.cardId, 
-          stripeCardholderId: cardData.cardholderId, 
+          stripeCardId: cardData.cardId,
+          stripeCardholderId: cardData.cardholderId,
           last4: cardData.last4,
           brand: cardData.brand,
           expMonth: cardData.exp_month,
           expYear: cardData.exp_year,
-          expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 3)), 
+          expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 3)),
           amount: calculation.amountReceived,
           currency: currencyTarget,
-          status: 'ACTIVE' 
+          status: 'ACTIVE'
         }
       });
     }
@@ -162,14 +162,14 @@ export async function POST(req: Request) {
     } catch (pusherError) {
       console.warn('Pusher trigger failed:', pusherError);
     }
-    
+
     // Create Persistent Notification
     try {
       const { createNotification } = await import('@/lib/notifications');
       await createNotification({
         userId: (session as any).userId,
-        title: 'Transferência Enviada',
-        body: `Você enviou ${currencySource} ${amountSource} para ${receiverName || receiverEmail}.`,
+        title: 'Transfer Sent',
+        body: `You sent ${currencySource} ${amountSource} to ${receiverName || receiverEmail}.`,
         type: 'SUCCESS'
       });
     } catch (notificationError) {

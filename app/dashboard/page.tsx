@@ -5,8 +5,9 @@ import { BalanceCard } from './components/BalanceCard';
 import { QuickActionsGrid } from './components/QuickActionsGrid';
 import { TransactionsList, TransactionItem } from './components/TransactionsList';
 import { CardVirtualItem } from './components/CardVirtualItem';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { pusherClient } from '@/lib/pusher-client';
+import { SkeletonBalance, SkeletonCard, SkeletonTransaction } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -31,7 +32,7 @@ export default function DashboardPage() {
     const handleDataUpdate = () => {
       fetchDashboardData();
     };
-    
+
     channel.bind('transfer:received', handleDataUpdate);
     channel.bind('transfer:sent', handleDataUpdate);
     channel.bind('card-update', handleDataUpdate);
@@ -59,7 +60,7 @@ export default function DashboardPage() {
       setCurrency(walletData.currency || 'EUR');
       setTransactions(transactionsData.transactions || []);
       setCards(cardsData.cards ? cardsData.cards.slice(0, 3) : []); // Show max 3 cards
-      setUserId(walletData.userId); 
+      setUserId(walletData.userId);
 
     } catch (error) {
       console.error('Dashboard load failed:', error);
@@ -70,15 +71,32 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
+      <div className="space-y-6 max-w-[1600px] mx-auto pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <SkeletonCard />
+          </div>
+          <div>
+            <SkeletonCard />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-3">
+            <SkeletonTransaction />
+            <SkeletonTransaction />
+            <SkeletonTransaction />
+          </div>
+          <div>
+            <SkeletonCard />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-20">
-      
+
       {/* Top Row: Balance (Hero) & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Zone 1: Hero/Balance - Takes 2/3 on large screens */}
@@ -105,12 +123,12 @@ export default function DashboardPage() {
             <h3 className="text-lg font-semibold text-gray-900">Cartões Ativos</h3>
             <button className="text-sm font-medium text-[var(--color-primary)] hover:underline">Gerenciar</button>
           </div>
-          
+
           <div className="grid gap-4">
             {cards.map((card) => (
               <CardVirtualItem key={card.id} card={card} />
             ))}
-            
+
             <button className="w-full py-4 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center gap-2 text-gray-500 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-all bg-gray-50/50 hover:bg-white">
               <Plus className="w-5 h-5" />
               <span className="font-medium">Criar Novo Cartão</span>

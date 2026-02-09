@@ -1,6 +1,6 @@
 # GlobalSecureSend (MVP)
 
-> ⚠️ **DISCLAIMER: AMBIENTE DE DEMONSTRAÇÃO**
+> **DISCLAIMER: AMBIENTE DE DEMONSTRAÇÃO**
 > Este projeto é um **MVP (Minimum Viable Product)** apenas para fins de demonstração técnica e educacional.
 > - **NENHUM DINHEIRO REAL** é processado. Todas as transações usam moedas fictícias ou redes de teste (Testnet).
 > - **NÃO É UM BANCO** nem uma instituição financeira licenciada.
@@ -8,26 +8,26 @@
 
 Plataforma financeira híbrida que une serviços bancários tradicionais (Fiat) com a eficiência da blockchain (Crypto), focada em nômades digitais e empresas globais.
 
-## 📚 Documentação Pública
+##  Documentação Pública
 - [Termos de Uso](./TERMS.md)
 - [Política de Privacidade](./PRIVACY.md)
 - [Whitepaper Técnico](./WHITEPAPER.md)
 
-## 🚀 Funcionalidades Principais
+##  Funcionalidades Principais
 - **Contas Multi-moeda:** EUR, USD, GBP.
 - **Cartões Virtuais:** Integração com Stripe Issuing.
 - **Cripto (Polygon):** Depósitos em USDT com conciliação automática.
 - **Compliance:** KYC/AML automatizado e seguro.
 - **Segurança:** Autenticação 2FA, Sessões seguras, Logs de auditoria.
 
-## 🛠️ Stack Tecnológica
+##  Stack Tecnológica
 - **Framework:** Next.js 15 (App Router)
 - **Database:** PostgreSQL (Supabase) + Prisma ORM
 - **UI:** TailwindCSS + ShadcnUI
 - **Blockchain:** Ethers.js + Polygon Amoy (Testnet)
 - **Infra:** Vercel (Serverless + Cron Jobs)
 
-## 🏗️ Arquitetura do Sistema
+##  Arquitetura do Sistema
 
 ```mermaid
 graph TD
@@ -48,14 +48,14 @@ graph TD
     end
 ```
 
-## 🔐 Segurança & Compliance
+##  Segurança & Compliance
 Implementamos práticas de segurança de nível bancário desde o MVP:
 - **Ledger Atômico (ACID):** Todas as transações financeiras usam `prisma.$transaction` para garantir consistência total.
 - **Zero-Trust Storage:** Documentos de KYC são armazenados em buckets privados com URLs assinadas temporárias (15 min).
 - **Autenticação Robusta:** Sessões seguras via Cookies HttpOnly e suporte a 2FA.
 - **Auditoria:** Logs imutáveis de todas as operações sensíveis.
 
-## 🗺️ Roadmap (2026)
+##  Roadmap (2026)
 - [x] **Q1:** MVP Sandbox (Web)
     - [x] Contas Multi-moeda & Câmbio
     - [x] Integração Cripto (Depósito Polygon)
@@ -70,7 +70,7 @@ Implementamos práticas de segurança de nível bancário desde o MVP:
 - [ ] **Q4:** Escala Global
     - [ ] Lançamento Público
 
-## ⚡ Como Rodar Localmente
+##  Como Rodar Localmente
 
 1. **Instalar dependências:**
 ```bash
@@ -93,7 +93,7 @@ npm run dev
 
 Acesse [http://localhost:3000](http://localhost:3000).
 
-## 🤝 Contribuição & Feedback
+##  Contribuição & Feedback
 Este é um projeto de código fechado (proprietário), mas estamos abertos a feedback de investidores e parceiros tecnológicos.
 Entre em contato para solicitar acesso ao ambiente de demonstração ou para discutir parcerias.
 

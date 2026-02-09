@@ -3,7 +3,7 @@
 
 **Última atualização:** 06 de Fevereiro de 2026
 
-> ⚠️ **AMBIENTE DE TESTE**
+>  **AMBIENTE DE TESTE**
 > Os dados coletados nesta plataforma de demonstração são utilizados **exclusivamente para fins de teste técnico**.
 > Recomendamos enfaticamente que você **NÃO utilize dados pessoais reais** (como números de documentos reais, endereços reais ou senhas utilizadas em outros serviços) durante a navegação neste MVP.
 

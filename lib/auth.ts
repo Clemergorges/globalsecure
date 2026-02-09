@@ -2,48 +2,116 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { JWTPayload, JWTVerificationResult, SessionData } from './types/jwt';
+import { isAdmin } from './services/admin';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
-export const ADMIN_EMAIL = 'clemergorges@hotmail.com';
 
-export async function hashPassword(password: string) {
+/**
+ * Hash password with bcrypt
+ */
+export async function hashPassword(password: string): Promise<string> {
   return await bcrypt.hash(password, 12);
 }
 
-export async function comparePassword(password: string, hash: string) {
+/**
+ * Compare password with hash
+ */
+export async function comparePassword(password: string, hash: string): Promise<boolean> {
   return await bcrypt.compare(password, hash);
 }
 
-export function signToken(payload: any) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' }); // Short lived access token
+/**
+ * Sign JWT token with typed payload
+ */
+export function signToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
-export function verifyToken(token: string) {
+/**
+ * Verify JWT token and return typed payload
+ */
+export function verifyToken(token: string): JWTVerificationResult {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    return { valid: true, payload };
   } catch (error) {
-    return null;
+    return {
+      valid: false,
+      error: error instanceof Error ? error.message : 'Invalid token'
+    };
   }
 }
 
-export async function getSession() {
+/**
+ * Get current session from cookies
+ */
+export async function getSession(): Promise<JWTPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
-  if (!token) return null;
-  return verifyToken(token);
+
+  if (!token) {
+    return null;
+  }
+
+  const result = verifyToken(token);
+  return result.valid ? result.payload! : null;
 }
 
-export async function checkAuth() {
+/**
+ * Check if user is authenticated
+ */
+export async function checkAuth(): Promise<SessionData | null> {
   const session = await getSession();
-  if (!session) return null;
+
+  if (!session) {
+    return null;
+  }
+
+  return {
+    userId: session.userId,
+    email: session.email,
+    role: session.role,
+    sessionId: session.sessionId,
+  };
+}
+
+/**
+ * Check if current user is admin
+ */
+export async function checkAdmin(): Promise<boolean> {
+  const session = await getSession();
+
+  if (!session) {
+    return false;
+  }
+
+  // Check if user is admin using centralized service
+  return isAdmin(session.email);
+}
+
+/**
+ * Require authentication (throws if not authenticated)
+ */
+export async function requireAuth(): Promise<SessionData> {
+  const session = await checkAuth();
+
+  if (!session) {
+    throw new Error('Unauthorized: Authentication required');
+  }
+
   return session;
 }
 
-export async function checkAdmin() {
-  const session = await getSession();
-  // @ts-ignore
-  if (!session || session.email !== ADMIN_EMAIL) {
-    return false;
+/**
+ * Require admin access (throws if not admin)
+ */
+export async function requireAdmin(): Promise<SessionData> {
+  const session = await requireAuth();
+
+  if (!isAdmin(session.email)) {
+    throw new Error('Unauthorized: Admin access required');
   }
-  return true;
+
+  return session;
 }

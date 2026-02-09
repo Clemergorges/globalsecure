@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
     // Internal transfers have stricter limits for unverified users
     if (kycLevel < 2 && amount > 50) {
-       return NextResponse.json({ error: 'KYC Verification required for internal transfers over €50.' }, { status: 403 });
+      return NextResponse.json({ error: 'KYC Verification required for internal transfers over €50.' }, { status: 403 });
     }
 
     // 1. Validations
@@ -77,12 +77,12 @@ export async function POST(req: Request) {
     // 2. ATOMIC TRANSACTION (MULTI-CURRENCY SUPPORT)
     // We now update the 'Balance' table instead of 'Wallet' columns
     const transfer = await prisma.$transaction(async (tx) => {
-      
+
       // 2.1 Atomic Debit (Check Balance + Deduct in one go)
       // We look for a Balance record for this wallet AND currency
       // And ensure amount >= totalDeduction
       const debitResult = await tx.balance.updateMany({
-        where: { 
+        where: {
           walletId: senderWallet.id,
           currency: currency,
           amount: { gte: totalDeduction } // Crucial: WHERE balance >= total
@@ -95,10 +95,10 @@ export async function POST(req: Request) {
       if (debitResult.count === 0) {
         // Fallback: Check if balance record exists at all to give better error
         const balanceExists = await tx.balance.findUnique({
-            where: { walletId_currency: { walletId: senderWallet.id, currency } }
+          where: { walletId_currency: { walletId: senderWallet.id, currency } }
         });
         if (!balanceExists) {
-             throw new Error(`Saldo em ${currency} não encontrado.`);
+          throw new Error(`Saldo em ${currency} não encontrado.`);
         }
         throw new Error('Insufficient funds or concurrent transaction conflict');
       }
@@ -111,16 +111,16 @@ export async function POST(req: Request) {
 
       if (recipientBalance) {
         await tx.balance.update({
-            where: { id: recipientBalance.id },
-            data: { amount: { increment: amount } }
+          where: { id: recipientBalance.id },
+          data: { amount: { increment: amount } }
         });
       } else {
         await tx.balance.create({
-            data: {
-                walletId: recipient.wallet!.id,
-                currency: currency,
-                amount: amount
-            }
+          data: {
+            walletId: recipient.wallet!.id,
+            currency: currency,
+            amount: amount
+          }
         });
       }
 
@@ -164,7 +164,7 @@ export async function POST(req: Request) {
           transferId: newTransfer.id
         }
       });
-      
+
       // Fee Transaction
       await tx.walletTransaction.create({
         data: {
@@ -218,9 +218,9 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Internal transfer error:', error);
-    
+
     if (error.message === 'Insufficient funds or concurrent transaction conflict') {
-      return NextResponse.json({ error: 'Saldo insuficiente.' }, { status: 400 });
+      return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
     }
 
     return NextResponse.json({ error: 'Internal transfer failed', details: error.message }, { status: 500 });
