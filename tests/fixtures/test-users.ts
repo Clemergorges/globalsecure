@@ -57,6 +57,15 @@ export async function createTestUsers() {
                 },
             });
 
+            // Create initial balance record (Phase 7.1)
+            await prisma.balance.create({
+                data: {
+                    walletId: wallet.id,
+                    currency: 'EUR',
+                    amount: 1000
+                }
+            });
+
             createdUsers.push({ user, wallet });
         } catch (error) {
             console.error(`Failed to create user ${userData.email}:`, error);
@@ -83,6 +92,10 @@ export async function cleanupTestUsers() {
 
     try {
         await prisma.walletTransaction.deleteMany({
+            where: { wallet: { userId: { in: ids } } }
+        });
+        // Cleanup balances first (if cascade not set)
+        await prisma.balance.deleteMany({
             where: { wallet: { userId: { in: ids } } }
         });
         await prisma.transactionLog.deleteMany({

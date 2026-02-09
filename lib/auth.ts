@@ -31,7 +31,8 @@ export function signToken(payload: { userId: string; email: string; role?: 'USER
     role: payload.role ?? 'USER',
     sessionId: payload.sessionId,
   };
-  return jwt.sign(base, JWT_SECRET, { expiresIn: '7d' });
+  // Hardening: Short expiration (15m) + Refresh Token flow would be better, but for now reducing to 1h
+  return jwt.sign(base, JWT_SECRET, { expiresIn: '1h' });
 }
 
 /**

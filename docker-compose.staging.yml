@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  app:
+    image: globalsecuresend-app:staging
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: globalsecuresend-staging-app
+    restart: always
+    ports:
+      - "3001:3000" # Running on port 3001 to avoid conflict with local/prod if on same machine, or mapping to 80/443 via reverse proxy
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://staging_user:staging_pass@db:5432/globalsecuresend_staging?schema=public
+      - DIRECT_URL=postgresql://staging_user:staging_pass@db:5432/globalsecuresend_staging?schema=public
+      - JWT_SECRET=${JWT_SECRET}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - NEXTAUTH_URL=https://staging.globalsecuresend.com
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    networks:
+      - staging-net
+
+  db:
+    image: postgres:15-alpine
+    container_name: globalsecuresend-staging-db
+    restart: always
+    environment:
+      POSTGRES_USER: staging_user
+      POSTGRES_PASSWORD: staging_pass
+      POSTGRES_DB: globalsecuresend_staging
+    volumes:
+      - pgdata_staging:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - staging-net
+
+  redis:
+    image: redis:alpine
+    container_name: globalsecuresend-staging-redis
+    restart: always
+    networks:
+      - staging-net
+
+networks:
+  staging-net:
+    driver: bridge
+
+volumes:
+  pgdata_staging:

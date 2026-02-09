@@ -1,0 +1,51 @@
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🔄 Starting balance migration...');
+
+  const wallets = await prisma.wallet.findMany();
+  console.log(`Found ${wallets.length} wallets to migrate.`);
+
+  for (const wallet of wallets) {
+    const balancesToMigrate = [
+      { currency: 'EUR', amount: wallet.balanceEUR },
+      { currency: 'USD', amount: wallet.balanceUSD },
+      { currency: 'GBP', amount: wallet.balanceGBP },
+    ];
+
+    for (const { currency, amount } of balancesToMigrate) {
+      // Only migrate if there is a balance or if we want to initialize it
+      // Using upsert to be safe
+      await prisma.balance.upsert({
+        where: {
+          walletId_currency: {
+            walletId: wallet.id,
+            currency: currency,
+          },
+        },
+        update: {
+          amount: amount,
+        },
+        create: {
+          walletId: wallet.id,
+          currency: currency,
+          amount: amount,
+        },
+      });
+    }
+    process.stdout.write('.');
+  }
+
+  console.log('\n✅ Balance migration completed.');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

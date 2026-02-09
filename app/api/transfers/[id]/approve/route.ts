@@ -23,25 +23,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     // Deduct from sender's wallet
     const wallet = await prisma.wallet.findUnique({
-      where: { userId: transfer.senderId }
+      where: { userId: transfer.senderId },
+      include: { balances: true }
     });
 
     // Determine which balance to deduct based on transfer currency
     // For MVP we assume EUR or USD, defaulting to EUR logic if complex
+    const currency = transfer.currencySent === 'USD' ? 'USD' : 'EUR';
     // @ts-ignore
-    const balance = transfer.currencySent === 'USD' ? wallet?.balanceUSD : wallet?.balanceEUR;
+    const balanceRecord = wallet?.balances.find(b => b.currency === currency);
+    const available = balanceRecord ? Number(balanceRecord.amount) : 0;
 
     // @ts-ignore
-    if (!wallet || balance < transfer.amountSent) {
+    if (!wallet || available < Number(transfer.amountSent)) {
       return NextResponse.json({ error: 'Insufficient funds' }, { status: 400 });
     }
 
-    const balanceField = transfer.currencySent === 'USD' ? 'balanceUSD' : 'balanceEUR';
-
     await prisma.$transaction([
-      prisma.wallet.update({
-        where: { id: wallet.id },
-        data: { [balanceField]: { decrement: transfer.amountSent } }
+      prisma.balance.update({
+        where: { id: balanceRecord!.id },
+        data: { amount: { decrement: transfer.amountSent } }
       }),
       prisma.transfer.update({
         where: { id },

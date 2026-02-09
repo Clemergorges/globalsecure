@@ -27,18 +27,11 @@ export async function GET(req: Request) {
     // Sanitize sensitive data & Normalize Balances
     const sanitizedUsers = users.map(user => {
       // Normalize balances: Combine explicit Balance table with Wallet columns
-      // For MVP, we prioritize Columns as they are used by the main App
-      const balances = [];
+      const balances: { currency: string; amount: any }[] = [];
       if (user.wallet) {
-        if (Number(user.wallet.balanceEUR) > 0) balances.push({ currency: 'EUR', amount: user.wallet.balanceEUR });
-        if (Number(user.wallet.balanceUSD) > 0) balances.push({ currency: 'USD', amount: user.wallet.balanceUSD });
-        if (Number(user.wallet.balanceGBP) > 0) balances.push({ currency: 'GBP', amount: user.wallet.balanceGBP });
-        
-        // Add others from Balance table if not already added
+        // Add others from Balance table
         user.wallet.balances.forEach(b => {
-            if (!['EUR', 'USD', 'GBP'].includes(b.currency)) {
-                balances.push({ currency: b.currency, amount: b.amount });
-            }
+            balances.push({ currency: b.currency, amount: b.amount });
         });
       }
 

@@ -3,8 +3,20 @@
 import { useState, useEffect } from 'react';
 // Removed unused imports
 import { Button } from '@/components/ui/button';
-import { Eye, EyeOff, CreditCard, Copy, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, CreditCard, Copy, Loader2, Plus, Power } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CardData {
   id: string;
@@ -27,6 +39,10 @@ export default function CardsPage() {
   const [loading, setLoading] = useState(true);
   const [revealedCard, setRevealedCard] = useState<string | null>(null);
   const [cardDetails, setCardDetails] = useState<CardDetails | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newCardAmount, setNewCardAmount] = useState('');
+  const [newCardCurrency, setNewCardCurrency] = useState('EUR');
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     fetchCards();
@@ -42,6 +58,44 @@ export default function CardsPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleCreateCard() {
+    if (!newCardAmount) return;
+    setCreating(true);
+    try {
+        const res = await fetch('/api/cards/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: parseFloat(newCardAmount),
+                currency: newCardCurrency,
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        
+        setIsCreateOpen(false);
+        setNewCardAmount('');
+        fetchCards(); // Refresh list
+        alert('Card created successfully!');
+    } catch (e: any) {
+        alert(e.message || 'Failed to create card');
+    } finally {
+        setCreating(false);
+    }
+  }
+
+  async function handleActivateCard(cardId: string) {
+      try {
+          const res = await fetch(`/api/cards/${cardId}/activate`, { method: 'POST' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          fetchCards(); // Refresh
+          alert('Card activated!');
+      } catch (e: any) {
+          alert(e.message || 'Failed to activate');
+      }
   }
 
   async function toggleReveal(cardId: string) {
@@ -69,7 +123,50 @@ export default function CardsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Your Cards</h2>
-        <Button>Create New Card</Button>
+        
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+                <Button><Plus className="w-4 h-4 mr-2" /> Create New Card</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Create Virtual Card</DialogTitle>
+                    <DialogDescription>
+                        This will create a new virtual card funded from your wallet balance.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label>Currency</Label>
+                        <Select value={newCardCurrency} onValueChange={setNewCardCurrency}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="EUR">EUR</SelectItem>
+                                <SelectItem value="USD">USD</SelectItem>
+                                <SelectItem value="GBP">GBP</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Initial Limit (Amount)</Label>
+                        <Input 
+                            type="number" 
+                            placeholder="e.g. 50" 
+                            value={newCardAmount}
+                            onChange={(e) => setNewCardAmount(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                    <Button onClick={handleCreateCard} disabled={creating}>
+                        {creating ? <Loader2 className="animate-spin w-4 h-4" /> : 'Create Card'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -110,7 +207,18 @@ export default function CardsPage() {
                 </div>
               </div>
 
-              <div className="absolute bottom-4 right-4">
+              <div className="absolute bottom-4 right-4 flex gap-2">
+                 {card.status === 'INACTIVE' && (
+                     <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="text-white hover:bg-green-500/50"
+                        title="Activate Card"
+                        onClick={() => handleActivateCard(card.id)}
+                     >
+                        <Power className="w-4 h-4" />
+                     </Button>
+                 )}
                  <Button 
                     size="icon" 
                     variant="ghost" 

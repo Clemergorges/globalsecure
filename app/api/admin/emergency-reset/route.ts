@@ -44,7 +44,9 @@ export async function POST(req: Request) {
         wallet: {
           create: {
             primaryCurrency: 'EUR',
-            balanceEUR: 1000000,
+            balances: {
+              create: { currency: 'EUR', amount: 1000000 }
+            }
           }
         }
       }

@@ -59,8 +59,9 @@ describe('E2E: Transfer Flows', () => {
                 kycLevel: 2,
                 wallet: {
                     create: {
-                        balanceEUR: 100, // Initial balance
-                        balanceUSD: 0,
+                        balances: {
+                            create: { currency: 'EUR', amount: 100 }
+                        }
                     }
                 }
             },
@@ -76,8 +77,9 @@ describe('E2E: Transfer Flows', () => {
                 kycLevel: 2,
                 wallet: {
                     create: {
-                        balanceEUR: 0,
-                        balanceUSD: 0,
+                        balances: {
+                            create: { currency: 'EUR', amount: 0 }
+                        }
                     }
                 }
             },
@@ -89,15 +91,15 @@ describe('E2E: Transfer Flows', () => {
         // 2. Execute Transfer (Simulating logic from API)
         await prisma.$transaction(async (tx) => {
             // Debit Sender
-            await tx.wallet.update({
-                where: { id: sender.wallet!.id },
-                data: { balanceEUR: { decrement: transferAmount } }
+            await tx.balance.updateMany({
+                where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                data: { amount: { decrement: transferAmount } }
             });
 
             // Credit Receiver
-            await tx.wallet.update({
-                where: { id: receiver.wallet!.id },
-                data: { balanceEUR: { increment: transferAmount } }
+            await tx.balance.updateMany({
+                where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                data: { amount: { increment: transferAmount } }
             });
 
             // Create Transfer Record
@@ -118,11 +120,15 @@ describe('E2E: Transfer Flows', () => {
         });
 
         // 3. Verify Balances
-        const finalSender = await prisma.wallet.findUnique({ where: { userId: sender.id } });
-        const finalReceiver = await prisma.wallet.findUnique({ where: { userId: receiver.id } });
+        const finalSenderBalance = await prisma.balance.findUnique({
+            where: { walletId_currency: { walletId: sender.wallet!.id, currency: 'EUR' } }
+        });
+        const finalReceiverBalance = await prisma.balance.findUnique({
+            where: { walletId_currency: { walletId: receiver.wallet!.id, currency: 'EUR' } }
+        });
 
-        expect(Number(finalSender!.balanceEUR)).toBe(50);
-        expect(Number(finalReceiver!.balanceEUR)).toBe(50);
+        expect(Number(finalSenderBalance!.amount)).toBe(50);
+        expect(Number(finalReceiverBalance!.amount)).toBe(50);
     });
 
     it('should fail transfer with insufficient funds', async () => {
@@ -134,7 +140,11 @@ describe('E2E: Transfer Flows', () => {
                 lastName: 'User',
                 kycLevel: 2,
                 wallet: {
-                    create: { balanceEUR: 10 }
+                    create: {
+                        balances: {
+                            create: { currency: 'EUR', amount: 10 }
+                        }
+                    }
                 }
             },
             include: { wallet: true }
@@ -143,9 +153,11 @@ describe('E2E: Transfer Flows', () => {
         const attemptAmount = 100;
 
         // Simulate API check
-        const wallet = await prisma.wallet.findUnique({ where: { userId: poorUser.id } });
+        const balance = await prisma.balance.findUnique({
+            where: { walletId_currency: { walletId: poorUser.wallet!.id, currency: 'EUR' } }
+        });
         try {
-            if (Number(wallet!.balanceEUR) < attemptAmount) {
+            if (Number(balance!.amount) < attemptAmount) {
                 throw new Error('Insufficient funds');
             }
             // Should not reach here

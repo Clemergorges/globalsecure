@@ -25,9 +25,13 @@ async function main() {
       phoneVerified: true,
       wallet: {
         create: {
-          balanceEUR: 10000.00, // Initial balance for testing
-          balanceUSD: 5000.00,
-          primaryCurrency: 'EUR'
+          primaryCurrency: 'EUR',
+          balances: {
+            create: [
+                { currency: 'EUR', amount: 10000.00 },
+                { currency: 'USD', amount: 5000.00 }
+            ]
+          }
         }
       }
     },

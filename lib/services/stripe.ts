@@ -12,6 +12,7 @@ interface CreateVirtualCardParams {
   recipientEmail: string;
   recipientName: string;
   transferId: string;
+  existingCardholderId?: string; // Reuse existing cardholder
 }
 
 // Interface de retorno
@@ -33,31 +34,36 @@ export async function createVirtualCard(
   params: CreateVirtualCardParams
 ): Promise<VirtualCardData> {
   try {
-    // 1. Criar Cardholder (titular do cartão)
-    const cardholder = await stripe.issuing.cardholders.create({
-      name: params.recipientName,
-      email: params.recipientEmail,
-      phone_number: '+352691123456', // Required for 3DS/SCA in EU
-      type: 'individual',
-      status: 'active',
-      billing: {
-        address: {
-          line1: '123 Main Street',
-          city: 'Luxembourg',
-          country: 'LU',
-          postal_code: '1234'
-        }
-      },
-      // Metadata para rastreamento
-      metadata: {
-        transferId: params.transferId,
-        createdBy: 'GlobalSecureSend'
-      }
-    });
+    let cardholderId = params.existingCardholderId;
+
+    // 1. Criar Cardholder se não existir
+    if (!cardholderId) {
+        const cardholder = await stripe.issuing.cardholders.create({
+          name: params.recipientName,
+          email: params.recipientEmail,
+          phone_number: '+352691123456', // Required for 3DS/SCA in EU
+          type: 'individual',
+          status: 'active',
+          billing: {
+            address: {
+              line1: '123 Main Street',
+              city: 'Luxembourg',
+              country: 'LU',
+              postal_code: '1234'
+            }
+          },
+          // Metadata para rastreamento
+          metadata: {
+            transferId: params.transferId,
+            createdBy: 'GlobalSecureSend'
+          }
+        });
+        cardholderId = cardholder.id;
+    }
 
     // 2. Criar Card Virtual
     const card = await stripe.issuing.cards.create({
-      cardholder: cardholder.id,
+      cardholder: cardholderId,
       currency: params.currency.toLowerCase(),
       type: 'virtual',
       status: 'inactive', // Start inactive until transfer is approved
@@ -82,7 +88,7 @@ export async function createVirtualCard(
     // ATENÇÃO: number e cvc só estão disponíveis no momento da criação!
     return {
       cardId: card.id,
-      cardholderId: cardholder.id,
+      cardholderId: cardholderId,
       last4: card.last4,
       number: card.number!, // Sensível! Criptografar antes de salvar
       cvc: card.cvc!,
@@ -128,6 +134,49 @@ export async function getCardDetails(cardId: string) {
 export async function cancelCard(cardId: string) {
   return await stripe.issuing.cards.update(cardId, {
     status: 'canceled'
+  });
+}
+
+/**
+ * Atualiza o status de um cartão
+ */
+export async function updateCardStatus(cardId: string, status: 'active' | 'inactive' | 'canceled') {
+  return await stripe.issuing.cards.update(cardId, {
+    status: status
+  });
+}
+
+/**
+ * Cria uma Ephemeral Key para Apple/Google Pay (Issuing)
+ */
+export async function createIssuingEphemeralKey(cardId: string, apiVersion: string) {
+    return await stripe.ephemeralKeys.create(
+      { issuing_card: cardId },
+      { apiVersion: apiVersion }
+    );
+}
+
+/**
+ * Atualiza controles de gastos de um cartão
+ */
+export async function updateCardControls(
+  cardId: string, 
+  controls: { 
+    spending_limits?: Array<{ amount: number; interval: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'all_time' }>;
+    blocked_categories?: string[];
+  }
+) {
+  // Convert limits to cents
+  const limits = controls.spending_limits?.map(l => ({
+    amount: Math.round(l.amount * 100),
+    interval: l.interval
+  }));
+
+  return await stripe.issuing.cards.update(cardId, {
+    spending_controls: {
+        spending_limits: limits,
+        blocked_categories: controls.blocked_categories as any
+    }
   });
 }
 

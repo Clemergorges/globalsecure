@@ -19,9 +19,18 @@ export async function GET(_req: Request) {
 
     // Default to primary currency or EUR
     const currency = wallet.primaryCurrency || 'EUR';
-    // Dynamic access to balance field e.g. balanceEUR
-    // @ts-expect-error Dynamic balance access
-    const balance = wallet[`balance${currency}`] || 0;
+    
+    // Fetch balance from Balance table
+    const balanceRecord = await prisma.balance.findUnique({
+      where: {
+        walletId_currency: {
+          walletId: wallet.id,
+          currency: currency
+        }
+      }
+    });
+
+    const balance = balanceRecord?.amount || 0;
 
     return NextResponse.json({
       balance: Number(balance),

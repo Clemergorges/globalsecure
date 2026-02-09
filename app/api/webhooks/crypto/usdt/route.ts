@@ -96,12 +96,21 @@ export async function POST(req: Request) {
             const usdtPrice = await getUsdtPriceUsd();
             const amountUsd = amount * usdtPrice;
 
-            // C. Update Wallet Balance (USDT)
-            await tx.wallet.update({
-                where: { userId: userId },
-                data: {
-                    balanceUSD: { increment: amountUsd }, // Converting to USD for main balance or keep separate
-                    // For MVP, we are adding to balanceUSD since USDT ~ USD
+            // C. Update Wallet Balance (Unified - USD)
+            await tx.balance.upsert({
+                where: {
+                    walletId_currency: {
+                        walletId: wallet.id,
+                        currency: 'USD'
+                    }
+                },
+                update: {
+                    amount: { increment: amountUsd }
+                },
+                create: {
+                    walletId: wallet.id,
+                    currency: 'USD',
+                    amount: amountUsd
                 }
             });
 

@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.globalsecuresend.mobile",
+        "paths": [ "/cards/*", "/verify/*" ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [ "TEAMID.com.globalsecuresend.mobile" ]
+  }
+}

@@ -73,10 +73,9 @@ model Wallet {
   userId        String   @unique
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
    
-  // Multi-moeda
-  balanceEUR    Decimal  @default(0) @db.Decimal(12, 2)
-  balanceUSD    Decimal  @default(0) @db.Decimal(12, 2)
-  balanceGBP    Decimal  @default(0) @db.Decimal(12, 2)
+  // Multi-moeda (Legacy columns removed - use Balance table)
+  // balanceEUR, balanceUSD, balanceGBP migrated to Balance model
+  
   primaryCurrency String @default("EUR")
   
   // Crypto (Polygon)

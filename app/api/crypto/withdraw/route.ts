@@ -41,22 +41,31 @@ export async function POST(req: Request) {
         where: { userId: (auth as any).userId }
       });
 
-      if (!wallet || wallet.balanceUSD.toNumber() < amount) {
-        throw new Error('Insufficient USDT/USD balance');
-      }
+      if (!wallet) throw new Error('Wallet not found');
 
+      // Check Balance via Balance table (assuming USDT uses USD currency code in balance)
+      const currency = 'USD';
+      
       // Debit Ledger with Atomic Check
-      const debitResult = await tx.wallet.updateMany({
+      const debitResult = await tx.balance.updateMany({
         where: { 
-            userId: (auth as any).userId,
-            balanceUSD: { gte: amount }
+            walletId: wallet.id,
+            currency: currency,
+            amount: { gte: amount }
         },
         data: {
-          balanceUSD: { decrement: amount }
+          amount: { decrement: amount }
         }
       });
 
       if (debitResult.count === 0) {
+          // Check if balance exists for better error
+          const balanceExists = await tx.balance.findUnique({
+              where: { walletId_currency: { walletId: wallet.id, currency } }
+          });
+          if (!balanceExists || balanceExists.amount.toNumber() < amount) {
+               throw new Error('Insufficient USDT/USD balance');
+          }
           throw new Error('Insufficient USDT/USD balance (Concurrency Check)');
       }
 
@@ -79,7 +88,6 @@ export async function POST(req: Request) {
           amount: amount,
           currency: 'USD',
           description: `Withdraw to ${toAddress.slice(0, 6)}...`,
-          // metadata: { withdrawId: withdraw.id } // Metadata not in schema yet for WalletTransaction
         }
       });
 

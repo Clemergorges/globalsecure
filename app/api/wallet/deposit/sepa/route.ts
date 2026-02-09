@@ -63,10 +63,25 @@ export async function POST(req: Request) {
     const currency = 'EUR';
 
     await prisma.$transaction(async (tx) => {
-      await tx.wallet.update({
-        where: { id: wallet.id },
-        data: { balanceEUR: { increment: creditAmount } }
+      // Upsert balance
+      const existingBalance = await tx.balance.findUnique({
+          where: { walletId_currency: { walletId: wallet.id, currency: 'EUR' } }
       });
+
+      if (existingBalance) {
+          await tx.balance.update({
+              where: { id: existingBalance.id },
+              data: { amount: { increment: creditAmount } }
+          });
+      } else {
+          await tx.balance.create({
+              data: {
+                  walletId: wallet.id,
+                  currency: 'EUR',
+                  amount: creditAmount
+              }
+          });
+      }
 
       await tx.walletTransaction.create({
         data: {

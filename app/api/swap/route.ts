@@ -54,51 +54,43 @@ export async function POST(req: Request) {
 
       if (!wallet) throw new Error('Wallet not found');
 
-      // Check Balance
-      // Map currency to wallet field
-      // Assuming USDT is mapped to balanceUSD for now, or we should use Balance table
-      const balanceField = 
-        fromAsset === 'USDT' ? 'balanceUSD' :
-        fromAsset === 'EUR' ? 'balanceEUR' :
-        fromAsset === 'USD' ? 'balanceUSD' : null;
-
-      if (!balanceField) throw new Error('Invalid balance field');
-
-      // @ts-ignore - Dynamic access to Decimal field
-      const currentBalance = wallet[balanceField];
-
-      if (currentBalance.toNumber() < amount) {
-        throw new Error(`Insufficient ${fromAsset} balance`);
-      }
-
-      // Debit Source with Atomic Check
-      // We use updateMany to ensure we only update if balance is sufficient at the moment of write.
-      const debitResult = await tx.wallet.updateMany({
+      // 3.1 Debit Source (Atomic Check via Balance table)
+      // Use updateMany with 'gte' guard to prevent negative balance
+      const debitResult = await tx.balance.updateMany({
         where: { 
-            userId: (auth as any).userId,
-            [balanceField]: { gte: amount }
+            walletId: wallet.id,
+            currency: fromAsset,
+            amount: { gte: amount }
         },
         data: {
-          [balanceField]: { decrement: amount }
+          amount: { decrement: amount }
         }
       });
 
       if (debitResult.count === 0) {
+          // Check if balance exists to give better error
+          const balanceExists = await tx.balance.findUnique({
+              where: { walletId_currency: { walletId: wallet.id, currency: fromAsset } }
+          });
+          if (!balanceExists) {
+              throw new Error(`Insufficient ${fromAsset} balance (No record found)`);
+          }
           throw new Error(`Insufficient ${fromAsset} balance (Concurrency Check)`);
       }
 
-      // Credit Destination
-      const creditField = 
-        toAsset === 'USDT' ? 'balanceUSD' :
-        toAsset === 'EUR' ? 'balanceEUR' :
-        toAsset === 'USD' ? 'balanceUSD' : null;
-      
-      if (!creditField) throw new Error('Invalid credit field');
-
-      await tx.wallet.update({
-        where: { userId: (auth as any).userId },
-        data: {
-          [creditField]: { increment: toAmount }
+      // 3.2 Credit Destination
+      // Upsert to ensure balance record exists
+      await tx.balance.upsert({
+        where: { 
+            walletId_currency: { walletId: wallet.id, currency: toAsset } 
+        },
+        update: {
+          amount: { increment: toAmount }
+        },
+        create: {
+          walletId: wallet.id,
+          currency: toAsset,
+          amount: toAmount
         }
       });
 
@@ -120,7 +112,7 @@ export async function POST(req: Request) {
       await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
-          type: 'REFUND', // DEBIT equivalent
+          type: 'DEBIT', // Was REFUND, but DEBIT is more appropriate for Swap Out
           amount: amount,
           currency: fromAsset,
           description: `Swap to ${toAsset}`,

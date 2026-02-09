@@ -69,9 +69,9 @@ export async function POST(req: Request) {
         wallet: {
           create: {
             primaryCurrency: mainCurrency,
-            balanceEUR: 0,
-            balanceUSD: 0,
-            balanceGBP: 0
+            balances: {
+                create: { currency: mainCurrency, amount: 0 }
+            }
           }
         }
       },

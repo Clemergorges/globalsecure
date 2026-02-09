@@ -263,38 +263,23 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const wallet = await prisma.wallet.findUnique({ where: { userId } });
     
     if (wallet) {
-      // 3. Update Balance
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updateData: any = {};
-      if (currency === 'EUR') {
-         updateData.balanceEUR = { increment: baseAmount };
-      } else if (currency === 'USD') {
-         updateData.balanceUSD = { increment: baseAmount };
-      } else if (currency === 'GBP') {
-         updateData.balanceGBP = { increment: baseAmount };
-      }
-
-      if (Object.keys(updateData).length > 0) {
-        await prisma.wallet.update({
-          where: { id: wallet.id },
-          data: updateData
-        });
-      } else {
-        // Fallback para moedas dinâmicas (ex.: BRL)
-        const existing = await prisma.balance.findUnique({
-          where: { walletId_currency: { walletId: wallet.id, currency } }
-        });
-        if (existing) {
-          await prisma.balance.update({
-            where: { id: existing.id },
-            data: { amount: { increment: baseAmount } }
-          });
-        } else {
-          await prisma.balance.create({
-            data: { walletId: wallet.id, currency, amount: baseAmount }
-          });
+      // 3. Update Balance (Unified)
+      await prisma.balance.upsert({
+        where: {
+          walletId_currency: {
+            walletId: wallet.id,
+            currency: currency
+          }
+        },
+        update: {
+          amount: { increment: baseAmount }
+        },
+        create: {
+          walletId: wallet.id,
+          currency: currency,
+          amount: baseAmount
         }
-      }
+      });
 
       // 4. Create Transaction Record
       await prisma.walletTransaction.create({
