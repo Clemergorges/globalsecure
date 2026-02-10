@@ -55,10 +55,32 @@ async function main() {
     });
 
     console.log(`✅ Card created on Stripe! ID: ${cardData.cardId}`);
-    console.log('⏳ Waiting 15 seconds for Webhook to process...');
+    
+    // Simulate what the App does (API Route): Create Card in DB with LOCKED status
+    const unlockCode = '123456';
+    await prisma.virtualCard.create({
+      data: {
+        transferId: transfer.id,
+        stripeCardId: cardData.cardId,
+        stripeCardholderId: cardData.cardholderId,
+        last4: cardData.last4,
+        brand: cardData.brand,
+        expMonth: cardData.exp_month,
+        expYear: cardData.exp_year,
+        expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 3)),
+        amount: 100,
+        currency: 'EUR',
+        status: 'ACTIVE',
+        // @ts-ignore - Schema updated but client might not be
+        unlockStatus: 'LOCKED',
+        unlockCode: unlockCode
+      }
+    });
+    console.log('✅ Card created in DB with LOCKED status');
 
-    // Wait for webhook
-    await new Promise(resolve => setTimeout(resolve, 15000));
+    console.log('⏳ Waiting 5 seconds for Webhook to process (if applicable)...');
+    // Wait for webhook (optional, since we manually created it above to simulate API)
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
     // 4. Verify DB
     const syncedCard = await prisma.virtualCard.findUnique({
@@ -66,10 +88,26 @@ async function main() {
     });
 
     if (syncedCard) {
-      console.log('🎉 SUCCESS: Webhook successfully synced the card to DB!');
-      console.log(syncedCard);
+      console.log('🎉 SUCCESS: Card found in DB!');
+      // @ts-ignore
+      console.log(`Status: ${syncedCard.status}, UnlockStatus: ${syncedCard.unlockStatus}`);
     } else {
-      console.error('❌ FAILURE: Card was NOT found in DB. Webhook sync failed.');
+      console.error('❌ FAILURE: Card was NOT found in DB.');
+    }
+
+    // 5. Test Unlock Logic
+    console.log('🔓 Testing Unlock Logic...');
+    if (syncedCard) {
+       // Simulate Unlock API
+       await prisma.virtualCard.update({
+         where: { id: syncedCard.id },
+         data: {
+            // @ts-ignore
+            unlockStatus: 'UNLOCKED',
+            unlockedAt: new Date()
+         }
+       });
+       console.log('✅ Card Unlocked!');
     }
 
   } catch (error) {

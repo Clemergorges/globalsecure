@@ -354,9 +354,10 @@ describe('Double Spend Prevention Tests', () => {
             const user = await getTestUser(2);
 
             // Set balance to €100
-            await prisma.wallet.update({
-                where: { userId: user.id },
-                data: { balanceEUR: 100 },
+            await prisma.balance.upsert({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                update: { amount: 100 },
+                create: { walletId: user.wallet!.id, currency: 'EUR', amount: 100 }
             });
 
             // Create a virtual card

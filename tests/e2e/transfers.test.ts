@@ -19,6 +19,18 @@ describe('E2E: Transfer Flows', () => {
                 ]
             }
         });
+        
+        // Delete wallets first to avoid FK violation
+        await prisma.balance.deleteMany({
+            where: { wallet: { userId: { in: ids } } }
+        });
+        await prisma.walletTransaction.deleteMany({
+            where: { wallet: { userId: { in: ids } } }
+        });
+        await prisma.wallet.deleteMany({
+            where: { userId: { in: ids } }
+        });
+
         await prisma.user.deleteMany({
             where: { email: { startsWith: E2E_PREFIX } }
         });
@@ -39,6 +51,18 @@ describe('E2E: Transfer Flows', () => {
                 ]
             }
         });
+
+        // Delete wallets first to avoid FK violation
+        await prisma.balance.deleteMany({
+            where: { wallet: { userId: { in: ids } } }
+        });
+        await prisma.walletTransaction.deleteMany({
+            where: { wallet: { userId: { in: ids } } }
+        });
+        await prisma.wallet.deleteMany({
+            where: { userId: { in: ids } }
+        });
+
         await prisma.user.deleteMany({
             where: { email: { startsWith: E2E_PREFIX } }
         });

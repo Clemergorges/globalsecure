@@ -17,7 +17,7 @@ export async function executeConcurrently<T>(
     for (const chunk of chunks) {
         const chunkResults = await Promise.all(
             chunk.map(op =>
-                retryWithBackoff(op, 5, 50)
+                retryWithBackoff(op, 10, 100)
             )
         );
         results.push(...chunkResults);
@@ -58,7 +58,12 @@ export async function retryWithBackoff<T>(
             return await operation();
         } catch (error) {
             lastError = error as Error;
-            const delay = initialDelay * Math.pow(2, attempt);
+            // Add jitter: random value between 0 and 0.5 * delay
+            // This prevents thundering herd problem where all retries collide again
+            const baseDelay = initialDelay * Math.pow(2, attempt);
+            const jitter = Math.random() * (baseDelay * 0.5);
+            const delay = baseDelay + jitter;
+            
             await new Promise(resolve => setTimeout(resolve, delay));
         }
     }

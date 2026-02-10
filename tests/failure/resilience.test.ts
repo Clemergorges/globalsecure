@@ -18,10 +18,14 @@ async function createUserWithWallet(kycLevel: number) {
   const wallet = await prisma.wallet.create({
     data: {
       userId: user.id,
-      balanceEUR: 1000,
-      balanceUSD: 0,
-      balanceGBP: 0,
-      primaryCurrency: 'EUR'
+      primaryCurrency: 'EUR',
+      balances: {
+        create: [
+          { currency: 'EUR', amount: 1000 },
+          { currency: 'USD', amount: 0 },
+          { currency: 'GBP', amount: 0 }
+        ]
+      }
     }
   });
   return { user, wallet };
@@ -37,6 +41,7 @@ afterAll(async () => {
   await prisma.transfer.deleteMany({});
   await prisma.cryptoDeposit.deleteMany({});
   await prisma.topUp.deleteMany({});
+  await prisma.balance.deleteMany({});
   await prisma.wallet.deleteMany({});
   await prisma.user.deleteMany({
     where: { email: { startsWith: 'resilience-' } }
@@ -46,7 +51,7 @@ afterAll(async () => {
 
 describe('System Resilience & Failure Handling', () => {
   test('should ignore duplicated webhooks', async () => {
-    const { user } = await createUserWithWallet(1);
+    const { user, wallet } = await createUserWithWallet(1);
     const sessionId = `sess_dup_${Date.now()}`;
     const amount = 100;
 
@@ -65,9 +70,9 @@ describe('System Resilience & Failure Handling', () => {
             status: 'COMPLETED'
           }
         });
-        await tx.wallet.update({
-          where: { userId: user.id },
-          data: { balanceEUR: { increment: amount } }
+        await tx.balance.updateMany({
+          where: { walletId: wallet.id, currency: 'EUR' },
+          data: { amount: { increment: amount } }
         });
       });
     };
@@ -76,15 +81,15 @@ describe('System Resilience & Failure Handling', () => {
     await processWebhook();
     await processWebhook();
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
+    const balanceRecord = await prisma.balance.findUnique({ where: { walletId_currency: { walletId: wallet.id, currency: 'EUR' } } });
     const topups = await prisma.topUp.findMany({ where: { stripeSessionId: sessionId } });
 
-    expect(Number(wallet!.balanceEUR)).toBe(1000 + amount);
+    expect(Number(balanceRecord!.amount)).toBe(1000 + amount);
     expect(topups.length).toBe(1);
   });
 
   test('should handle out-of-order events safely', async () => {
-    const { user } = await createUserWithWallet(1);
+    const { user, wallet } = await createUserWithWallet(1);
     const txHash = '0xout_of_order_tx_hash';
     const amount = 50;
 
@@ -113,9 +118,9 @@ describe('System Resilience & Failure Handling', () => {
         where: { walletId: wallet!.id, type: 'DEPOSIT', amount }
       });
       if (!credited) {
-        await tx.wallet.update({
-          where: { userId: user.id },
-          data: { balanceEUR: { increment: amount } }
+        await tx.balance.updateMany({
+          where: { walletId: wallet!.id, currency: 'EUR' },
+          data: { amount: { increment: amount } }
         });
         await tx.walletTransaction.create({
           data: {
@@ -153,13 +158,13 @@ describe('System Resilience & Failure Handling', () => {
     });
 
     const dep = await prisma.cryptoDeposit.findUnique({ where: { txHash } });
-    const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
+    const balanceRecord = await prisma.balance.findUnique({ where: { walletId_currency: { walletId: wallet.id, currency: 'EUR' } } });
     const transactions = await prisma.walletTransaction.findMany({
       where: { walletId: wallet!.id, type: 'DEPOSIT', amount }
     });
 
     expect(dep!.status).toBe('CONFIRMED');
-    expect(Number(wallet!.balanceEUR)).toBe(1000 + amount);
+    expect(Number(balanceRecord!.amount)).toBe(1000 + amount);
     expect(transactions.length).toBe(1);
   });
 
@@ -195,8 +200,8 @@ describe('System Resilience & Failure Handling', () => {
   });
 
   test('should not credit balance on Stripe failure', async () => {
-    const { user } = await createUserWithWallet(1);
-    const startWallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
+    const { user, wallet } = await createUserWithWallet(1);
+    const startBalanceRecord = await prisma.balance.findUnique({ where: { walletId_currency: { walletId: wallet.id, currency: 'EUR' } } });
     const amount = 75;
     const sessionId = 'sess_fail_test_001';
 
@@ -212,13 +217,13 @@ describe('System Resilience & Failure Handling', () => {
       });
     });
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
-    expect(Number(wallet!.balanceEUR)).toBe(Number(startWallet!.balanceEUR));
+    const endBalanceRecord = await prisma.balance.findUnique({ where: { walletId_currency: { walletId: wallet.id, currency: 'EUR' } } });
+    expect(Number(endBalanceRecord!.amount)).toBe(Number(startBalanceRecord!.amount));
   });
 
   test('should not credit balance on blockchain reverted tx', async () => {
-    const { user } = await createUserWithWallet(1);
-    const startWallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
+    const { user, wallet } = await createUserWithWallet(1);
+    const startBalanceRecord = await prisma.balance.findUnique({ where: { walletId_currency: { walletId: wallet.id, currency: 'EUR' } } });
     const txHash = '0xreverted_tx';
     const amount = 200;
 
@@ -235,40 +240,40 @@ describe('System Resilience & Failure Handling', () => {
       });
     });
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
-    expect(Number(wallet!.balanceEUR)).toBe(Number(startWallet!.balanceEUR));
+    const endBalanceRecord = await prisma.balance.findUnique({ where: { walletId_currency: { walletId: wallet.id, currency: 'EUR' } } });
+    expect(Number(endBalanceRecord!.amount)).toBe(Number(startBalanceRecord!.amount));
   });
 
   test('should reject transfer with insufficient balance', async () => {
-    const { user: sender } = await createUserWithWallet(1);
-    const { user: receiver } = await createUserWithWallet(2);
+    const { user: sender, wallet: senderWallet } = await createUserWithWallet(1);
+    const { user: receiver, wallet: receiverWallet } = await createUserWithWallet(2);
 
-    await prisma.wallet.update({
-      where: { userId: sender.id },
-      data: { balanceEUR: 50 }
+    await prisma.balance.updateMany({
+      where: { walletId: senderWallet.id, currency: 'EUR' },
+      data: { amount: 50 }
     });
 
     const transferAmount = 100;
     await expect(
       prisma.$transaction(async (tx) => {
-        const senderWallet = await tx.wallet.findUnique({ where: { userId: sender.id } });
-        if (Number(senderWallet!.balanceEUR) < transferAmount) {
+        const senderBalance = await tx.balance.findUnique({ where: { walletId_currency: { walletId: senderWallet.id, currency: 'EUR' } } });
+        if (Number(senderBalance!.amount) < transferAmount) {
           throw new Error('Insufficient balance');
         }
-        await tx.wallet.update({
-          where: { userId: sender.id },
-          data: { balanceEUR: { decrement: transferAmount } }
+        await tx.balance.updateMany({
+          where: { walletId: senderWallet.id, currency: 'EUR' },
+          data: { amount: { decrement: transferAmount } }
         });
-        await tx.wallet.update({
-          where: { userId: receiver.id },
-          data: { balanceEUR: { increment: transferAmount } }
+        await tx.balance.updateMany({
+          where: { walletId: receiverWallet.id, currency: 'EUR' },
+          data: { amount: { increment: transferAmount } }
         });
       })
     ).rejects.toThrow('Insufficient balance');
   });
 
   test('should reject operation above KYC limit', async () => {
-    const { user } = await createUserWithWallet(0);
+    const { user, wallet } = await createUserWithWallet(0);
     const limit = KYC_LIMITS[user.kycLevel as keyof typeof KYC_LIMITS];
     const amount = limit + 100;
 
@@ -277,9 +282,9 @@ describe('System Resilience & Failure Handling', () => {
         if (amount > limit) {
           throw new Error(`Transfer amount exceeds KYC level ${user.kycLevel} limit of €${limit}`);
         }
-        await tx.wallet.update({
-          where: { userId: user.id },
-          data: { balanceEUR: { decrement: amount } }
+        await tx.balance.updateMany({
+          where: { walletId: wallet.id, currency: 'EUR' },
+          data: { amount: { decrement: amount } }
         });
       })
     ).rejects.toThrow(`Transfer amount exceeds KYC level ${user.kycLevel} limit of €${limit}`);

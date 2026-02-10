@@ -16,7 +16,11 @@ describe('Stripe Webhooks Tests', () => {
     describe('4.1. Topup Webhook (checkout.session.completed)', () => {
         it('should credit balance correctly on successful payment', async () => {
             const user = await getTestUser(1);
-            const initialBalance = Number(user.wallet!.balanceEUR);
+            
+            const initialBalanceRecord = await prisma.balance.findUnique({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+            });
+            const initialBalance = Number(initialBalanceRecord?.amount || 0);
             const topupAmount = 100;
 
             // Simulate Stripe webhook payload
@@ -57,9 +61,10 @@ describe('Stripe Webhooks Tests', () => {
                 });
 
                 // Credit wallet
-                await tx.wallet.update({
-                    where: { userId: user.id },
-                    data: { balanceEUR: { increment: topupAmount } },
+                await tx.balance.upsert({
+                    where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                    update: { amount: { increment: topupAmount } },
+                    create: { walletId: user.wallet!.id, currency: 'EUR', amount: topupAmount }
                 });
 
                 // Create transaction log
@@ -75,11 +80,11 @@ describe('Stripe Webhooks Tests', () => {
             });
 
             // Verify balance increased
-            const updatedWallet = await prisma.wallet.findUnique({
-                where: { userId: user.id },
+            const updatedBalance = await prisma.balance.findUnique({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
             });
 
-            expect(Number(updatedWallet!.balanceEUR)).toBe(initialBalance + topupAmount);
+            expect(Number(updatedBalance!.amount)).toBe(initialBalance + topupAmount);
 
             console.log('✅ Stripe topup webhook: Balance credited correctly');
         });
@@ -101,14 +106,15 @@ describe('Stripe Webhooks Tests', () => {
                     },
                 });
 
-                await tx.wallet.update({
-                    where: { userId: user.id },
-                    data: { balanceEUR: { increment: topupAmount } },
+                await tx.balance.upsert({
+                    where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                    update: { amount: { increment: topupAmount } },
+                    create: { walletId: user.wallet!.id, currency: 'EUR', amount: topupAmount }
                 });
             });
 
-            const balanceAfterFirst = await prisma.wallet.findUnique({
-                where: { userId: user.id },
+            const balanceAfterFirst = await prisma.balance.findUnique({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
             });
 
             // Second webhook (duplicate)
@@ -122,24 +128,16 @@ describe('Stripe Webhooks Tests', () => {
                         throw new Error('Webhook already processed');
                     }
 
-                    await tx.topUp.create({
-                        data: {
-                            userId: user.id,
-                            amount: topupAmount,
-                            currency: 'EUR',
-                            stripeSessionId: sessionId,
-                            status: 'COMPLETED',
-                        },
-                    });
+                    // ... rest of logic skipped due to error throw
                 });
             }).rejects.toThrow('Webhook already processed');
 
             // Verify balance didn't change
-            const balanceAfterSecond = await prisma.wallet.findUnique({
-                where: { userId: user.id },
+            const balanceAfterSecond = await prisma.balance.findUnique({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
             });
 
-            expect(Number(balanceAfterSecond!.balanceEUR)).toBe(Number(balanceAfterFirst!.balanceEUR));
+            expect(Number(balanceAfterSecond!.amount)).toBe(Number(balanceAfterFirst!.amount));
 
             console.log('✅ Stripe duplicate webhook: Correctly ignored');
         });
@@ -148,7 +146,10 @@ describe('Stripe Webhooks Tests', () => {
     describe('4.2. Payment Failed Webhook', () => {
         it('should NOT credit balance on failed payment', async () => {
             const user = await getTestUser(1);
-            const initialBalance = Number(user.wallet!.balanceEUR);
+            const initialBalanceRecord = await prisma.balance.findUnique({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+            });
+            const initialBalance = Number(initialBalanceRecord?.amount || 0);
             const attemptedAmount = 100;
 
             // Simulate failed payment webhook
@@ -169,11 +170,11 @@ describe('Stripe Webhooks Tests', () => {
             // In real implementation, we'd log the failure but not credit
 
             // Verify balance unchanged
-            const finalBalance = await prisma.wallet.findUnique({
-                where: { userId: user.id },
+            const finalBalance = await prisma.balance.findUnique({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
             });
 
-            expect(Number(finalBalance!.balanceEUR)).toBe(initialBalance);
+            expect(Number(finalBalance?.amount || 0)).toBe(initialBalance);
 
             console.log('✅ Failed payment webhook: Balance unchanged');
         });

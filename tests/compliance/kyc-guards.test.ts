@@ -35,14 +35,14 @@ describe('KYC Guards and Limits Enforcement', () => {
                         throw new Error(`Transfer amount exceeds KYC level ${sender.kycLevel} limit of €${limit}`);
                     }
 
-                    await tx.wallet.update({
-                        where: { userId: sender.id },
-                        data: { balanceEUR: { decrement: transferAmount } },
+                    await tx.balance.updateMany({
+                        where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                        data: { amount: { decrement: transferAmount } },
                     });
 
-                    await tx.wallet.update({
-                        where: { userId: receiver.id },
-                        data: { balanceEUR: { increment: transferAmount } },
+                    await tx.balance.updateMany({
+                        where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                        data: { amount: { increment: transferAmount } },
                     });
                 });
             }).rejects.toThrow('Transfer amount exceeds KYC level 0 limit of €100');
@@ -62,14 +62,14 @@ describe('KYC Guards and Limits Enforcement', () => {
                     throw new Error(`Transfer amount exceeds KYC level ${sender.kycLevel} limit of €${limit}`);
                 }
 
-                await tx.wallet.update({
-                    where: { userId: sender.id },
-                    data: { balanceEUR: { decrement: transferAmount } },
+                await tx.balance.updateMany({
+                    where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                    data: { amount: { decrement: transferAmount } },
                 });
 
-                await tx.wallet.update({
-                    where: { userId: receiver.id },
-                    data: { balanceEUR: { increment: transferAmount } },
+                await tx.balance.updateMany({
+                    where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                    data: { amount: { increment: transferAmount } },
                 });
             });
 
@@ -88,14 +88,14 @@ describe('KYC Guards and Limits Enforcement', () => {
                     throw new Error(`Transfer amount exceeds KYC level ${sender.kycLevel} limit of €${limit}`);
                 }
 
-                await tx.wallet.update({
-                    where: { userId: sender.id },
-                    data: { balanceEUR: { decrement: transferAmount } },
+                await tx.balance.updateMany({
+                    where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                    data: { amount: { decrement: transferAmount } },
                 });
 
-                await tx.wallet.update({
-                    where: { userId: receiver.id },
-                    data: { balanceEUR: { increment: transferAmount } },
+                await tx.balance.updateMany({
+                    where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                    data: { amount: { increment: transferAmount } },
                 });
             });
 
@@ -115,14 +115,14 @@ describe('KYC Guards and Limits Enforcement', () => {
                         throw new Error(`Transfer amount exceeds KYC level ${sender.kycLevel} limit of €${limit}`);
                     }
 
-                    await tx.wallet.update({
-                        where: { userId: sender.id },
-                        data: { balanceEUR: { decrement: transferAmount } },
+                    await tx.balance.updateMany({
+                        where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                        data: { amount: { decrement: transferAmount } },
                     });
 
-                    await tx.wallet.update({
-                        where: { userId: receiver.id },
-                        data: { balanceEUR: { increment: transferAmount } },
+                    await tx.balance.updateMany({
+                        where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                        data: { amount: { increment: transferAmount } },
                     });
                 });
             }).rejects.toThrow('Transfer amount exceeds KYC level 1 limit of €500');
@@ -137,9 +137,9 @@ describe('KYC Guards and Limits Enforcement', () => {
             const transferAmount = 5000; // Below €10,000 limit
 
             // Ensure sender has enough balance
-            await prisma.wallet.update({
-                where: { userId: sender.id },
-                data: { balanceEUR: 10000 },
+            await prisma.balance.updateMany({
+                where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                data: { amount: 10000 },
             });
 
             await prisma.$transaction(async (tx) => {
@@ -148,14 +148,14 @@ describe('KYC Guards and Limits Enforcement', () => {
                     throw new Error(`Transfer amount exceeds KYC level ${sender.kycLevel} limit of €${limit}`);
                 }
 
-                await tx.wallet.update({
-                    where: { userId: sender.id },
-                    data: { balanceEUR: { decrement: transferAmount } },
+                await tx.balance.updateMany({
+                    where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                    data: { amount: { decrement: transferAmount } },
                 });
 
-                await tx.wallet.update({
-                    where: { userId: receiver.id },
-                    data: { balanceEUR: { increment: transferAmount } },
+                await tx.balance.updateMany({
+                    where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                    data: { amount: { increment: transferAmount } },
                 });
             });
 
@@ -253,9 +253,9 @@ describe('KYC Guards and Limits Enforcement', () => {
                     throw new Error(`Transfer exceeds limit`);
                 }
 
-                await tx.wallet.update({
-                    where: { userId: user.id },
-                    data: { balanceEUR: { decrement: amount } },
+                await tx.balance.updateMany({
+                    where: { walletId: user.wallet!.id, currency: 'EUR' },
+                    data: { amount: { decrement: amount } },
                 });
             });
 
@@ -268,9 +268,9 @@ describe('KYC Guards and Limits Enforcement', () => {
                     throw new Error(`Cumulative transfers exceed daily limit`);
                 }
 
-                await tx.wallet.update({
-                    where: { userId: user.id },
-                    data: { balanceEUR: { decrement: amount } },
+                await tx.balance.updateMany({
+                    where: { walletId: user.wallet!.id, currency: 'EUR' },
+                    data: { amount: { decrement: amount } },
                 });
             });
 

@@ -96,7 +96,7 @@ describe('Session Security and Authentication Tests', () => {
             });
 
             // Logout (delete session)
-            await prisma.session.delete({
+            await prisma.session.deleteMany({
                 where: { id: session.id },
             });
 

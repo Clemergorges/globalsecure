@@ -4,9 +4,25 @@ const prisma = new PrismaClient();
 
 describe('Network Failure Simulation', () => {
   afterAll(async () => {
-    await prisma.topUp.deleteMany({});
-    await prisma.wallet.deleteMany({});
-    await prisma.user.deleteMany({ where: { email: { startsWith: 'net-' } } });
+    // Safer cleanup: only delete data created by this test suite (emails starting with 'net-')
+    const users = await prisma.user.findMany({ 
+      where: { email: { startsWith: 'net-' } },
+      select: { id: true }
+    });
+    const userIds = users.map(u => u.id);
+
+    if (userIds.length > 0) {
+      await prisma.topUp.deleteMany({ where: { userId: { in: userIds } } });
+      
+      await prisma.balance.deleteMany({
+        where: { wallet: { userId: { in: userIds } } }
+      });
+      
+      await prisma.wallet.deleteMany({ where: { userId: { in: userIds } } });
+      
+      await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    }
+    
     await prisma.$disconnect();
   });
 
@@ -91,10 +107,23 @@ describe('Network Failure Simulation', () => {
     const user = await prisma.user.create({
       data: { email, passwordHash: '$2a$10$test.hash', kycLevel: 1, kycStatus: 'APPROVED' }
     });
-    await prisma.wallet.create({
-      data: { userId: user.id, balanceEUR: 1000, balanceUSD: 0, balanceGBP: 0, primaryCurrency: 'EUR' }
+    
+    const wallet = await prisma.wallet.create({
+      data: {
+        userId: user.id,
+        primaryCurrency: 'EUR',
+        balances: {
+          create: [
+            { currency: 'EUR', amount: 1000 },
+            { currency: 'USD', amount: 0 },
+            { currency: 'GBP', amount: 0 }
+          ]
+        }
+      },
+      include: { balances: true }
     });
-    const startWallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
+    
+    const startBalanceEUR = wallet.balances.find(b => b.currency === 'EUR')?.amount ?? 0;
     const sessionId = 'sess_api_500';
     const amount = 60;
 
@@ -111,14 +140,26 @@ describe('Network Failure Simulation', () => {
             status: 'COMPLETED'
           }
         });
-        await tx.wallet.update({
-          where: { userId: user.id },
-          data: { balanceEUR: { increment: amount } }
+        
+        await tx.balance.update({
+          where: {
+            walletId_currency: {
+              walletId: wallet.id,
+              currency: 'EUR'
+            }
+          },
+          data: { amount: { increment: amount } }
         });
       });
     }
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
-    expect(Number(wallet!.balanceEUR)).toBe(Number(startWallet!.balanceEUR));
+    const finalWallet = await prisma.wallet.findUnique({ 
+      where: { userId: user.id },
+      include: { balances: true }
+    });
+    
+    const finalBalanceEUR = finalWallet!.balances.find(b => b.currency === 'EUR')?.amount ?? 0;
+    
+    expect(Number(finalBalanceEUR)).toBe(Number(startBalanceEUR));
   });
 });

@@ -1,0 +1,109 @@
+{
+  "Settings": {
+    "title": "Paramètres",
+    "security": "Sécurité",
+    "securityDesc": "Gérez votre mot de passe et l'authentification.",
+    "passwordAuth": "Mot de passe et authentification",
+    "passwordAuthDesc": "Changer le mot de passe ou activer l'authentification à deux facteurs.",
+    "manageSecurity": "Gérer la sécurité",
+    "notifications": "Notifications",
+    "notificationsDesc": "Choisissez comment vous souhaitez être averti.",
+    "emailNotif": "Notifications par e-mail",
+    "emailNotifDesc": "Recevoir des reçus et des alertes de sécurité.",
+    "pushNotif": "Notifications Push",
+    "pushNotifDesc": "Alertes en temps réel dans le navigateur.",
+    "preferences": "Préférences",
+    "preferencesDesc": "Ajustez votre expérience.",
+    "mainCurrency": "Devise principale",
+    "mainCurrencyDesc": "Devise utilisée pour afficher votre solde total.",
+    "language": "Langue",
+    "languageDesc": "Langue de l'interface."
+  },
+  "Sidebar": {
+    "overview": "Aperçu",
+    "sendMoney": "Envoyer de l'argent",
+    "cards": "Cartes",
+    "history": "Historique",
+    "security": "Sécurité",
+    "adminPanel": "Panneau d'administration",
+    "logout": "Se déconnecter"
+  },
+  "Header": {
+    "searchPlaceholder": "Rechercher une transaction...",
+    "notifications": "Notifications",
+    "new": "Nouveau",
+    "noNotifications": "Aucune notification récente.",
+    "markAllRead": "Tout marquer comme lu",
+    "myAccount": "Mon Compte",
+    "profile": "Profil",
+    "myCards": "Mes Cartes",
+    "settings": "Paramètres",
+    "help": "Aide et Support",
+    "logout": "Se déconnecter",
+    "loading": "Chargement...",
+    "status": {
+      "premium": "Premium",
+      "verified": "Vérifié",
+      "standard": "Standard"
+    }
+  },
+  "Dashboard": {
+    "BalanceCard": {
+      "totalBalance": "Solde Total Disponible",
+      "thisMonth": "ce mois-ci",
+      "swap": "Swap / Convertir",
+      "deposit": "Dépôt",
+      "withdraw": "Retrait Crypto",
+      "modalTitle": "Déposer des Fonds",
+      "card": "Carte",
+      "sepa": "SEPA",
+      "crypto": "Crypto",
+      "depositAmount": "Montant du Dépôt",
+      "fee": "Frais",
+      "payWithCard": "Payer par Carte (Stripe)",
+      "beneficiary": "Bénéficiaire",
+      "reference": "Référence Obligatoire",
+      "sepaNote": "Les virements SEPA Instant arrivent généralement en quelques secondes. SEPA Standard peut prendre jusqu'à 1 jour ouvrable.",
+      "cryptoAddress": "Adresse Polygon (USDT)",
+      "cryptoWarning": "Envoyez uniquement des USDT sur le réseau Polygon Amoy.",
+      "withdrawTitle": "Retirer USDT (Polygon)",
+      "withdrawSuccess": "Retrait demandé avec succès !",
+      "close": "Fermer",
+      "destinationAddress": "Adresse de Destination (0x...)",
+      "amount": "Montant (USDT)",
+      "confirmWithdraw": "Confirmer le Retrait",
+      "processing": "Traitement...",
+      "swapTitle": "Convertir des Devises",
+      "from": "De",
+      "to": "À",
+      "amountToConvert": "Montant à Convertir",
+      "exchangeRate": "Taux de Change : Base + 0.8% Spread",
+      "calculating": "Calcul...",
+      "convertNow": "Convertir Maintenant"
+    },
+    "QuickActions": {
+      "newTransfer": "Nouveau Virement",
+      "newTransferDesc": "Virement rapide",
+      "cards": "Cartes",
+      "cardsDesc": "Gérer virtuels",
+      "invite": "Inviter",
+      "inviteDesc": "Gagnez des bonus",
+      "help": "Aide",
+      "helpDesc": "Support 24/7"
+    },
+    "Transactions": {
+      "title": "Transactions Récentes",
+      "subtitle": "Derniers mouvements du compte",
+      "viewAll": "Voir relevé complet",
+      "emptyTitle": "Aucune transaction récente",
+      "emptyDesc": "Vos transactions apparaîtront ici dès que vous commencerez à utiliser votre compte.",
+      "success": "Succès",
+      "pending": "En attente"
+    },
+    "Cards": {
+      "activeCards": "Cartes Actives",
+      "manage": "Gérer",
+      "createNew": "Créer Nouvelle Carte"
+    }
+  }
+}

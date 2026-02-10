@@ -56,19 +56,18 @@ async function main() {
     for (const userData of users) {
         const user = await prisma.user.create({ data: userData });
 
-        const wallet = await prisma.wallet.create({
+        await prisma.wallet.create({
             data: {
                 userId: user.id,
                 primaryCurrency: 'EUR',
+                balances: {
+                    create: [
+                        { currency: 'EUR', amount: 1000 },
+                        { currency: 'USD', amount: 0 },
+                        { currency: 'GBP', amount: 0 }
+                    ]
+                }
             },
-        });
-
-        await prisma.balance.create({
-            data: {
-                walletId: wallet.id,
-                currency: 'EUR',
-                amount: 1000
-            }
         });
 
         console.log(`✅ User ${userData.email} and wallet created.`);

@@ -6,6 +6,7 @@ describe('Webhook Failure Scenarios', () => {
   afterAll(async () => {
     await prisma.topUp.deleteMany({});
     await prisma.walletTransaction.deleteMany({});
+    await prisma.balance.deleteMany({});
     await prisma.wallet.deleteMany({});
     await prisma.user.deleteMany({ where: { email: { startsWith: 'webhook-' } } });
     await prisma.$disconnect();
@@ -38,8 +39,18 @@ describe('Webhook Failure Scenarios', () => {
     const user = await prisma.user.create({
       data: { email, passwordHash: '$2a$10$test.hash', kycLevel: 1, kycStatus: 'APPROVED' }
     });
-    await prisma.wallet.create({
-      data: { userId: user.id, balanceEUR: 1000, balanceUSD: 0, balanceGBP: 0, primaryCurrency: 'EUR' }
+    const wallet = await prisma.wallet.create({
+      data: {
+        userId: user.id,
+        primaryCurrency: 'EUR',
+        balances: {
+          create: [
+            { currency: 'EUR', amount: 1000 },
+            { currency: 'USD', amount: 0 },
+            { currency: 'GBP', amount: 0 }
+          ]
+        }
+      }
     });
     const sessionId = `sess_double_credit_${Date.now()}`;
     const amount = 30;
@@ -57,9 +68,9 @@ describe('Webhook Failure Scenarios', () => {
             status: 'COMPLETED'
           }
         });
-        await tx.wallet.update({
-          where: { userId: user.id },
-          data: { balanceEUR: { increment: amount } }
+        await tx.balance.updateMany({
+          where: { walletId: wallet.id, currency: 'EUR' },
+          data: { amount: { increment: amount } }
         });
       });
     };
@@ -67,9 +78,9 @@ describe('Webhook Failure Scenarios', () => {
     await processOnce();
     await processOnce();
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
+    const balanceRecord = await prisma.balance.findUnique({ where: { walletId_currency: { walletId: wallet.id, currency: 'EUR' } } });
     const topups = await prisma.topUp.findMany({ where: { stripeSessionId: sessionId } });
     expect(topups.length).toBe(1);
-    expect(Number(wallet!.balanceEUR)).toBe(1000 + 30);
+    expect(Number(balanceRecord!.amount)).toBe(1000 + 30);
   });
 });

@@ -26,7 +26,12 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
                 },
             });
 
-            const initialBalance = Number(user.wallet!.balanceEUR);
+            // Verify initial balance
+            const initialBalanceRecord = await prisma.balance.findUnique({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+            });
+            const initialBalance = Number(initialBalanceRecord?.amount || 0);
+            
             const depositAmount = 100; // 100 USDT
             const txHash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890';
 
@@ -54,10 +59,10 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
             });
 
             // Verify NOT credited yet
-            let currentWallet = await prisma.wallet.findUnique({
-                where: { userId: user.id },
+            const currentBalanceRecord = await prisma.balance.findUnique({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
             });
-            expect(Number(currentWallet!.balanceEUR)).toBe(initialBalance);
+            expect(Number(currentBalanceRecord?.amount || 0)).toBe(initialBalance);
 
             // Step 2: Confirmed webhook (12+ confirmations)
             await prisma.$transaction(async (tx) => {
@@ -83,9 +88,10 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
                 });
 
                 // Credit wallet (1 USDT = 1 EUR for simplicity)
-                await tx.wallet.update({
-                    where: { userId: user.id },
-                    data: { balanceEUR: { increment: depositAmount } },
+                await tx.balance.upsert({
+                    where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                    create: { walletId: user.wallet!.id, currency: 'EUR', amount: depositAmount },
+                    update: { amount: { increment: depositAmount } }
                 });
 
                 // Create transaction log
@@ -115,10 +121,10 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
             });
 
             // Verify balance credited
-            currentWallet = await prisma.wallet.findUnique({
-                where: { userId: user.id },
+            const finalBalanceRecord = await prisma.balance.findUnique({
+                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
             });
-            expect(Number(currentWallet!.balanceEUR)).toBe(initialBalance + depositAmount);
+            expect(Number(finalBalanceRecord?.amount || 0)).toBe(initialBalance + depositAmount);
 
             console.log('✅ Crypto deposit webhook: Credited after confirmations');
         });

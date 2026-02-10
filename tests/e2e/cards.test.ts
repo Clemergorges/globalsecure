@@ -23,6 +23,7 @@ describe('E2E: Virtual Cards', () => {
         
         await prisma.walletTransaction.deleteMany({ where: { wallet: { userId: { in: ids } } } });
         await prisma.balance.deleteMany({ where: { wallet: { userId: { in: ids } } } });
+        await prisma.wallet.deleteMany({ where: { userId: { in: ids } } });
         await prisma.virtualCard.deleteMany({ where: { userId: { in: ids } } });
         await prisma.transfer.deleteMany({ where: { senderId: { in: ids } } });
         await prisma.user.deleteMany({ where: { id: { in: ids } } });
@@ -38,6 +39,7 @@ describe('E2E: Virtual Cards', () => {
         
         await prisma.walletTransaction.deleteMany({ where: { wallet: { userId: { in: ids } } } });
         await prisma.balance.deleteMany({ where: { wallet: { userId: { in: ids } } } });
+        await prisma.wallet.deleteMany({ where: { userId: { in: ids } } });
         await prisma.virtualCard.deleteMany({ where: { userId: { in: ids } } });
         await prisma.transfer.deleteMany({ where: { senderId: { in: ids } } });
         await prisma.user.deleteMany({ where: { id: { in: ids } } });
@@ -117,7 +119,10 @@ describe('E2E: Virtual Cards', () => {
                     expiresAt: new Date('2030-12-31'),
                     amount: cardAmount,
                     currency: 'EUR',
-                    status: 'INACTIVE'
+                    status: 'INACTIVE',
+                    // @ts-ignore
+                    unlockStatus: 'LOCKED',
+                    unlockCode: '123456'
                 }
             });
         });
@@ -131,7 +136,27 @@ describe('E2E: Virtual Cards', () => {
         expect(Number(finalBalance!.amount)).toBe(80); // 100 - 20
         expect(card).toBeDefined();
         expect(card!.status).toBe('INACTIVE');
+        // @ts-ignore
+        expect(card!.unlockStatus).toBe('LOCKED');
         expect(Number(card!.amount)).toBe(20);
+    });
+
+    it('should unlock a card', async () => {
+        const user = await prisma.user.findFirst({ where: { email: `${E2E_PREFIX}user@test.com` } });
+        const card = await prisma.virtualCard.findFirst({ where: { userId: user!.id } });
+
+        // Simulate Unlock
+        const unlockedCard = await prisma.virtualCard.update({
+            where: { id: card!.id },
+            data: {
+                // @ts-ignore
+                unlockStatus: 'UNLOCKED',
+                unlockedAt: new Date()
+            }
+        });
+
+        // @ts-ignore
+        expect(unlockedCard.unlockStatus).toBe('UNLOCKED');
     });
 
     it('should activate a card', async () => {

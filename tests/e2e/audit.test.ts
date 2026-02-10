@@ -8,11 +8,13 @@ describe('E2E: Audit & Reconciliation', () => {
     it('should verify total system liability equals sum of all wallets', async () => {
         // This is a high-level consistency check
 
-        // 1. Get all wallets
-        const wallets = await prisma.wallet.findMany();
+        // 1. Get all EUR balances
+        const balances = await prisma.balance.findMany({
+            where: { currency: 'EUR' }
+        });
 
         // 2. Sum locally
-        const totalEUR = wallets.reduce((sum, w) => sum + Number(w.balanceEUR), 0);
+        const totalEUR = balances.reduce((sum, b) => sum + Number(b.amount), 0);
 
         // 3. Compare with some "Master Ledger" if it existed, or just ensuring no NaN/Negative weirdness
         expect(totalEUR).toBeGreaterThanOrEqual(0); // Basic sanity check

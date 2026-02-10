@@ -50,20 +50,15 @@ export async function createTestUsers() {
             const wallet = await prisma.wallet.create({
                 data: {
                     userId: user.id,
-                    balanceEUR: 1000,
-                    balanceUSD: 0,
-                    balanceGBP: 0,
                     primaryCurrency: 'EUR',
+                    balances: {
+                        create: [
+                            { currency: 'EUR', amount: 1000 },
+                            { currency: 'USD', amount: 0 },
+                            { currency: 'GBP', amount: 0 }
+                        ]
+                    }
                 },
-            });
-
-            // Create initial balance record (Phase 7.1)
-            await prisma.balance.create({
-                data: {
-                    walletId: wallet.id,
-                    currency: 'EUR',
-                    amount: 1000
-                }
             });
 
             createdUsers.push({ user, wallet });
