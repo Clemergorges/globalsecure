@@ -1,6 +1,6 @@
 
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(__dirname, '../.env.local') });
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
@@ -17,7 +17,7 @@ async function main() {
     where: { email },
   });
 
-  const passwordHash = await bcrypt.hash(targetPassword, 12);
+  const passwordHash = await bcrypt.hash(targetPassword, 10);
 
   if (user) {
     console.log(`User found (ID: ${user.id}). Updating password...`);

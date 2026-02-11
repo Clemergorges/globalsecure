@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -103,6 +104,7 @@ model User {
   cryptoWithdraws CryptoWithdraw[]
   swaps         Swap[]
   virtualCards  VirtualCard[]
+  auditLogs     AuditLog[]
   
   @@index([email])
   @@index([phone])
@@ -465,4 +467,26 @@ enum ClaimStatus {
   CLAIMED
   EXPIRED
   CANCELLED
+}
+
+// --- NEW AUDIT LOG MODEL ---
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String   // e.g. "LOGIN", "TRANSFER", "RATE_LIMIT", "API_ERROR"
+  status    String   // e.g. "SUCCESS", "FAILURE", "429"
+  ipAddress String?
+  userAgent String?
+  method    String?  // GET, POST
+  path      String?  // /api/auth/login
+  metadata  Json?    // Any extra details
+  duration  Int?     // ms
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+  @@index([status])
 }

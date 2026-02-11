@@ -1,44 +1,47 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { createHandler } from '@/lib/api-handler';
+import { z } from 'zod';
 
-export async function GET(_req: Request) {
-  const session = await getSession();
-  
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+// Schema for query params (optional currency override)
+const balanceQuerySchema = z.object({
+  currency: z.enum(['EUR', 'USD', 'GBP']).optional()
+});
 
-  try {
+export const GET = createHandler(
+  z.any(), // GET request has no body
+  async (req) => {
+    const userId = req.userId!; // Guaranteed by requireAuth
+
+    // Optional: Parse query params manually if needed, or use a helper
+    // const { currency: requestedCurrency } = validateQuery(req, balanceQuerySchema);
+    
     const wallet = await prisma.wallet.findUnique({
-      where: { userId: (session as any).userId }
+      where: { userId },
+      include: { balances: true }
     });
 
     if (!wallet) {
       return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
     }
 
-    // Default to primary currency or EUR
-    const currency = wallet.primaryCurrency || 'EUR';
-    
-    // Fetch balance from Balance table
-    const balanceRecord = await prisma.balance.findUnique({
-      where: {
-        walletId_currency: {
-          walletId: wallet.id,
-          currency: currency
-        }
-      }
-    });
-
-    const balance = balanceRecord?.amount || 0;
+    // Transform balances into a clean map
+    const balances = wallet.balances.reduce((acc, curr) => {
+        acc[curr.currency] = Number(curr.amount);
+        return acc;
+    }, {} as Record<string, number>);
 
     return NextResponse.json({
-      balance: Number(balance),
-      currency: currency,
-      userId: (session as any).userId
+      userId,
+      primaryCurrency: wallet.primaryCurrency,
+      balances: balances,
+      // Backward compatibility for single balance view
+      balance: balances[wallet.primaryCurrency] || 0,
+      currency: wallet.primaryCurrency
     });
-  } catch (error) {
-    console.error('Failed to fetch balance:', error);
-    return NextResponse.json({ error: 'Failed to fetch balance' }, { status: 500 });
+  },
+  {
+    rateLimit: { key: 'balance', limit: 20, window: 60 }, // High limit for dashboard polling
+    requireAuth: true
   }
-}
+);

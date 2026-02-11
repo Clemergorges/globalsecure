@@ -1,9 +1,47 @@
+import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-change-me';
+
+// --- New Helper for API Handler ---
+export async function extractUserId(req: NextRequest): Promise<string | undefined> {
+  // 1. Try Authorization Header (Bearer)
+  const authHeader = req.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7);
+    try {
+      const { payload } = await jwtVerify(
+        token,
+        new TextEncoder().encode(JWT_SECRET)
+      );
+      return payload.userId as string;
+    } catch {
+      // Invalid token in header, try cookie
+    }
+  }
+
+  // 2. Try Cookie (auth_token)
+  const cookieStore = await cookies();
+  const token = cookieStore.get('auth_token')?.value;
+
+  if (token) {
+    try {
+      const { payload } = await jwtVerify(
+        token,
+        new TextEncoder().encode(JWT_SECRET)
+      );
+      return payload.userId as string;
+    } catch {
+      return undefined;
+    }
+  }
+  
+  return undefined;
+}
+// ----------------------------------
 
 export async function getSession() {
   const cookieStore = await cookies();
