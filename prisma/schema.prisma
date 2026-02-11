@@ -51,6 +51,7 @@ model User {
   cryptoDeposits      CryptoDeposit[]
   withdraws           CryptoWithdraw[]
   swaps               Swap[]
+  auditLogs           AuditLog[]
 
   @@index([email])
   @@index([phone])
@@ -383,6 +384,22 @@ model TransactionLog {
   createdAt  DateTime @default(now())
 
   @@index([transferId])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  resource  String?
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
   @@index([createdAt])
 }
 

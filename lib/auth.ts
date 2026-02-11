@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { JWTPayload, JWTVerificationResult, SessionData } from './types/jwt';
 import { isAdmin } from './services/admin';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'GlobalSecureSecret2026!';
 
 /**
  * Hash password with bcrypt
@@ -43,6 +43,7 @@ export function verifyToken(token: string): JWTVerificationResult {
     const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
     return { valid: true, payload };
   } catch (error) {
+    console.error('Verify Token Error:', error instanceof Error ? error.message : error);
     return {
       valid: false,
       error: error instanceof Error ? error.message : 'Invalid token'

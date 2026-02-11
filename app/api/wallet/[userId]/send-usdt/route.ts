@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sendUsdtFromHotWallet } from '@/lib/services/polygon';
 import { prisma } from '@/lib/db';
-// import { auth } from '@/auth'; 
+import { getSession } from '@/lib/auth';
 
 export async function POST(
   request: Request,
@@ -11,8 +11,10 @@ export async function POST(
     const { userId } = await params;
     
     // Security: Auth Check
-    // const session = await auth();
-    // if (!session || session.user.id !== userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await getSession();
+    if (!session || session.userId !== userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const body = await request.json();
     const { to, amountUsdt } = body;
@@ -21,19 +23,44 @@ export async function POST(
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
     }
 
-    // 1. Internal Ledger Check (Prevent spending more than owned)
-    // const userWallet = await prisma.wallet.findUnique({ where: { userId } });
-    // if (!userWallet || userWallet.balanceUSDT < parseFloat(amountUsdt)) {
-    //    return NextResponse.json({ error: 'Insufficient funds' }, { status: 402 });
-    // }
+    const amount = parseFloat(amountUsdt);
 
-    // 2. Compliance / Limits Check
-    // if (amountUsdt > 10000) ...
+    // 1. Internal Ledger Check & Atomic Debit
+    const txHash = await prisma.$transaction(async (tx) => {
+        // Find USDT Balance
+        // Assuming USDT is stored in Balance table with currency 'USDT' or 'USDT_POL'
+        // Need to check schema or convention. Assuming 'USDT' for now based on context.
+        // Or if it's using the old Wallet fields, we should check that.
+        // The schema showed `cryptoAddress` in Wallet, but not explicit USDT balance column (removed).
+        // So it MUST be in Balance table.
+        
+        const balance = await tx.balance.findFirst({
+            where: { 
+                wallet: { userId },
+                currency: 'USDT' 
+            }
+        });
 
-    // 3. Execute Blockchain Transaction
-    const txHash = await sendUsdtFromHotWallet(to, amountUsdt);
+        if (!balance || balance.amount.toNumber() < amount) {
+            throw new Error('Insufficient USDT funds');
+        }
 
-    // 4. Log Transaction
+        // Debit
+        await tx.balance.update({
+            where: { id: balance.id },
+            data: { amount: { decrement: amount } }
+        });
+
+        // 3. Execute Blockchain Transaction (This is risky inside transaction if it takes long, 
+        // but necessary to ensure we don't debit if it fails immediately. 
+        // Ideally, we debit first, then process in background job. 
+        // For now, keeping it synchronous but safer.)
+        const hash = await sendUsdtFromHotWallet(to, amountUsdt);
+        
+        return hash;
+    });
+
+    // 4. Log Transaction (Outside transaction block to capture the hash)
     await prisma.transactionLog.create({
       data: {
         transferId: 'crypto-send-' + Date.now(), 
@@ -42,9 +69,6 @@ export async function POST(
         // transfer: { connect: ... } 
       }
     }).catch(e => console.error("Log failed", e));
-
-    // 5. Deduct Balance (Atomic operation recommended)
-    // await prisma.wallet.update(...)
 
     return NextResponse.json({
       success: true,

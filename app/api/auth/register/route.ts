@@ -12,6 +12,11 @@ const registerSchema = z.object({
   password: z.string().min(6),
   country: z.string().length(2),
   mainCurrency: z.string().length(3),
+  // Allow these fields but don't strictly require them for now
+  address: z.string().optional().or(z.literal("")),
+  city: z.string().optional().or(z.literal("")),
+  postalCode: z.string().optional().or(z.literal("")),
+  language: z.string().optional().or(z.literal(""))
 });
 
 export async function POST(req: Request) {
@@ -28,7 +33,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { fullName, email, phone, password, country, mainCurrency } = parsed.data;
+    const { firstName, lastName, email, phone, password, country, mainCurrency, address, city, postalCode, language } = parsed.data;
     const normalizedEmail = email.toLowerCase();
 
     // Check if email or phone already exists
@@ -49,11 +54,6 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await hashPassword(password);
-
-    // Split full name
-    const nameParts = fullName.trim().split(' ');
-    const firstName = nameParts[0];
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
 
     // Create user (Unverified)
     const user = await prisma.user.create({

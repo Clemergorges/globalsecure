@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: globalsecuresend-local
+    restart: always
+    ports:
+      - "3012:3000"
+    env_file:
+      - .env.local
+    environment:
+      - DATABASE_URL=postgresql://postgres:GlobalSecureEU2026!@db:5432/globalsecuresend?schema=public
+      - DIRECT_URL=postgresql://postgres:GlobalSecureEU2026!@db:5432/globalsecuresend?schema=public
+      - NEXT_PUBLIC_URL=http://localhost:3012
+      - APP_BASE_URL=http://localhost:3012
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: globalsecuresend-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: GlobalSecureEU2026!
+      POSTGRES_DB: globalsecuresend
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:alpine
+    container_name: globalsecuresend-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  pgdata:

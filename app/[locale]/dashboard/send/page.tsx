@@ -60,6 +60,12 @@ export default function SendMoneyPage() {
   // We handle currency conversion in backend if needed
 
   // Auto-calculate quote with debounce
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   useEffect(() => {
     const getQuote = async (isAuto = false) => {
       if (!amount) return;
@@ -187,7 +193,6 @@ export default function SendMoneyPage() {
                     onChange={(e) => setAmount(e.target.value)} 
                     placeholder="1000.00"
                     className="border-0 bg-transparent text-3xl font-bold text-gray-900 p-0 h-auto focus-visible:ring-0 placeholder:text-gray-300"
-                    autoFocus
                   />
                   <div className="flex items-center gap-2 border-l pl-4">
                     <Select value={fromCurrency} onValueChange={setFromCurrency}>

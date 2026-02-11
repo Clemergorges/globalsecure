@@ -1,10 +1,9 @@
 import Pusher from 'pusher';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID || 'mock',
-  key: process.env.PUSHER_KEY || 'mock',
-  secret: process.env.PUSHER_SECRET || 'mock',
+  appId: process.env.PUSHER_APP_ID!,
+  key: process.env.PUSHER_KEY!,
+  secret: process.env.PUSHER_SECRET!,
   cluster: process.env.PUSHER_CLUSTER || 'eu',
   useTLS: true,
 });
@@ -12,9 +11,7 @@ const _pusher = new Pusher({
 export const pusherService = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async trigger(channel: string, event: string, data: any) {
-    console.log(`[Pusher Mock] Trigger ${event} on ${channel}`, data);
-    // In a real scenario with valid keys, we would call:
-    // return pusher.trigger(channel, event, data);
-    return Promise.resolve();
+    console.log(`[Pusher] Trigger ${event} on ${channel}`, data);
+    return _pusher.trigger(channel, event, data);
   }
 };

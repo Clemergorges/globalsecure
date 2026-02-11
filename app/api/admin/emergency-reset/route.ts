@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { hashPassword, getSession } from '@/lib/auth';
+import { isAdmin } from '@/lib/services/admin';
 
 export async function POST(req: Request) {
   const timestamp = new Date().toISOString();
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
     const session = await getSession();
     const userEmail = (session as any)?.email;
 
-    if (!userEmail || userEmail !== process.env.ADMIN_EMAIL) {
+    if (!userEmail || !isAdmin(userEmail)) {
       console.warn(`[ADMIN_RESET_UNAUTHORIZED] User: ${userEmail || 'Guest'}, IP: ${ip}`);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }

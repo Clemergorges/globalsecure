@@ -1,0 +1,82 @@
+{
+  "Register": {
+    "title": "Create Account",
+    "subtitle": "Start sending money globally today",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "country": "Country",
+    "postalCode": "Postal Code",
+    "address": "Address",
+    "city": "City",
+    "email": "Email",
+    "phone": "Phone",
+    "password": "Password",
+    "passwordStrength": {
+      "weak": "Weak",
+      "medium": "Medium",
+      "strong": "Strong"
+    },
+    "mainCurrency": "Main Currency",
+    "language": "Language",
+    "submit": "Create Account",
+    "loginLink": "Already have an account? <link>Login</link>"
+  },
+  "Login": {
+    "title": "Welcome back",
+    "subtitle": "Enter your email to access your account",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "submit": "Sign In",
+    "registerLink": "Don't have an account? <link>Create account</link>"
+  },
+  "Dashboard": {
+    "Sidebar": {
+      "overview": "Overview",
+      "send": "Send Money",
+      "cards": "Cards",
+      "history": "History",
+      "security": "Security",
+      "admin": "Admin Panel",
+      "logout": "Logout"
+    },
+    "Header": {
+      "search": "Search transaction...",
+      "notifications": "Notifications",
+      "markAllRead": "Mark all as read",
+      "noNotifications": "No recent notifications.",
+      "myAccount": "My Account",
+      "profile": "Profile",
+      "myCards": "My Cards",
+      "settings": "Settings",
+      "help": "Help & Support",
+      "logout": "Logout"
+    }
+  },
+  "Settings": {
+    "title": "Settings",
+    "Security": {
+      "title": "Security",
+      "description": "Manage your password and authentication.",
+      "authTitle": "Password and Authentication",
+      "authDesc": "Change password or enable 2FA.",
+      "manage": "Manage Security"
+    },
+    "Notifications": {
+      "title": "Notifications",
+      "description": "Choose how you want to be notified.",
+      "emailTitle": "Email Notifications",
+      "emailDesc": "Receive receipts and security alerts.",
+      "pushTitle": "Push Notifications",
+      "pushDesc": "Real-time alerts in the browser."
+    },
+    "Preferences": {
+      "title": "Preferences",
+      "description": "Adjust your experience.",
+      "currencyTitle": "Main Currency",
+      "currencyDesc": "Currency used to display total balance.",
+      "languageTitle": "Language",
+      "languageDesc": "Interface language."
+    }
+  }
+}

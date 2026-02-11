@@ -4,6 +4,16 @@ import { getSession } from '@/lib/auth';
 import { createVirtualCard } from '@/lib/services/stripe';
 import { calculateTransferAmounts } from '@/lib/services/exchange';
 import { pusherService } from '@/lib/services/pusher';
+import { z } from 'zod';
+
+const transferSchema = z.object({
+  mode: z.enum(['ACCOUNT_CONTROLLED', 'CARD_EMAIL', 'SELF_TRANSFER']), // Add other modes if needed
+  amountSource: z.number().min(1, "Minimum amount is 1"),
+  currencySource: z.string().length(3),
+  currencyTarget: z.string().length(3),
+  receiverEmail: z.string().email().optional(),
+  receiverName: z.string().optional()
+});
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -12,6 +22,17 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
+    
+    // Convert string amount to number for validation
+    if (typeof body.amountSource === 'string') {
+        body.amountSource = parseFloat(body.amountSource);
+    }
+
+    const validation = transferSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Validation Error', details: validation.error.format() }, { status: 400 });
+    }
+
     const {
       mode,
       amountSource,
@@ -19,18 +40,21 @@ export async function POST(req: Request) {
       currencyTarget,
       receiverEmail,
       receiverName
-    } = body;
+    } = validation.data;
 
     // 0. KYC Check
-    const user = await prisma.user.findUnique({ where: { id: (session as any).userId } });
+    const user = await prisma.user.findUnique({ 
+        where: { id: (session as any).userId },
+        include: { wallet: true }
+    });
+
+    if (!user || !user.wallet) {
+        return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+    }
 
     // Limits based on KYC Level
-    // Level 0 (Unverified): Max 100 EUR
-    // Level 1 (Pending): Max 500 EUR
-    // Level 2 (Verified): Max 10,000 EUR
-
-    const amount = Number(amountSource);
-    const kycLevel = (user as any)?.kycLevel || 0;
+    const amount = amountSource;
+    const kycLevel = user.kycLevel;
 
     if (kycLevel === 0 && amount > 100) {
       return NextResponse.json({ error: 'Unverified account limit exceeded. Please complete KYC to send more than €100.' }, { status: 403 });
@@ -41,66 +65,98 @@ export async function POST(req: Request) {
 
     // 1. Calculate Amounts
     const calculation = await calculateTransferAmounts(
-      Number(amountSource),
+      amountSource,
       currencySource,
       currencyTarget
     );
+    
+    // Total to deduct = Amount + Fee
+    const totalDeduction = Number(amountSource) + Number(calculation.fee);
 
-    // 2. Find Receiver if Account mode
-    let receiverId = null;
-    if (mode === 'ACCOUNT_CONTROLLED' && receiverEmail) {
-      const receiver = await prisma.user.findUnique({ where: { email: receiverEmail } });
-      if (receiver) receiverId = receiver.id;
-    }
+    // 2. Transaction: Debit & Create Transfer
+    const result = await prisma.$transaction(async (tx) => {
+        // 2.1 Check Balance & Debit
+        const balanceRecord = await tx.balance.findUnique({
+            where: {
+                walletId_currency: {
+                    walletId: user.wallet!.id,
+                    currency: currencySource
+                }
+            }
+        });
 
-    // 3. Create Transfer
-    const transfer = await prisma.transfer.create({
-      data: {
-        senderId: (session as any).userId,
-        recipientId: receiverId, // Correct field name
-        recipientEmail: receiverEmail || 'unknown', // Required field
-        recipientName: receiverName,
-        // mode: mode, // Removed as per new schema
-        type: mode === 'CARD_EMAIL' ? 'CARD' : 'ACCOUNT',
-        amountSent: Number(amountSource), // Correct field name
-        currencySent: currencySource,
-        amountReceived: calculation.amountReceived, // Correct field name
-        currencyReceived: currencyTarget,
-        exchangeRate: calculation.exchangeRate,
-        feePercentage: calculation.feePercentage,
-        fee: calculation.fee, // Changed from feeAmount to fee
-        status: 'PENDING', // Default valid status
-        logs: {
-          create: {
-            type: 'CREATE_TRANSFER',
-            metadata: { receiverEmail, receiverName }
-          }
+        if (!balanceRecord || balanceRecord.amount.toNumber() < totalDeduction) {
+            throw new Error(`Insufficient funds. You have ${balanceRecord?.amount || 0} ${currencySource} but need ${totalDeduction} ${currencySource}`);
         }
-      }
+
+        // Debit Balance
+        await tx.balance.update({
+            where: { id: balanceRecord.id },
+            data: { amount: { decrement: totalDeduction } }
+        });
+
+        // Log Debit Transaction
+        await tx.walletTransaction.create({
+            data: {
+                walletId: user.wallet!.id,
+                type: 'DEBIT',
+                amount: totalDeduction,
+                currency: currencySource,
+                description: `Transfer to ${receiverEmail || 'External'} (${mode})`
+            }
+        });
+
+        // 2.2 Find Receiver if Account mode
+        let receiverId = null;
+        if (mode === 'ACCOUNT_CONTROLLED' && receiverEmail) {
+            const receiver = await tx.user.findUnique({ where: { email: receiverEmail } });
+            if (receiver) receiverId = receiver.id;
+        }
+
+        // 2.3 Create Transfer Record
+        const transfer = await tx.transfer.create({
+            data: {
+                senderId: (session as any).userId,
+                recipientId: receiverId,
+                recipientEmail: receiverEmail || 'unknown',
+                recipientName: receiverName,
+                type: mode === 'CARD_EMAIL' ? 'CARD' : 'ACCOUNT',
+                amountSent: amountSource,
+                currencySent: currencySource,
+                amountReceived: calculation.amountReceived,
+                currencyReceived: currencyTarget,
+                exchangeRate: calculation.exchangeRate,
+                feePercentage: calculation.feePercentage,
+                fee: calculation.fee,
+                status: 'PENDING',
+                logs: {
+                    create: {
+                        type: 'CREATE_TRANSFER',
+                        metadata: { receiverEmail, receiverName }
+                    }
+                }
+            }
+        });
+        
+        return transfer;
     });
 
-    // 4. If Card Mode, create Virtual Card
+    // 4. If Card Mode, create Virtual Card (OUTSIDE Transaction because it calls External API)
+    // If this fails, we should probably mark transfer as FAILED and refund the user, 
+    // OR keep it PENDING for manual retry. For now, we'll mark FAILED but NOT auto-refund (requires manual admin check)
+    // Ideally, we would have a background job for this.
     if (mode === 'CARD_EMAIL') {
       console.log('[Transfer] Mode is CARD_EMAIL. Initiating Stripe Card creation...');
       const supportedCurrencies = ['eur', 'usd', 'gbp'];
       let issueCurrency = currencyTarget.toLowerCase();
       let issueAmount = calculation.amountReceived;
 
-      // Auto-convert to EUR (Stripe Issuing Native Currency) if currency not supported
       if (!supportedCurrencies.includes(issueCurrency)) {
         console.log(`[Transfer] Currency ${issueCurrency} not supported for card issuing. Converting to EUR.`);
-
-        // Get rate from original currency to EUR
         const { getExchangeRate } = await import('@/lib/services/exchange');
         const exchangeData = await getExchangeRate(currencyTarget, 'EUR');
-        const rateToEUR = exchangeData.rate;
-
-        issueAmount = calculation.amountReceived * rateToEUR;
+        issueAmount = calculation.amountReceived * exchangeData.rate;
         issueCurrency = 'eur';
-      } else {
-        // Se a moeda já é suportada (ex: EUR), usamos o valor calculado diretamente.
-        // Isso evita a dupla taxação/spread.
-        issueAmount = calculation.amountReceived;
       }
 
       let cardData;
@@ -108,78 +164,67 @@ export async function POST(req: Request) {
         cardData = await createVirtualCard({
           amount: Number(issueAmount),
           currency: issueCurrency,
-          recipientEmail: receiverEmail,
-          recipientName: receiverName,
-          transferId: transfer.id
+          recipientEmail: receiverEmail!,
+          recipientName: receiverName!,
+          transferId: result.id
         });
         console.log('[Transfer] Stripe Card created successfully:', cardData.cardId);
+        
+        await prisma.virtualCard.create({
+            data: {
+              transferId: result.id,
+              stripeCardId: cardData.cardId,
+              stripeCardholderId: cardData.cardholderId,
+              last4: cardData.last4,
+              brand: cardData.brand,
+              expMonth: cardData.exp_month,
+              expYear: cardData.exp_year,
+              expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 3)),
+              amount: calculation.amountReceived,
+              currency: currencyTarget,
+              status: 'ACTIVE'
+            }
+        });
+        
+        // Update Transfer to COMPLETED if card created successfully
+        await prisma.transfer.update({ where: { id: result.id }, data: { status: 'COMPLETED' } });
+
+        // Send Email
+        try {
+            const { sendEmail, templates } = await import('@/lib/services/email');
+            await sendEmail({
+              to: receiverEmail!,
+              subject: '🎁 You received a GlobalSecure Virtual Card',
+              html: templates.cardCreated(
+                receiverName || 'Cliente',
+                cardData.last4,
+                Number(issueAmount).toFixed(2),
+                issueCurrency.toUpperCase()
+              )
+            });
+        } catch (emailError) {
+            console.error('[Transfer] Email sending failed:', emailError);
+        }
+
       } catch (stripeError: any) {
         console.error('[Transfer] Stripe Card Creation Failed:', stripeError);
-        // Clean up the transfer since card creation failed
-        await prisma.transfer.update({ where: { id: transfer.id }, data: { status: 'FAILED' } });
+        // Mark as FAILED
+        await prisma.transfer.update({ where: { id: result.id }, data: { status: 'FAILED' } });
+        // NOTE: Funds are already deducted. Admin needs to refund or retry.
         throw new Error(`Stripe Issuing Failed: ${stripeError.message}`);
       }
-
-      // Send Email with Card Details
-      try {
-        const { sendEmail, templates } = await import('@/lib/services/email');
-        console.log('[Transfer] Sending email to:', receiverEmail);
-        await sendEmail({
-          to: receiverEmail,
-          subject: '🎁 You received a GlobalSecure Virtual Card',
-          html: templates.cardCreated(
-            receiverName || 'Cliente',
-            cardData.last4,
-            Number(issueAmount).toFixed(2),
-            issueCurrency.toUpperCase()
-          )
-        });
-        console.log('[Transfer] Email sent successfully.');
-      } catch (emailError) {
-        console.error('[Transfer] Email sending failed (non-blocking):', emailError);
-      }
-
-      await prisma.virtualCard.create({
-        data: {
-          transferId: transfer.id,
-          stripeCardId: cardData.cardId,
-          stripeCardholderId: cardData.cardholderId,
-          last4: cardData.last4,
-          brand: cardData.brand,
-          expMonth: cardData.exp_month,
-          expYear: cardData.exp_year,
-          expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 3)),
-          amount: calculation.amountReceived,
-          currency: currencyTarget,
-          status: 'ACTIVE'
-        }
-      });
     }
 
-    // 5. Notify Sender (Pusher + DB Notification)
+    // 5. Notify Sender
     try {
-      await pusherService.trigger(`user-${(session as any).userId}`, 'transfer-created', { transferId: transfer.id });
+      await pusherService.trigger(`user-${(session as any).userId}`, 'transfer-created', { transferId: result.id });
     } catch (pusherError) {
       console.warn('Pusher trigger failed:', pusherError);
     }
 
-    // Create Persistent Notification
-    try {
-      const { createNotification } = await import('@/lib/notifications');
-      await createNotification({
-        userId: (session as any).userId,
-        title: 'Transfer Sent',
-        body: `You sent ${currencySource} ${amountSource} to ${receiverName || receiverEmail}.`,
-        type: 'SUCCESS'
-      });
-    } catch (notificationError) {
-      console.warn('Notification creation failed:', notificationError);
-    }
-
-    return NextResponse.json({ success: true, transferId: transfer.id });
-  } catch (error) {
+    return NextResponse.json({ success: true, transferId: result.id });
+  } catch (error: any) {
     console.error('Transfer creation failed:', error);
-    // @ts-ignore
     return NextResponse.json({ error: 'Transfer creation failed', details: error.message }, { status: 500 });
   }
 }

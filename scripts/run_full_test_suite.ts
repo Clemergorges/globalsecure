@@ -7,7 +7,9 @@ import crypto from 'crypto';
 
 const BASE_URL = 'http://localhost:3012';
 // We use the known secret from .env.local
-const JWT_SECRET = "GlobalSecureSecret2026!"; 
+const JWT_SECRET = process.env.JWT_SECRET || "GlobalSecureSecret2026!"; 
+console.log('🔑 JWT_SECRET used in test:', JWT_SECRET.slice(0, 3) + '...');
+
 const ADMIN_EMAIL = 'clemergorges@hotmail.com';
 const TEST_EMAIL = 'beta_test_suite@demo.com';
 
@@ -44,7 +46,7 @@ async function main() {
       if (existingUser.wallet) {
         await prisma.walletTransaction.deleteMany({ where: { walletId: existingUser.wallet.id } });
         await prisma.balance.deleteMany({ where: { walletId: existingUser.wallet.id } });
-        await prisma.wallet.update({ where: { id: existingUser.wallet.id }, data: { balanceEUR: 0, balanceUSD: 0, balanceGBP: 0 } });
+        // Legacy columns removed
       }
       await prisma.swap.deleteMany({ where: { userId: existingUser.id } });
       await prisma.cryptoDeposit.deleteMany({ where: { userId: existingUser.id } });
@@ -99,13 +101,20 @@ async function main() {
       console.log('✅ ACID Passed: Only 1 transaction succeeded.');
   } else {
       console.error('❌ ACID FAILED: ', { successes, failures });
+      results.forEach((r, i) => {
+          if (r.status !== 200) console.error(`   Request ${i+1} Failed: ${r.status}`, r.data);
+      });
   }
   
   // Verify Balance (Should be 0 EUR)
-  const walletCheck = await prisma.wallet.findUnique({ where: { userId: user!.id } });
-  console.log(`   Final Balance: ${walletCheck?.balanceEUR} EUR (Expected 0)`);
+  const walletCheck = await prisma.wallet.findUnique({ 
+      where: { userId: user!.id },
+      include: { balances: true }
+  });
+  const eurBalance = walletCheck?.balances.find(b => b.currency === 'EUR')?.amount || 0;
+  console.log(`   Final Balance: ${eurBalance} EUR (Expected 0)`);
   
-  if (Number(walletCheck?.balanceEUR) !== 0) console.error('❌ Balance Divergence!');
+  if (Number(eurBalance) !== 0) console.error('❌ Balance Divergence!');
   console.log('');
 
 
@@ -179,11 +188,11 @@ async function main() {
   console.log('   Trying withdraw with invalid address...');
   const failRes1 = await request('POST', '/api/crypto/withdraw', userToken, { amount: 10, toAddress: '0xInvalid' });
   if (failRes1.status === 400) console.log('✅ Rejected invalid address');
-  else console.error('❌ Failed to reject invalid address');
+  else console.error('❌ Failed to reject invalid address. Status:', failRes1.status, failRes1.data);
 
   console.log('   Trying withdraw more than balance (1000000 USD)...');
   const failRes2 = await request('POST', '/api/crypto/withdraw', userToken, { amount: 1000000, toAddress: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F' });
-  if (failRes2.status === 500 || failRes2.data.error.includes('Insufficient')) console.log('✅ Rejected insufficient balance'); // Our API throws 500 on transaction fail currently, or 400.
+  if (failRes2.status === 500 || failRes2.data.error?.includes('Insufficient')) console.log('✅ Rejected insufficient balance');
   else console.error('❌ Failed to reject overdraft', failRes2);
   console.log('');
 
@@ -192,9 +201,14 @@ async function main() {
   // 5. FULL CYCLE CONFIRMATION
   // ==========================================
   console.log('📊 FINAL STATE AUDIT');
-  const finalWallet = await prisma.wallet.findUnique({ where: { userId: user!.id } });
-  console.log(`EUR: ${finalWallet?.balanceEUR}`);
-  console.log(`USD: ${finalWallet?.balanceUSD}`);
+  const finalWallet = await prisma.wallet.findUnique({ 
+      where: { userId: user!.id },
+      include: { balances: true }
+  });
+  const eur = finalWallet?.balances.find(b => b.currency === 'EUR')?.amount;
+  const usd = finalWallet?.balances.find(b => b.currency === 'USD')?.amount;
+  console.log(`EUR: ${eur}`);
+  console.log(`USD: ${usd}`);
   
   // Clean up
   await prisma.$disconnect();

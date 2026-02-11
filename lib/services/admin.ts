@@ -7,7 +7,7 @@
  * Check if email is an admin
  */
 export function isAdmin(email: string): boolean {
-    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminEmail = process.env.ADMIN_EMAIL || "clemergorges@hotmail.com";
 
     if (!adminEmail) {
         console.warn('⚠️ ADMIN_EMAIL not set in environment variables');

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, ArrowUpRight, Loader2, Wallet, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { QRCodeSVG } from 'qrcode.react';
 

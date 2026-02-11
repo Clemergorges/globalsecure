@@ -1,25 +1,29 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { LayoutDashboard, Send, CreditCard, History, Shield, LogOut, X, Lock } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { useEffect, useState } from 'react';
-
-const links = [
-  { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
-  { href: '/dashboard/send', label: 'Enviar Dinheiro', icon: Send },
-  { href: '/dashboard/cards', label: 'Cartões', icon: CreditCard },
-  { href: '/dashboard/activity', label: 'Histórico', icon: History },
-  { href: '/dashboard/settings/security', label: 'Segurança', icon: Shield },
-];
+import { useTranslations } from 'next-intl';
 
 export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobileOpen: (open: boolean) => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
+  const t = useTranslations('Dashboard.Sidebar');
+
+  const links = [
+    { href: '/dashboard', label: t('overview'), icon: LayoutDashboard },
+    { href: '/dashboard/send', label: t('send'), icon: Send },
+    { href: '/dashboard/cards', label: t('cards'), icon: CreditCard },
+    { href: '/dashboard/activity', label: t('history'), icon: History },
+    { href: '/dashboard/settings/security', label: t('security'), icon: Shield },
+  ];
+
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     // Check if user is admin from cookie or fetch
     fetch('/api/auth/me')
       .then(res => res.json())
@@ -63,6 +67,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
         <nav className="flex-1 space-y-1 px-4 py-6">
           {links.map((link) => {
             const Icon = link.icon;
+            // Basic check for active state (could be improved to handle sub-paths)
             const isActive = pathname === link.href;
             return (
               <Link
@@ -76,7 +81,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                {link.label}
+                {isClient ? link.label : <span className="opacity-0">{link.label}</span>}
               </Link>
             );
           })}
@@ -88,7 +93,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
               className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all text-indigo-600 hover:bg-indigo-50 mt-4`}
             >
               <Lock className="w-5 h-5" />
-              Painel Admin
+              {isClient ? t('admin') : <span className="opacity-0">Admin</span>}
             </Link>
           )}
         </nav>
@@ -99,7 +104,7 @@ export function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; se
             className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 rounded-lg transition-all"
           >
             <LogOut className="w-5 h-5" />
-            Sair
+            {isClient ? t('logout') : <span className="opacity-0">Logout</span>}
           </button>
         </div>
       </aside>

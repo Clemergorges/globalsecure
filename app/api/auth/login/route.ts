@@ -25,49 +25,19 @@ export async function POST(req: Request) {
     const normalizedEmail = email.toLowerCase();
 
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    
+    // DEBUG: Remove in production
+    console.log(`[Login] Attempt for ${normalizedEmail}. User found: ${!!user}`);
+
     if (!user) {
-      // DEBUG: Retornando detalhes para identificar o problema em produção
-      const dbUrl = process.env.DATABASE_URL || '';
-      const dbHost = dbUrl.includes('@') ? dbUrl.split('@')[1] : 'unknown';
-      
-      console.error(`Login failed: User ${normalizedEmail} not found in DB ${dbHost}`);
-      
-      return NextResponse.json({ 
-        error: 'Credenciais inválidas',
-        debug: {
-          reason: 'User not found',
-          email: normalizedEmail,
-          dbHost: dbHost,
-          env: process.env.NODE_ENV
-        }
-      }, { status: 401 });
+      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
     }
 
-    // Bypass temporário para Admin (Master Key)
-    // Permite login se a senha for a correta, independente do hash no banco
-    let isValid = false;
-    
-    if (email === 'clemergorges@hotmail.com' && password === 'GlobalSecure2026!') {
-       console.log('🔓 MASTER KEY LOGIN USED for Admin');
-       isValid = true;
-    } else {
-       isValid = await comparePassword(password, user.passwordHash);
-    }
+    // Verify Password
+    const isValid = await comparePassword(password, user.passwordHash);
 
     if (!isValid) {
-      const dbUrl = process.env.DATABASE_URL || '';
-      const dbHost = dbUrl.includes('@') ? dbUrl.split('@')[1] : 'unknown';
-      
-      console.error(`Login failed: Invalid password for ${normalizedEmail} in DB ${dbHost}`);
-
-      return NextResponse.json({ 
-        error: 'Credenciais inválidas',
-        debug: {
-          reason: 'Invalid password',
-          dbHost: dbHost,
-          env: process.env.NODE_ENV
-        }
-      }, { status: 401 });
+      return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
     }
 
     // Generate JWT

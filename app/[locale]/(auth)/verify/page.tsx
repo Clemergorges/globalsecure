@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,7 +40,7 @@ function VerifyContent() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push('/login?verified=true');
+        router.replace('/login?verified=true');
       }, 2000);
 
     } catch (err: any) {

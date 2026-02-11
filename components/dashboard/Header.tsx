@@ -9,11 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const router = useRouter();
+  const t = useTranslations('Dashboard.Header');
   const [user, setUser] = useState<{ firstName: string; lastName: string; kycLevel: number } | null>(null);
 
   const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body: string; type: string; read: boolean; createdAt: string }>>([]);
@@ -74,7 +76,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           <Search className="w-4 h-4" />
           <input 
             type="text" 
-            placeholder="Buscar transação..." 
+            placeholder={t('search')}
             className="bg-transparent border-none outline-none text-sm w-full text-gray-900 dark:text-white placeholder:text-gray-400"
           />
         </div>
@@ -92,7 +94,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel className="flex justify-between items-center">
-              <span>Notificações</span>
+              <span>{t('notifications')}</span>
               {notifications.some(n => !n.read) && (
                 <span className="text-xs font-normal text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Novas</span>
               )}
@@ -101,7 +103,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
             <div className="max-h-[300px] overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="p-4 text-center text-gray-500 text-sm">
-                  Nenhuma notificação recente.
+                  {t('noNotifications')}
                 </div>
               ) : (
                 notifications.map((n) => (
@@ -121,7 +123,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
             <DropdownMenuSeparator />
             <div className="p-2 text-center">
               <button onClick={markRead} className="text-xs text-[var(--color-primary)] hover:underline font-medium">
-                Marcar todas como lidas
+                {t('markAllRead')}
               </button>
             </div>
           </DropdownMenuContent>
@@ -151,28 +153,28 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                <p className="text-sm font-semibold text-gray-900">{fullName}</p>
                <p className="text-xs text-gray-500">{statusLabel}</p>
             </div>
-            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/dashboard/settings/profile')}>
               <User className="mr-2 h-4 w-4" />
-              <span>Perfil</span>
+              <span>{t('profile')}</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/dashboard/cards')}>
               <CreditCard className="mr-2 h-4 w-4" />
-              <span>Meus Cartões</span>
+              <span>{t('myCards')}</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/dashboard/settings')}>
               <Settings className="mr-2 h-4 w-4" />
-              <span>Configurações</span>
+              <span>{t('settings')}</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/dashboard/support')}>
               <HelpCircle className="mr-2 h-4 w-4" />
-              <span>Ajuda e Suporte</span>
+              <span>{t('help')}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
-              <span>Sair</span>
+              <span>{t('logout')}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

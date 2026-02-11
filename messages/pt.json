@@ -1,0 +1,82 @@
+{
+  "Register": {
+    "title": "Criar Conta",
+    "subtitle": "Comece a enviar dinheiro globalmente hoje",
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "country": "País",
+    "postalCode": "Código Postal",
+    "address": "Endereço",
+    "city": "Cidade",
+    "email": "Email",
+    "phone": "Telefone",
+    "password": "Senha",
+    "passwordStrength": {
+      "weak": "Fraca",
+      "medium": "Média",
+      "strong": "Forte"
+    },
+    "mainCurrency": "Moeda Principal",
+    "language": "Idioma",
+    "submit": "Criar Conta",
+    "loginLink": "Já tem uma conta? <link>Entrar</link>"
+  },
+  "Login": {
+    "title": "Bem-vindo de volta",
+    "subtitle": "Entre com seu email para acessar sua conta",
+    "email": "Email",
+    "password": "Senha",
+    "forgotPassword": "Esqueceu a senha?",
+    "submit": "Entrar",
+    "registerLink": "Não tem uma conta? <link>Criar conta</link>"
+  },
+  "Dashboard": {
+    "Sidebar": {
+      "overview": "Visão Geral",
+      "send": "Enviar Dinheiro",
+      "cards": "Cartões",
+      "history": "Histórico",
+      "security": "Segurança",
+      "admin": "Painel Admin",
+      "logout": "Sair"
+    },
+    "Header": {
+      "search": "Buscar transação...",
+      "notifications": "Notificações",
+      "markAllRead": "Marcar todas como lidas",
+      "noNotifications": "Nenhuma notificação recente.",
+      "myAccount": "Minha Conta",
+      "profile": "Perfil",
+      "myCards": "Meus Cartões",
+      "settings": "Configurações",
+      "help": "Ajuda e Suporte",
+      "logout": "Sair"
+    }
+  },
+  "Settings": {
+    "title": "Configurações",
+    "Security": {
+      "title": "Segurança",
+      "description": "Gerencie sua senha e autenticação.",
+      "authTitle": "Senha e Autenticação",
+      "authDesc": "Alterar senha ou ativar autenticação em dois fatores.",
+      "manage": "Gerenciar Segurança"
+    },
+    "Notifications": {
+      "title": "Notificações",
+      "description": "Escolha como você quer ser avisado.",
+      "emailTitle": "Notificações por Email",
+      "emailDesc": "Receber comprovantes e alertas de segurança.",
+      "pushTitle": "Notificações Push",
+      "pushDesc": "Alertas em tempo real no navegador."
+    },
+    "Preferences": {
+      "title": "Preferências",
+      "description": "Ajuste sua experiência.",
+      "currencyTitle": "Moeda Principal",
+      "currencyDesc": "Moeda usada para exibir seu saldo total.",
+      "languageTitle": "Idioma",
+      "languageDesc": "Idioma da interface."
+    }
+  }
+}
