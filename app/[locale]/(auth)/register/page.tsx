@@ -26,7 +26,15 @@ const registerSchema = z.object({
     .regex(/[0-9]/, "Deve conter um número")
     .regex(/[^A-Za-z0-9]/, "Deve conter um caractere especial"),
   mainCurrency: z.enum(['EUR', 'USD', 'BRL']),
-  language: z.enum(['pt', 'en', 'es', 'de', 'fr']) // Novo campo de idioma
+  language: z.enum(['pt', 'en', 'es', 'de', 'fr']), // Novo campo de idioma
+  // Consentimentos GDPR - OBRIGATÓRIOS
+  gdprConsent: z.boolean().refine(val => val === true, {
+    message: "Você deve aceitar a Política de Privacidade"
+  }),
+  cookieConsent: z.boolean().refine(val => val === true, {
+    message: "Você deve aceitar o uso de cookies"
+  }),
+  marketingConsent: z.boolean().optional()
 });
 
 // Lista de países europeus prioritários
@@ -115,7 +123,11 @@ export default function RegisterPage() {
     phone: '',
     password: '',
     mainCurrency: 'EUR',
-    language: 'pt' // Default language
+    language: 'pt', // Default language
+    // Consentimentos GDPR
+    gdprConsent: false,
+    cookieConsent: false,
+    marketingConsent: false
   });
 
   // Password Strength Calculation
@@ -171,7 +183,11 @@ export default function RegisterPage() {
         address: formData.address,
         city: formData.city,
         postalCode: formData.postalCode,
-        language: formData.language
+        language: formData.language,
+        // Consentimentos GDPR
+        gdprConsent: formData.gdprConsent,
+        cookieConsent: formData.cookieConsent,
+        marketingConsent: formData.marketingConsent
       };
 
       const res = await fetch('/api/auth/register', {
@@ -403,6 +419,55 @@ export default function RegisterPage() {
                 <option value="USD">USD (Dólar Americano)</option>
                 <option value="BRL">BRL (Real Brasileiro)</option>
               </select>
+            </div>
+
+            {/* Consentimentos GDPR */}
+            <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
+              <h3 className="text-sm font-semibold text-gray-700">Consentimentos Obrigatórios</h3>
+              
+              <div className="flex items-start space-x-2">
+                <input
+                  type="checkbox"
+                  id="gdprConsent"
+                  name="gdprConsent"
+                  checked={formData.gdprConsent}
+                  onChange={(e) => setFormData({...formData, gdprConsent: e.target.checked})}
+                  className="mt-0.5 h-4 w-4 text-[var(--color-primary)] focus:ring-[var(--color-primary)] border-gray-300 rounded"
+                  required
+                />
+                <label htmlFor="gdprConsent" className="text-sm text-gray-600">
+                  Li e aceito a <Link href="/privacy" className="text-[var(--color-primary)] hover:underline">Política de Privacidade</Link> e concordo com o processamento dos meus dados pessoais de acordo com o GDPR europeu. <span className="text-red-500">*</span>
+                </label>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <input
+                  type="checkbox"
+                  id="cookieConsent"
+                  name="cookieConsent"
+                  checked={formData.cookieConsent}
+                  onChange={(e) => setFormData({...formData, cookieConsent: e.target.checked})}
+                  className="mt-0.5 h-4 w-4 text-[var(--color-primary)] focus:ring-[var(--color-primary)] border-gray-300 rounded"
+                  required
+                />
+                <label htmlFor="cookieConsent" className="text-sm text-gray-600">
+                  Aceito o uso de cookies necessários para o funcionamento da plataforma. <span className="text-red-500">*</span>
+                </label>
+              </div>
+
+              <div className="flex items-start space-x-2">
+                <input
+                  type="checkbox"
+                  id="marketingConsent"
+                  name="marketingConsent"
+                  checked={formData.marketingConsent}
+                  onChange={(e) => setFormData({...formData, marketingConsent: e.target.checked})}
+                  className="mt-0.5 h-4 w-4 text-[var(--color-primary)] focus:ring-[var(--color-primary)] border-gray-300 rounded"
+                />
+                <label htmlFor="marketingConsent" className="text-sm text-gray-600">
+                  Desejo receber comunicações de marketing e ofertas especiais (opcional).
+                </label>
+              </div>
             </div>
             
             {error && (

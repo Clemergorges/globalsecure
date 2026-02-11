@@ -80,7 +80,7 @@ export default function TransactionsPage() {
             placeholder="Search by name, email or description..."
             className="pl-9"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
           />
         </div>
 

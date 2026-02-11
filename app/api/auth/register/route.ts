@@ -12,6 +12,14 @@ const registerSchema = z.object({
   password: z.string().min(6),
   country: z.string().length(2),
   mainCurrency: z.string().length(3),
+  // Consentimentos GDPR - OBRIGATÓRIOS
+  gdprConsent: z.boolean().refine(val => val === true, {
+    message: "Consentimento GDPR é obrigatório"
+  }),
+  cookieConsent: z.boolean().refine(val => val === true, {
+    message: "Consentimento de cookies é obrigatório"
+  }),
+  marketingConsent: z.boolean().optional(),
   // Allow these fields but don't strictly require them for now
   address: z.string().optional().or(z.literal("")),
   city: z.string().optional().or(z.literal("")),
@@ -33,7 +41,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { firstName, lastName, email, phone, password, country, mainCurrency, address, city, postalCode, language } = parsed.data;
+    const { firstName, lastName, email, phone, password, country, mainCurrency, gdprConsent, cookieConsent, marketingConsent, address, city, postalCode, language } = parsed.data;
     const normalizedEmail = email.toLowerCase();
 
     // Check if email or phone already exists
@@ -66,6 +74,11 @@ export async function POST(req: Request) {
         phoneVerified: false,
         passwordHash,
         country,
+        // Consentimentos GDPR
+        gdprConsent: true,
+        gdprConsentAt: new Date(),
+        cookieConsent: cookieConsent,
+        marketingConsent: marketingConsent || false,
         wallet: {
           create: {
             primaryCurrency: mainCurrency,

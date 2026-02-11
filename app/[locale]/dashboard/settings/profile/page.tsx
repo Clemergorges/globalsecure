@@ -56,50 +56,97 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Dados Pessoais */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Dados Pessoais</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Nome</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <Input defaultValue={user.firstName} disabled className="pl-9" />
+        <div className="md:col-span-2 space-y-6">
+          {/* Dados Pessoais */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Dados Pessoais</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                    <Input defaultValue={user.firstName} disabled className="pl-9" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Sobrenome</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                    <Input defaultValue={user.lastName} disabled className="pl-9" />
+                  </div>
                 </div>
               </div>
+
               <div className="space-y-2">
-                <Label>Sobrenome</Label>
+                <Label>Email</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <Input defaultValue={user.lastName} disabled className="pl-9" />
+                  <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <Input defaultValue={user.email} disabled className="pl-9" />
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <Input defaultValue={user.email} disabled className="pl-9" />
+              <div className="space-y-2">
+                <Label>Telefone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <Input defaultValue={user.phone || 'Não cadastrado'} disabled className="pl-9" />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Telefone</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <Input defaultValue={user.phone || 'Não cadastrado'} disabled className="pl-9" />
+              <div className="pt-4 flex justify-end">
+                <Button disabled variant="outline">Editar (Em breve)</Button>
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="pt-4 flex justify-end">
-              <Button disabled variant="outline">Editar (Em breve)</Button>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Privacidade e Dados */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Privacidade e Controle de Dados (GDPR)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-500">
+                Você tem total controle sobre seus dados. Baixe uma cópia completa ou solicite a exclusão da sua conta conforme garantido pelo GDPR.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => window.open('/api/user/data-export', '_blank')}
+                  className="flex-1"
+                >
+                  <ShieldCheck className="w-4 h-4 mr-2" />
+                  Baixar meus Dados
+                </Button>
+                
+                <Button 
+                  variant="destructive"
+                  onClick={async () => {
+                    if(!confirm('Tem certeza? Esta ação é irreversível e anonimizará seus dados.')) return;
+                    try {
+                      const res = await fetch('/api/user/delete-account', { method: 'DELETE' });
+                      const data = await res.json();
+                      if(res.ok) {
+                        alert(data.message);
+                        window.location.href = '/login';
+                      } else {
+                        alert(data.error);
+                      }
+                    } catch(e) {
+                      alert('Erro ao processar solicitação');
+                    }
+                  }}
+                  className="flex-1"
+                >
+                  Excluir Conta
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
       </div>
     </div>

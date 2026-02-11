@@ -29,6 +29,8 @@ model User {
   kycStatus     KYCStatus @default(PENDING)
   gdprConsent   Boolean   @default(false)
   gdprConsentAt DateTime?
+  cookieConsent Boolean   @default(false)
+  marketingConsent Boolean @default(false)
    
   // Localização
   country       String?   // Código ISO (LU, FR, DE, etc)
@@ -347,6 +349,7 @@ model Session {
   country      String?  // GeoIP
   createdAt    DateTime @default(now())
   expiresAt    DateTime
+  lastScaAt    DateTime? // Last successful SCA verification
 
   @@index([userId])
   @@index([token])

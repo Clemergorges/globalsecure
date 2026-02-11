@@ -52,6 +52,36 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
     }
 
+    // SCA CHECK (Strong Customer Authentication)
+    // Required for amounts > 30 EUR (approx)
+    if (amountSource > 30) {
+        // We need to verify if the session has a recent SCA verification
+        const sessionId = (session as any).sessionId;
+        
+        if (sessionId) {
+            const dbSession = await prisma.session.findUnique({
+                where: { id: sessionId },
+                select: { lastScaAt: true }
+            });
+
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+            if (!dbSession?.lastScaAt || dbSession.lastScaAt < fiveMinutesAgo) {
+                return NextResponse.json({ 
+                    error: 'Autenticação Forte (SCA) Necessária', 
+                    code: 'SCA_REQUIRED',
+                    message: 'Por favor, verifique sua identidade para continuar com esta transferência de valor elevado.'
+                }, { status: 403 });
+            }
+        } else {
+            // Fallback for sessions without ID (should enforce re-login)
+             return NextResponse.json({ 
+                error: 'Sessão inválida para transferência de alto valor. Por favor, faça login novamente.',
+                code: 'AUTH_REQUIRED'
+            }, { status: 401 });
+        }
+    }
+
     // Limits based on KYC Level
     const amount = amountSource;
     const kycLevel = user.kycLevel;
