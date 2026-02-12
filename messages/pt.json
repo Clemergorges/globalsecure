@@ -1,109 +1,73 @@
 {
-  "Settings": {
-    "title": "Configurações",
-    "security": "Segurança",
-    "securityDesc": "Gerencie sua senha e autenticação.",
-    "passwordAuth": "Senha e Autenticação",
-    "passwordAuthDesc": "Alterar senha ou ativar autenticação em dois fatores.",
-    "manageSecurity": "Gerenciar Segurança",
-    "notifications": "Notificações",
-    "notificationsDesc": "Escolha como você quer ser avisado.",
-    "emailNotif": "Notificações por Email",
-    "emailNotifDesc": "Receber comprovantes e alertas de segurança.",
-    "pushNotif": "Notificações Push",
-    "pushNotifDesc": "Alertas em tempo real no navegador.",
-    "preferences": "Preferências",
-    "preferencesDesc": "Ajuste sua experiência.",
+  "Register": {
+    "title": "Criar Conta",
+    "subtitle": "Comece a enviar dinheiro globalmente hoje",
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "country": "País",
+    "postalCode": "Código Postal",
+    "address": "Endereço",
+    "city": "Cidade",
+    "email": "Email",
+    "phone": "Telefone",
+    "password": "Senha",
+    "passwordStrength": {
+      "weak": "Fraca",
+      "medium": "Média",
+      "strong": "Forte"
+    },
     "mainCurrency": "Moeda Principal",
-    "mainCurrencyDesc": "Moeda usada para exibir seu saldo total.",
     "language": "Idioma",
-    "languageDesc": "Idioma da interface."
-  },
-  "Sidebar": {
-    "overview": "Visão Geral",
-    "sendMoney": "Enviar Dinheiro",
-    "cards": "Cartões",
-    "history": "Histórico",
-    "security": "Segurança",
-    "adminPanel": "Painel Admin",
-    "logout": "Sair"
-  },
-  "Header": {
-    "searchPlaceholder": "Buscar transação...",
-    "notifications": "Notificações",
-    "new": "Novas",
-    "noNotifications": "Nenhuma notificação recente.",
-    "markAllRead": "Marcar todas como lidas",
-    "myAccount": "Minha Conta",
-    "profile": "Perfil",
-    "myCards": "Meus Cartões",
-    "settings": "Configurações",
-    "help": "Ajuda e Suporte",
-    "logout": "Sair",
-    "loading": "Carregando...",
-    "status": {
-      "premium": "Premium",
-      "verified": "Verificado",
-      "standard": "Standard"
-    }
+    "submit": "Criar Conta",
+    "loginLink": "Já tem uma conta? <link>Entrar</link>"
   },
   "Dashboard": {
-    "BalanceCard": {
-      "totalBalance": "Saldo Total Disponível",
-      "thisMonth": "este mês",
-      "swap": "Swap / Converter",
-      "deposit": "Depositar",
-      "withdraw": "Sacar Cripto",
-      "modalTitle": "Depositar Fundos",
-      "card": "Cartão",
-      "sepa": "SEPA",
-      "crypto": "Cripto",
-      "depositAmount": "Valor do Depósito",
-      "fee": "Taxa",
-      "payWithCard": "Pagar com Cartão (Stripe)",
-      "beneficiary": "Beneficiário",
-      "reference": "Referência Obrigatória",
-      "sepaNote": "Transferências SEPA Instant geralmente chegam em segundos. SEPA Padrão pode levar até 1 dia útil.",
-      "cryptoAddress": "Endereço Polygon (USDT)",
-      "cryptoWarning": "Envie apenas USDT na rede Polygon Amoy.",
-      "withdrawTitle": "Sacar USDT (Polygon)",
-      "withdrawSuccess": "Saque solicitado com sucesso!",
-      "close": "Fechar",
-      "destinationAddress": "Endereço de Destino (0x...)",
-      "amount": "Valor (USDT)",
-      "confirmWithdraw": "Confirmar Saque",
-      "processing": "Processando...",
-      "swapTitle": "Converter Moedas",
-      "from": "De",
-      "to": "Para",
-      "amountToConvert": "Valor a Converter",
-      "exchangeRate": "Taxa de Câmbio: Base + 0.8% Spread",
-      "calculating": "Calculando...",
-      "convertNow": "Converter Agora"
-    },
-    "QuickActions": {
-      "newTransfer": "Novo Envio",
-      "newTransferDesc": "Transferência rápida",
+    "Sidebar": {
+      "overview": "Visão Geral",
+      "send": "Enviar Dinheiro",
       "cards": "Cartões",
-      "cardsDesc": "Gerenciar virtuais",
-      "invite": "Convidar",
-      "inviteDesc": "Ganhe bônus",
-      "help": "Ajuda",
-      "helpDesc": "Suporte 24/7"
+      "history": "Histórico",
+      "security": "Segurança",
+      "admin": "Painel Admin",
+      "logout": "Sair"
     },
-    "Transactions": {
-      "title": "Transações Recentes",
-      "subtitle": "Últimas movimentações da sua conta",
-      "viewAll": "Ver extrato completo",
-      "emptyTitle": "Nenhuma transação recente",
-      "emptyDesc": "Suas transações aparecerão aqui assim que você começar a usar sua conta.",
-      "success": "Sucesso",
-      "pending": "Pendente"
+    "Header": {
+      "search": "Buscar transação...",
+      "notifications": "Notificações",
+      "markAllRead": "Marcar todas como lidas",
+      "noNotifications": "Nenhuma notificação recente.",
+      "myAccount": "Minha Conta",
+      "profile": "Perfil",
+      "myCards": "Meus Cartões",
+      "settings": "Configurações",
+      "help": "Ajuda e Suporte",
+      "logout": "Sair"
+    }
+  },
+  "Settings": {
+    "title": "Configurações",
+    "Security": {
+      "title": "Segurança",
+      "description": "Gerencie sua senha e autenticação.",
+      "authTitle": "Senha e Autenticação",
+      "authDesc": "Alterar senha ou ativar autenticação em dois fatores.",
+      "manage": "Gerenciar Segurança"
     },
-    "Cards": {
-      "activeCards": "Cartões Ativos",
-      "manage": "Gerenciar",
-      "createNew": "Criar Novo Cartão"
+    "Notifications": {
+      "title": "Notificações",
+      "description": "Escolha como você quer ser avisado.",
+      "emailTitle": "Notificações por Email",
+      "emailDesc": "Receber comprovantes e alertas de segurança.",
+      "pushTitle": "Notificações Push",
+      "pushDesc": "Alertas em tempo real no navegador."
+    },
+    "Preferences": {
+      "title": "Preferências",
+      "description": "Ajuste sua experiência.",
+      "currencyTitle": "Moeda Principal",
+      "currencyDesc": "Moeda usada para exibir seu saldo total.",
+      "languageTitle": "Idioma",
+      "languageDesc": "Idioma da interface."
     }
   }
 }

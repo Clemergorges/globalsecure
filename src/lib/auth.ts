@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
+import * as jose from 'jose';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
@@ -13,7 +13,7 @@ export async function extractUserId(req: NextRequest): Promise<string | undefine
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
     try {
-      const { payload } = await jwtVerify(
+      const { payload } = await jose.jwtVerify(
         token,
         new TextEncoder().encode(JWT_SECRET)
       );
@@ -29,7 +29,7 @@ export async function extractUserId(req: NextRequest): Promise<string | undefine
 
   if (token) {
     try {
-      const { payload } = await jwtVerify(
+      const { payload } = await jose.jwtVerify(
         token,
         new TextEncoder().encode(JWT_SECRET)
       );
@@ -52,7 +52,7 @@ export async function getSession() {
   }
 
   try {
-    const { payload } = await jwtVerify(
+    const { payload } = await jose.jwtVerify(
       token,
       new TextEncoder().encode(JWT_SECRET)
     );

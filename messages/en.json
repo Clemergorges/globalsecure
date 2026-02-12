@@ -1,109 +1,73 @@
 {
-  "Settings": {
-    "title": "Settings",
-    "security": "Security",
-    "securityDesc": "Manage your password and authentication.",
-    "passwordAuth": "Password & Authentication",
-    "passwordAuthDesc": "Change password or enable two-factor authentication.",
-    "manageSecurity": "Manage Security",
-    "notifications": "Notifications",
-    "notificationsDesc": "Choose how you want to be notified.",
-    "emailNotif": "Email Notifications",
-    "emailNotifDesc": "Receive receipts and security alerts.",
-    "pushNotif": "Push Notifications",
-    "pushNotifDesc": "Real-time alerts in your browser.",
-    "preferences": "Preferences",
-    "preferencesDesc": "Adjust your experience.",
+  "Register": {
+    "title": "Create Account",
+    "subtitle": "Start sending money globally today",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "country": "Country",
+    "postalCode": "Postal Code",
+    "address": "Address",
+    "city": "City",
+    "email": "Email",
+    "phone": "Phone",
+    "password": "Password",
+    "passwordStrength": {
+      "weak": "Weak",
+      "medium": "Medium",
+      "strong": "Strong"
+    },
     "mainCurrency": "Main Currency",
-    "mainCurrencyDesc": "Currency used to display your total balance.",
     "language": "Language",
-    "languageDesc": "Interface language."
-  },
-  "Sidebar": {
-    "overview": "Overview",
-    "sendMoney": "Send Money",
-    "cards": "Cards",
-    "history": "History",
-    "security": "Security",
-    "adminPanel": "Admin Panel",
-    "logout": "Logout"
-  },
-  "Header": {
-    "searchPlaceholder": "Search transaction...",
-    "notifications": "Notifications",
-    "new": "New",
-    "noNotifications": "No recent notifications.",
-    "markAllRead": "Mark all as read",
-    "myAccount": "My Account",
-    "profile": "Profile",
-    "myCards": "My Cards",
-    "settings": "Settings",
-    "help": "Help & Support",
-    "logout": "Logout",
-    "loading": "Loading...",
-    "status": {
-      "premium": "Premium",
-      "verified": "Verified",
-      "standard": "Standard"
-    }
+    "submit": "Create Account",
+    "loginLink": "Already have an account? <link>Login</link>"
   },
   "Dashboard": {
-    "BalanceCard": {
-      "totalBalance": "Total Available Balance",
-      "thisMonth": "this month",
-      "swap": "Swap / Convert",
-      "deposit": "Deposit",
-      "withdraw": "Withdraw Crypto",
-      "modalTitle": "Deposit Funds",
-      "card": "Card",
-      "sepa": "SEPA",
-      "crypto": "Crypto",
-      "depositAmount": "Deposit Amount",
-      "fee": "Fee",
-      "payWithCard": "Pay with Card (Stripe)",
-      "beneficiary": "Beneficiary",
-      "reference": "Mandatory Reference",
-      "sepaNote": "SEPA Instant transfers usually arrive in seconds. Standard SEPA may take up to 1 business day.",
-      "cryptoAddress": "Polygon Address (USDT)",
-      "cryptoWarning": "Send only USDT on the Polygon Amoy network.",
-      "withdrawTitle": "Withdraw USDT (Polygon)",
-      "withdrawSuccess": "Withdrawal requested successfully!",
-      "close": "Close",
-      "destinationAddress": "Destination Address (0x...)",
-      "amount": "Amount (USDT)",
-      "confirmWithdraw": "Confirm Withdrawal",
-      "processing": "Processing...",
-      "swapTitle": "Convert Currencies",
-      "from": "From",
-      "to": "To",
-      "amountToConvert": "Amount to Convert",
-      "exchangeRate": "Exchange Rate: Base + 0.8% Spread",
-      "calculating": "Calculating...",
-      "convertNow": "Convert Now"
-    },
-    "QuickActions": {
-      "newTransfer": "New Transfer",
-      "newTransferDesc": "Quick transfer",
+    "Sidebar": {
+      "overview": "Overview",
+      "send": "Send Money",
       "cards": "Cards",
-      "cardsDesc": "Manage virtuals",
-      "invite": "Invite",
-      "inviteDesc": "Get bonuses",
-      "help": "Help",
-      "helpDesc": "24/7 Support"
+      "history": "History",
+      "security": "Security",
+      "admin": "Admin Panel",
+      "logout": "Logout"
     },
-    "Transactions": {
-      "title": "Recent Transactions",
-      "subtitle": "Latest account movements",
-      "viewAll": "View full statement",
-      "emptyTitle": "No recent transactions",
-      "emptyDesc": "Your transactions will appear here once you start using your account.",
-      "success": "Success",
-      "pending": "Pending"
+    "Header": {
+      "search": "Search transaction...",
+      "notifications": "Notifications",
+      "markAllRead": "Mark all as read",
+      "noNotifications": "No recent notifications.",
+      "myAccount": "My Account",
+      "profile": "Profile",
+      "myCards": "My Cards",
+      "settings": "Settings",
+      "help": "Help & Support",
+      "logout": "Logout"
+    }
+  },
+  "Settings": {
+    "title": "Settings",
+    "Security": {
+      "title": "Security",
+      "description": "Manage your password and authentication.",
+      "authTitle": "Password and Authentication",
+      "authDesc": "Change password or enable 2FA.",
+      "manage": "Manage Security"
     },
-    "Cards": {
-      "activeCards": "Active Cards",
-      "manage": "Manage",
-      "createNew": "Create New Card"
+    "Notifications": {
+      "title": "Notifications",
+      "description": "Choose how you want to be notified.",
+      "emailTitle": "Email Notifications",
+      "emailDesc": "Receive receipts and security alerts.",
+      "pushTitle": "Push Notifications",
+      "pushDesc": "Real-time alerts in the browser."
+    },
+    "Preferences": {
+      "title": "Preferences",
+      "description": "Adjust your experience.",
+      "currencyTitle": "Main Currency",
+      "currencyDesc": "Currency used to display total balance.",
+      "languageTitle": "Language",
+      "languageDesc": "Interface language."
     }
   }
 }

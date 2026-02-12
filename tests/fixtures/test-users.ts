@@ -175,6 +175,7 @@ export async function disconnectPrisma() {
  * Get test user by KYC level
  */
 export async function getTestUser(kycLevel: number) {
+    // Force explicit include to ensure wallet is returned
     const user = await prisma.user.findFirst({
         where: { kycLevel, email: { startsWith: SUITE_TAG } },
         include: { wallet: true },
@@ -182,7 +183,16 @@ export async function getTestUser(kycLevel: number) {
     });
 
     if (!user) {
-        throw new Error(`Test user with KYC level ${kycLevel} not found`);
+        throw new Error(`Test user with KYC level ${kycLevel} not found in suite ${SUITE_TAG}`);
+    }
+
+    if (!user.wallet) {
+        // Fallback: try to find wallet if relation didn't load properly (though include should work)
+        const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
+        if (!wallet) {
+             throw new Error(`Wallet not found for user ${user.email} (ID: ${user.id})`);
+        }
+        return { ...user, wallet };
     }
 
     return user;

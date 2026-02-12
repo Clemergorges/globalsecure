@@ -59,6 +59,7 @@ describe('Ledger ACID Compliance', () => {
         lastName: 'Test',
         wallet: {
           create: {
+            primaryCurrency: 'EUR',
             balances: {
               create: { currency: 'EUR', amount: 100.00 }
             }
@@ -77,6 +78,7 @@ describe('Ledger ACID Compliance', () => {
         lastName: 'Test',
         wallet: {
           create: {
+            primaryCurrency: 'EUR',
             balances: {
               create: { currency: 'EUR', amount: 0.00 }
             }

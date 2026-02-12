@@ -113,18 +113,20 @@ describe('System Resilience & Failure Handling', () => {
           }
         });
       }
-      const wallet = await tx.wallet.findUnique({ where: { userId: user.id } });
+      // Use wallet.id from closure instead of fetching again to avoid potential null issues in tx context
+      const targetWalletId = wallet.id;
+      
       const credited = await tx.walletTransaction.findFirst({
-        where: { walletId: wallet!.id, type: 'DEPOSIT', amount }
+        where: { walletId: targetWalletId, type: 'DEPOSIT', amount }
       });
       if (!credited) {
         await tx.balance.updateMany({
-          where: { walletId: wallet!.id, currency: 'EUR' },
+          where: { walletId: targetWalletId, currency: 'EUR' },
           data: { amount: { increment: amount } }
         });
         await tx.walletTransaction.create({
           data: {
-            walletId: wallet!.id,
+            walletId: targetWalletId,
             type: 'DEPOSIT',
             amount,
             currency: 'EUR',

@@ -4,13 +4,17 @@ module.exports = {
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
     },
+    transformIgnorePatterns: [
+        'node_modules/(?!(jose|uuid)/)'
+    ],
     testMatch: [
         '**/tests/**/*.test.ts',
         '**/smoke.test.js',
     ],
     transform: {
-        '^.+\\.tsx?$': ['ts-jest', {
+        '^.+\.(t|j)sx?$': ['ts-jest', {
             tsconfig: 'tsconfig.json',
+            useESM: true,
         }],
     },
     testPathIgnorePatterns: [
