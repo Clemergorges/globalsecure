@@ -29,6 +29,7 @@ const registerSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    // Trigger Vercel Re-Deploy
     const body = await req.json();
     // console.log('[Register] Body received:', body);
 
