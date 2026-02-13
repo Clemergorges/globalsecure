@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db';
 import { KYC_LIMITS } from '@/lib/services/kyc-limits';
 
+console.log('DEBUG: DATABASE_URL in resilience.test.ts:', process.env.DATABASE_URL);
+
 async function createUserWithWallet(kycLevel: number) {
   const email = `resilience-${Date.now()}-kyc${kycLevel}@globalsecure.test`;
   const user = await prisma.user.create({

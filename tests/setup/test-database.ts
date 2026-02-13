@@ -35,12 +35,13 @@ export async function setupTestDatabase() {
  */
 export async function cleanupTestDatabase() {
     try {
-        // Delete test users (emails starting with 'test_')
+        // Delete test users (emails starting with 'test_' or 'suite-')
         const deletedUsers = await prisma.user.deleteMany({
             where: {
-                email: {
-                    startsWith: 'test_',
-                },
+                OR: [
+                    { email: { startsWith: 'test_' } },
+                    { email: { startsWith: 'suite-' } }
+                ]
             },
         });
 
