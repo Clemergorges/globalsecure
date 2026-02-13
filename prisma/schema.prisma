@@ -86,6 +86,8 @@ model User {
   kycStatus     KYCStatus @default(PENDING)
   gdprConsent   Boolean   @default(false)
   gdprConsentAt DateTime?
+  cookieConsent Boolean   @default(false)
+  marketingConsent Boolean @default(false)
   country       String?
   timezone      String    @default("Europe/Luxembourg")
   createdAt     DateTime  @default(now())
