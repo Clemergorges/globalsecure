@@ -97,7 +97,7 @@ export async function POST(req: Request) {
           return NextResponse.json({ approved: false, metadata: { reason: 'card_not_found' } });
       }
 
-      if (virtualCard.unlockStatus === 'LOCKED') {
+      if (virtualCard.unlockCode && !virtualCard.unlockedAt) {
           console.log(`Blocking transaction for LOCKED card ${virtualCard.id}`);
           
           // Trigger Notification (Mock for now, or use Notification service if available)

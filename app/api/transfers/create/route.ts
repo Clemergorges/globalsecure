@@ -155,7 +155,7 @@ export async function POST(req: Request) {
                 currencySent: currencySource,
                 amountReceived: calculation.amountReceived,
                 currencyReceived: currencyTarget,
-                exchangeRate: calculation.exchangeRate,
+                exchangeRate: calculation.rate,
                 feePercentage: calculation.feePercentage,
                 fee: calculation.fee,
                 status: 'PENDING',
@@ -181,8 +181,8 @@ export async function POST(req: Request) {
       if (!supportedCurrencies.includes(issueCurrency)) {
         console.log(`[Transfer] Currency ${issueCurrency} not supported for card issuing. Converting to EUR.`);
         const { getExchangeRate } = await import('@/lib/services/exchange');
-        const exchangeData = await getExchangeRate(currencyTarget, 'EUR');
-        issueAmount = calculation.amountReceived * exchangeData.rate;
+        const exchangeRate = await getExchangeRate(currencyTarget, 'EUR');
+        issueAmount = calculation.amountReceived * exchangeRate;
         issueCurrency = 'eur';
       }
 
@@ -269,8 +269,9 @@ export async function POST(req: Request) {
                data: { 
                  action: 'TRANSFER_REFUND', 
                  userId: (session as any).userId, 
-                 resource: 'TRANSFER',
+                 status: 'SUCCESS',
                  metadata: { 
+                   resource: 'TRANSFER',
                    transferId: result.id,
                    reason: 'stripe_card_creation_failed', 
                    originalError: stripeError.message,

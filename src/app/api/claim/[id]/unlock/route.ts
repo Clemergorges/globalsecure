@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const card = transfer.card;
 
-    if (card.unlockStatus === 'UNLOCKED') {
+    if (card.unlockedAt) {
         return NextResponse.json({ success: true, message: 'Already unlocked' });
     }
 
@@ -36,7 +36,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     await prisma.virtualCard.update({
         where: { id: card.id },
         data: {
-            unlockStatus: 'UNLOCKED',
+            // unlockStatus: 'UNLOCKED', // Removed as per schema
             unlockedAt: new Date()
         }
     });

@@ -5,7 +5,15 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_mock'
   typescript: true,
 });
 
-export async function createVirtualCard(userId: string, amount: number, currency: string) {
+export interface CreateCardParams {
+  amount: number;
+  currency: string;
+  recipientEmail: string;
+  recipientName: string;
+  transferId: string;
+}
+
+export async function createVirtualCard(params: CreateCardParams) {
   // In a real implementation, this would:
   // 1. Create or retrieve a Cardholder for the user
   // 2. Create a Card via Stripe Issuing API

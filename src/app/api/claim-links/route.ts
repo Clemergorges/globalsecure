@@ -56,7 +56,7 @@ export async function POST(req: Request) {
             amount: amount,
             currency: currency,
             status: 'ACTIVE',
-            unlockStatus: 'LOCKED', // Starts locked per security flow
+            // unlockStatus: 'LOCKED', // Starts locked per security flow 
             unlockCode: randomBytes(3).toString('hex'), // 6 chars
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days card validity
         }

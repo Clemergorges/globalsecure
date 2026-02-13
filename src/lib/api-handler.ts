@@ -43,7 +43,7 @@ async function applyRateLimit(
       // zCard is at index 2.
       if (!results) return true; // Fail open if redis fails?
       
-      const count = results[2] as number;
+      const count = results[2] as unknown as number;
       return count <= cfg.limit 
   } catch (e) {
       console.error("Rate limit redis error", e);
