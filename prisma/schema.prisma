@@ -297,6 +297,7 @@ model Session {
   ipAddress String?
   userAgent String?
   country   String?
+  lastScaAt DateTime?
   createdAt DateTime @default(now())
   expiresAt DateTime
 
