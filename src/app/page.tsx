@@ -1,5 +1,6 @@
 
 import Link from 'next/link';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Globe, CreditCard, ArrowRight, Smartphone, Zap, CheckCircle2, ChevronRight, Lock } from 'lucide-react';
@@ -123,7 +124,7 @@ export default function Home() {
                     ].map((action, i) => (
                       <div key={i} className="flex flex-col items-center gap-2 group/btn cursor-pointer">
                         <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-400 group-hover/btn:bg-cyan-600 group-hover/btn:text-white transition-colors">
-                          {React.cloneElement(action.icon as React.ReactElement, { className: "w-5 h-5" })}
+                          {React.cloneElement(action.icon as React.ReactElement<any>, { className: "w-5 h-5" })}
                         </div>
                         <span className="text-xs text-slate-400 group-hover/btn:text-slate-200">{action.label}</span>
                       </div>
