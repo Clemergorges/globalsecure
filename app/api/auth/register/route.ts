@@ -48,8 +48,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const { firstName, lastName, email, phone, password, country, mainCurrency, gdprConsent, cookieConsent, marketingConsent, address, city, postalCode, language } = parsed.data;
+    const { fullName, email, phone, password, country, mainCurrency, gdprConsent, cookieConsent, marketingConsent, address, city, postalCode, language } = parsed.data;
     const normalizedEmail = email.toLowerCase();
+
+    // Split fullName into firstName and lastName for database storage
+    const nameParts = fullName.trim().split(/\s+/);
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || '';
 
     // Check if email or phone already exists
     const existingUser = await prisma.user.findFirst({
