@@ -1,15 +1,23 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/db';
 
 describe('Webhook Failure Scenarios', () => {
   afterAll(async () => {
-    await prisma.topUp.deleteMany({});
-    await prisma.walletTransaction.deleteMany({});
-    await prisma.balance.deleteMany({});
-    await prisma.wallet.deleteMany({});
-    await prisma.user.deleteMany({ where: { email: { startsWith: 'webhook-' } } });
-    await prisma.$disconnect();
+    // Safer cleanup: only delete data created by this test suite (emails starting with 'webhook-fail-')
+    const users = await prisma.user.findMany({
+      where: { email: { startsWith: 'webhook-fail-' } },
+      select: { id: true }
+    });
+
+    if (users.length > 0) {
+      const userIds = users.map(u => u.id);
+      
+      // Delete dependent records first to avoid foreign key constraints
+      await prisma.topUp.deleteMany({ where: { userId: { in: userIds } } });
+      await prisma.walletTransaction.deleteMany({ where: { wallet: { userId: { in: userIds } } } });
+      await prisma.balance.deleteMany({ where: { wallet: { userId: { in: userIds } } } });
+      await prisma.wallet.deleteMany({ where: { userId: { in: userIds } } });
+      await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+    }
   });
 
   test('Stripe webhook with invalid signature should be rejected', async () => {

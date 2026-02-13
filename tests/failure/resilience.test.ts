@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/db';
 import { KYC_LIMITS } from '@/lib/services/kyc-limits';
-
-const prisma = new PrismaClient();
 
 async function createUserWithWallet(kycLevel: number) {
   const email = `resilience-${Date.now()}-kyc${kycLevel}@globalsecure.test`;
@@ -32,21 +30,29 @@ async function createUserWithWallet(kycLevel: number) {
 }
 
 afterAll(async () => {
-  await prisma.notification.deleteMany({});
-  await prisma.oTP.deleteMany({});
-  await prisma.session.deleteMany({});
-  await prisma.kYCDocument.deleteMany({});
-  await prisma.walletTransaction.deleteMany({});
-  await prisma.transactionLog.deleteMany({});
-  await prisma.transfer.deleteMany({});
-  await prisma.cryptoDeposit.deleteMany({});
-  await prisma.topUp.deleteMany({});
-  await prisma.balance.deleteMany({});
-  await prisma.wallet.deleteMany({});
-  await prisma.user.deleteMany({
-    where: { email: { startsWith: 'resilience-' } }
+  // Safer cleanup: only delete data created by this test suite (emails starting with 'resilience-')
+  const users = await prisma.user.findMany({
+    where: { email: { startsWith: 'resilience-' } },
+    select: { id: true }
   });
-  await prisma.$disconnect();
+
+  if (users.length > 0) {
+    const userIds = users.map(u => u.id);
+    
+    // Delete dependent records first to avoid foreign key constraints
+    await prisma.notification.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.oTP.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.session.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.kYCDocument.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.walletTransaction.deleteMany({ where: { wallet: { userId: { in: userIds } } } });
+    await prisma.transactionLog.deleteMany({ where: { transfer: { senderId: { in: userIds } } } });
+    await prisma.transfer.deleteMany({ where: { senderId: { in: userIds } } });
+    await prisma.cryptoDeposit.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.topUp.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.balance.deleteMany({ where: { wallet: { userId: { in: userIds } } } });
+    await prisma.wallet.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+  }
 });
 
 describe('System Resilience & Failure Handling', () => {
@@ -276,7 +282,7 @@ describe('System Resilience & Failure Handling', () => {
 
   test('should reject operation above KYC limit', async () => {
     const { user, wallet } = await createUserWithWallet(0);
-    const limit = KYC_LIMITS[user.kycLevel as keyof typeof KYC_LIMITS];
+    const limit = KYC_LIMITS[user.kycLevel as 0 | 1 | 2].singleTransactionLimit;
     const amount = limit + 100;
 
     await expect(

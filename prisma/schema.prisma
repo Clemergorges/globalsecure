@@ -207,7 +207,6 @@ model VirtualCard {
   currency           String
   amountUsed         Decimal    @default(0) @db.Decimal(12, 2)
   status             CardStatus @default(ACTIVE)
-  unlockStatus       UnlockStatus @default(LOCKED)
   unlockCode         String?
   unlockedAt         DateTime?
   activationToken    String?    @unique
