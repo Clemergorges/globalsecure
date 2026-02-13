@@ -1,1 +1,0 @@
-Restored missing dashboard pages: src/app/dashboard/page.tsx and layout.tsx. Fixed 404 error.
