@@ -5,6 +5,9 @@ import "./globals.css";
 export const metadata = {
   title: 'Global Secure Send',
   description: 'Global payments and transfers',
+  icons: {
+    icon: '/globe.svg',
+  },
 };
 
 export default async function RootLayout({

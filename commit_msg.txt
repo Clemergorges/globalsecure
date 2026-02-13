@@ -1,0 +1,9 @@
+Fix: Vercel build errors, encoding issues, and security tests
+
+- Fixed 'firstName' property error in register route
+- Fixed 'lastScaAt', 'exchangeRate', 'resource' errors in transfers route
+- Fixed 'unlockStatus' error in virtual cards
+- Fixed Redis type casting in api-handler
+- Updated Prisma schema with missing fields (address, city, etc.)
+- Fixed PowerShell script encoding (removed emojis)
+- Verified all tests pass (Security, Ledger, KYC, E2E)

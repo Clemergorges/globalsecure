@@ -1,7 +1,0 @@
-fix: resolve all build errors for production deploy
-
-- Fix 'resource' field in AuditLog creation (transfers/create)
-- Fix 'unlockStatus' field removal in VirtualCard (claim-links, unlock, webhooks)
-- Fix redis type casting in api-handler
-- Update Prisma schema and generate client
-- Ensure register route uses correct destructuring (no firstName)
