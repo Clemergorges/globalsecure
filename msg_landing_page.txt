@@ -1,7 +1,0 @@
-feat: Create modern Landing Page
-
-- Replaced automatic redirect with a full marketing landing page.
-- Added Hero Section with "Banking Sem Fronteiras" value prop.
-- Added Features Grid highlighting Multi-Currency, Virtual Cards, and Security.
-- Added CTA and Footer sections.
-- Uses existing UI components (Button, Card) and Lucide icons.
