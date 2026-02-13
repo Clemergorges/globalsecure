@@ -89,6 +89,10 @@ model User {
   cookieConsent Boolean   @default(false)
   marketingConsent Boolean @default(false)
   country       String?
+  address       String?
+  city          String?
+  postalCode    String?
+  language      String?   @default("en")
   timezone      String    @default("Europe/Luxembourg")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

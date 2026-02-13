@@ -86,6 +86,10 @@ export async function POST(req: Request) {
         phoneVerified: false,
         passwordHash,
         country,
+        address,
+        city,
+        postalCode,
+        language: language || 'en',
         // Consentimentos GDPR
         gdprConsent: true,
         gdprConsentAt: new Date(),
