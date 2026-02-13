@@ -1,0 +1,8 @@
+chore: move app directory files to src/app to fix import errors and build conflicts
+
+- Moved app/api/auth/register/route.ts to src/app/api/auth/register/route.ts
+- Moved app/api/transfers/create/route.ts to src/app/api/transfers/create/route.ts
+- Removed root app directory
+- Fixed type errors in tests/webhooks/crypto-webhooks.test.ts (Wallet balance access)
+- Fixed type errors in tests/security/injection.test.ts (global session casting)
+- Verified build with npm run build

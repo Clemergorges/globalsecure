@@ -255,7 +255,7 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
     describe('4.7. Failed/Reverted Transactions', () => {
         it('should NOT credit balance for reverted transaction', async () => {
             const user = await getTestUser(2);
-            const initialBalance = Number(user.wallet!.balanceEUR);
+            const initialBalance = Number(user.wallet!.balances.find(b => b.currency === 'EUR')?.amount || 0);
             const depositAmount = 100;
             const txHash = '0xreverted1234567890reverted1234567890reverted1234567890reverted';
 
@@ -280,9 +280,10 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
             // Verify balance NOT credited
             const finalWallet = await prisma.wallet.findUnique({
                 where: { userId: user.id },
+                include: { balances: true }
             });
 
-            expect(Number(finalWallet!.balanceEUR)).toBe(initialBalance);
+            expect(Number(finalWallet!.balances.find(b => b.currency === 'EUR')?.amount || 0)).toBe(initialBalance);
 
             console.log('✅ Reverted transaction: Balance NOT credited');
         });

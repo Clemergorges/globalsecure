@@ -7,12 +7,12 @@ const prisma = new PrismaClient();
 
 // Mock Auth to be logged in as Attacker
 jest.mock('@/lib/auth', () => ({
-    getSession: jest.fn().mockImplementation(async () => {
-        // We need to return a session for the attacker. 
-        // We'll set this dynamically in the test if possible, or use a closure.
-        return global.testSession; 
-    })
-}));
+        getSession: jest.fn().mockImplementation(async () => {
+            // We need to return a session for the attacker. 
+            // We'll set this dynamically in the test if possible, or use a closure.
+            return (global as any).testSession; 
+        })
+    }));
 
 describe('Security: Injection Attacks', () => {
     let users: any[];
