@@ -1,12 +1,5 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/reconcile-ledger",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/process-queue",
-      "schedule": "0 1 * * *"
-    }
-  ]
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs"
 }
