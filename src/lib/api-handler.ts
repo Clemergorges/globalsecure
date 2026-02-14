@@ -52,7 +52,7 @@ async function applyRateLimit(
 } 
 
 export function createHandler<TBody>( 
-  schema: ZodSchema<TBody>, 
+  schema: ZodSchema<TBody> | undefined, 
   handler: AppHandler<TBody>, 
   options: HandlerOptions<TBody> = {}, 
 ) { 
@@ -98,7 +98,7 @@ export function createHandler<TBody>(
       } 
 
       // 2. Auth Check
-      if (options.requireAuth) {
+      if (options.requireAuth !== false) { // Default to true if undefined
         if (!userId) {
              logger.warn({ requestId }, "Unauthorized request");
              
@@ -121,11 +121,20 @@ export function createHandler<TBody>(
       }
 
       // 3. Validation
-      const body = (await req.json().catch(() => ({}))) as unknown 
-      const validatedBody = schema.parse(body) 
+      let validatedBody: TBody | undefined = undefined;
+      if (schema) {
+          const body = (await req.json().catch(() => ({}))) as unknown 
+          validatedBody = schema.parse(body) 
+      }
 
       const extendedReq = req as NextRequest & { validatedBody: TBody } 
-      extendedReq.validatedBody = validatedBody 
+      if (validatedBody) {
+          extendedReq.validatedBody = validatedBody 
+      } else {
+        // If no schema, still provide empty object or similar if TBody allows, 
+        // but safe to cast for now as handler expects TBody
+         extendedReq.validatedBody = {} as TBody
+      }
 
       // 4. Handler Execution
       const res = await handler(extendedReq, params) 

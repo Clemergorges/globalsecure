@@ -40,83 +40,83 @@ export default function SettingsGeneralPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h2 className="text-2xl font-bold tracking-tight">{t('title')}</h2>
+      <h2 className="text-2xl font-bold tracking-tight text-white">{t('title')}</h2>
 
       <div className="grid gap-6">
         
-        {/* Segurança */}
-        <Card>
+        {/* Security Section */}
+        <Card className="bg-[#111116] border-white/5 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-gray-500" />
-              {t('security')}
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Lock className="w-5 h-5 text-slate-400" />
+              {t('Security.title')}
             </CardTitle>
-            <CardDescription>{t('securityDesc')}</CardDescription>
+            <CardDescription className="text-slate-500">{t('Security.description')}</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between">
             <div className="space-y-1">
-              <p className="font-medium">{t('passwordAuth')}</p>
-              <p className="text-sm text-gray-500">{t('passwordAuthDesc')}</p>
+              <Label className="text-slate-200">{t('Security.authTitle')}</Label>
+              <p className="text-sm text-slate-500">{t('Security.authDesc')}</p>
             </div>
-            <Button variant="outline" onClick={() => router.push('/dashboard/settings/security')}>
-              {t('manageSecurity')}
+            <Button variant="outline" onClick={() => router.push('/dashboard/settings/security')} className="border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+              {t('Security.manage')}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Notificações (Simulado) */}
-        <Card>
+        {/* Notifications Section */}
+        <Card className="bg-[#111116] border-white/5 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-gray-500" />
-              {t('notifications')}
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Bell className="w-5 h-5 text-slate-400" />
+              {t('Notifications.title')}
             </CardTitle>
-            <CardDescription>{t('notificationsDesc')}</CardDescription>
+            <CardDescription className="text-slate-500">{t('Notifications.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label htmlFor="email-notif">{t('emailNotif')}</Label>
-                <p className="text-sm text-gray-500">{t('emailNotifDesc')}</p>
+                <Label htmlFor="email-notif" className="text-slate-200">{t('Notifications.emailTitle')}</Label>
+                <p className="text-sm text-slate-500">{t('Notifications.emailDesc')}</p>
               </div>
               <Switch id="email-notif" defaultChecked />
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label htmlFor="push-notif">{t('pushNotif')}</Label>
-                <p className="text-sm text-gray-500">{t('pushNotifDesc')}</p>
+                <Label htmlFor="push-notif" className="text-slate-200">{t('Notifications.pushTitle')}</Label>
+                <p className="text-sm text-slate-500">{t('Notifications.pushDesc')}</p>
               </div>
               <Switch id="push-notif" defaultChecked />
             </div>
           </CardContent>
         </Card>
 
-        {/* Preferências */}
-        <Card>
+        {/* Preferences Section */}
+        <Card className="bg-[#111116] border-white/5 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="w-5 h-5 text-gray-500" />
-              {t('preferences')}
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Globe className="w-5 h-5 text-slate-400" />
+              {t('Preferences.title')}
             </CardTitle>
-            <CardDescription>{t('preferencesDesc')}</CardDescription>
+            <CardDescription className="text-slate-500">{t('Preferences.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label>{t('mainCurrency')}</Label>
-                <p className="text-sm text-gray-500">{t('mainCurrencyDesc')}</p>
+                <Label className="text-slate-200">{t('Preferences.currencyTitle')}</Label>
+                <p className="text-sm text-slate-500">{t('Preferences.currencyDesc')}</p>
               </div>
-              <Button variant="outline" size="sm">Euro (EUR)</Button>
+              <Button variant="outline" size="sm" className="border-white/10 text-slate-300">Euro (EUR)</Button>
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label>{t('language')}</Label>
-                <p className="text-sm text-gray-500">{t('languageDesc')}</p>
+                <Label className="text-slate-200">{t('Preferences.languageTitle')}</Label>
+                <p className="text-sm text-slate-500">{t('Preferences.languageDesc')}</p>
               </div>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-[180px] justify-between" disabled={isPending}>
+                  <Button variant="outline" size="sm" className="w-[180px] justify-between border-white/10 text-slate-300 hover:text-white hover:bg-white/5" disabled={isPending}>
                     <span className="flex items-center gap-2">
                       <span className="text-base">{currentLang.flag}</span>
                       {currentLang.name}
@@ -124,12 +124,12 @@ export default function SettingsGeneralPage() {
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[180px]">
+                <DropdownMenuContent align="end" className="w-[180px] bg-[#0A0A0F] border-white/10 text-white">
                   {LANGUAGES.map((lang) => (
                     <DropdownMenuItem 
                       key={lang.code} 
                       onClick={() => handleLanguageChange(lang.code)}
-                      className="flex items-center justify-between cursor-pointer"
+                      className="flex items-center justify-between cursor-pointer focus:bg-white/10 focus:text-white"
                     >
                       <span className="flex items-center gap-2">
                         <span className="text-base">{lang.flag}</span>

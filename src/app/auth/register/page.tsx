@@ -10,11 +10,13 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
     fullName: '',
@@ -201,28 +203,58 @@ export default function RegisterPage() {
 
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              disabled={loading}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={formData.password}
+                onChange={handleChange}
+                disabled={loading}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              disabled={loading}
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                disabled={loading}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-4 pt-4">
@@ -230,7 +262,7 @@ export default function RegisterPage() {
               <Checkbox 
                 id="gdprConsent" 
                 checked={formData.gdprConsent}
-                onCheckedChange={(checked) => handleCheckboxChange('gdprConsent', checked as boolean)}
+                onCheckedChange={(checked: boolean | "indeterminate") => handleCheckboxChange('gdprConsent', checked === true)}
               />
               <div className="grid gap-1.5 leading-none">
                 <Label
@@ -246,7 +278,7 @@ export default function RegisterPage() {
               <Checkbox 
                 id="cookieConsent" 
                 checked={formData.cookieConsent}
-                onCheckedChange={(checked) => handleCheckboxChange('cookieConsent', checked as boolean)}
+                onCheckedChange={(checked: boolean | "indeterminate") => handleCheckboxChange('cookieConsent', checked === true)}
               />
               <div className="grid gap-1.5 leading-none">
                 <Label
@@ -262,7 +294,7 @@ export default function RegisterPage() {
               <Checkbox 
                 id="marketingConsent" 
                 checked={formData.marketingConsent}
-                onCheckedChange={(checked) => handleCheckboxChange('marketingConsent', checked as boolean)}
+                onCheckedChange={(checked: boolean | "indeterminate") => handleCheckboxChange('marketingConsent', checked === true)}
               />
               <div className="grid gap-1.5 leading-none">
                 <Label
@@ -277,12 +309,12 @@ export default function RegisterPage() {
 
           <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
             {loading ? (
-              <>
+              <span key="loading" className="flex items-center justify-center">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Criando Conta...
-              </>
+              </span>
             ) : (
-              'Criar Conta'
+              <span key="idle">Criar Conta</span>
             )}
           </Button>
         </form>

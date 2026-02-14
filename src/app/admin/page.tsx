@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, DollarSign, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface User {
   id: string;
@@ -27,6 +28,7 @@ interface User {
 }
 
 export default function AdminDashboard() {
+  const t = useTranslations('Admin');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -36,7 +38,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/admin/users');
       if (res.status === 403) {
-        alert('Acesso Negado');
+        alert(t('accessDenied'));
         router.push('/dashboard');
         return;
       }
@@ -54,7 +56,7 @@ export default function AdminDashboard() {
   }, []);
 
   const handleApproveKYC = async (userId: string, approve: boolean) => {
-    if (!confirm(approve ? 'Aprovar este usuário?' : 'Rejeitar este usuário?')) return;
+    if (!confirm(approve ? t('approveUser') : t('rejectUser'))) return;
     
     try {
         await fetch('/api/admin/kyc/approve', {
@@ -67,14 +69,14 @@ export default function AdminDashboard() {
         });
         fetchUsers();
     } catch (e) {
-        alert('Erro ao atualizar KYC');
+        alert(t('kycUpdateError'));
     }
   };
 
   const handleTopUp = async (userId: string) => {
-    const amount = prompt('Valor para depositar (ex: 1000):');
+    const amount = prompt(t('enterDepositAmount'));
     if (!amount) return;
-    const currency = prompt('Moeda (EUR, USD, BRL):', 'EUR');
+    const currency = prompt(t('enterCurrency'), 'EUR');
     if (!currency) return;
 
     try {
@@ -86,10 +88,10 @@ export default function AdminDashboard() {
                 currency: currency.toUpperCase()
             })
         });
-        alert('Depósito realizado!');
+        alert(t('depositSuccess'));
         fetchUsers();
     } catch (e) {
-        alert('Erro ao depositar');
+        alert(t('depositError'));
     }
   };
 
@@ -100,8 +102,8 @@ export default function AdminDashboard() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Painel Admin (Super User)</h1>
-        <Button onClick={fetchUsers} variant="outline"><RefreshCw className="w-4 h-4 mr-2" /> Atualizar</Button>
+        <h1 className="text-3xl font-bold">{t('adminPanel')}</h1>
+        <Button onClick={fetchUsers} variant="outline"><RefreshCw className="w-4 h-4 mr-2" /> {t('refresh')}</Button>
       </div>
 
       <div className="grid gap-6">
@@ -122,7 +124,7 @@ export default function AdminDashboard() {
                     <div className="grid md:grid-cols-2 gap-8">
                         {/* Carteira */}
                         <div>
-                            <h3 className="font-bold mb-2 flex items-center gap-2"><DollarSign className="w-4 h-4" /> Saldos</h3>
+                            <h3 className="font-bold mb-2 flex items-center gap-2"><DollarSign className="w-4 h-4" /> {t('balances')}</h3>
                             <div className="space-y-1">
                                 {user.wallet?.balances && user.wallet.balances.length > 0 ? (
                                     user.wallet.balances.map(b => (
@@ -132,39 +134,39 @@ export default function AdminDashboard() {
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-gray-400 italic">Sem saldos</p>
+                                    <p className="text-gray-400 italic">{t('noBalances')}</p>
                                 )}
                             </div>
                             <Button size="sm" className="mt-4 w-full" onClick={() => handleTopUp(user.id)}>
-                                + Adicionar Saldo Manual
+                                + {t('addManualBalance')}
                             </Button>
                         </div>
 
                         {/* KYC Docs */}
                         <div>
-                            <h3 className="font-bold mb-2">Documentos KYC</h3>
+                            <h3 className="font-bold mb-2">{t('kycDocuments')}</h3>
                             {user.lastKycDoc ? (
                                 <div className="space-y-2">
-                                    <p className="text-sm">Doc: {user.lastKycDoc.documentNumber}</p>
+                                    <p className="text-sm">{t('document')}: {user.lastKycDoc.documentNumber}</p>
                                     <div className="flex gap-2 mt-2">
-                                        <a href={user.lastKycDoc.frontImageUrl} target="_blank" className="text-blue-600 underline text-sm">Ver Frente</a>
-                                        {user.lastKycDoc.backImageUrl && <a href={user.lastKycDoc.backImageUrl} target="_blank" className="text-blue-600 underline text-sm">Ver Verso</a>}
-                                        {user.lastKycDoc.selfieUrl && <a href={user.lastKycDoc.selfieUrl} target="_blank" className="text-blue-600 underline text-sm">Ver Selfie</a>}
+                                        <a href={user.lastKycDoc.frontImageUrl} target="_blank" className="text-blue-600 underline text-sm">{t('viewFront')}</a>
+                                        {user.lastKycDoc.backImageUrl && <a href={user.lastKycDoc.backImageUrl} target="_blank" className="text-blue-600 underline text-sm">{t('viewBack')}</a>}
+                                        {user.lastKycDoc.selfieUrl && <a href={user.lastKycDoc.selfieUrl} target="_blank" className="text-blue-600 underline text-sm">{t('viewSelfie')}</a>}
                                     </div>
                                     
                                     {user.kycStatus === 'PENDING' && (
                                         <div className="flex gap-2 mt-4">
                                             <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleApproveKYC(user.id, true)}>
-                                                <CheckCircle className="w-4 h-4 mr-1" /> Aprovar
+                                                <CheckCircle className="w-4 h-4 mr-1" /> {t('approve')}
                                             </Button>
                                             <Button size="sm" variant="destructive" onClick={() => handleApproveKYC(user.id, false)}>
-                                                <XCircle className="w-4 h-4 mr-1" /> Rejeitar
+                                                <XCircle className="w-4 h-4 mr-1" /> {t('reject')}
                                             </Button>
                                         </div>
                                     )}
                                 </div>
                             ) : (
-                                <p className="text-gray-400 italic">Nenhum documento enviado</p>
+                                <p className="text-gray-400 italic">{t('noDocumentsSubmitted')}</p>
                             )}
                         </div>
                     </div>

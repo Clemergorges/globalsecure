@@ -5,16 +5,18 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowUpRight, ArrowDownLeft, History } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, History, Wallet, TrendingUp } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 export default async function DashboardPage() {
+  const t = await getTranslations('Dashboard');
   const session = await getSession();
 
   if (!session) {
     redirect('/auth/login');
   }
 
-  const wallet = await prisma.wallet.findUnique({
+  let wallet = await prisma.wallet.findUnique({
     where: { userId: session.userId },
     include: {
       balances: true,
@@ -26,17 +28,37 @@ export default async function DashboardPage() {
   });
 
   if (!wallet) {
-    // Fallback if wallet doesn't exist (should happen only if creation failed)
-    return (
-      <div className="p-8">
-        <Card className="bg-red-50 border-red-200">
-          <CardContent className="p-6">
-            <h2 className="text-red-800 font-bold text-lg">Carteira não encontrada</h2>
-            <p className="text-red-600">Ocorreu um erro ao carregar sua carteira. Por favor, contate o suporte.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    try {
+      console.log(`Wallet missing for user ${session.userId}. Attempting to create one.`);
+      wallet = await prisma.wallet.create({
+        data: {
+          userId: session.userId,
+          primaryCurrency: 'EUR',
+          balances: {
+            create: { currency: 'EUR', amount: 0 }
+          }
+        },
+        include: {
+          balances: true,
+          transactions: {
+            take: 5,
+            orderBy: { createdAt: 'desc' }
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to auto-create wallet:', error);
+      return (
+        <div className="p-8">
+          <Card className="bg-red-950/20 border-red-500/50">
+            <CardContent className="p-6">
+              <h2 className="text-red-400 font-bold text-lg">Carteira não encontrada</h2>
+              <p className="text-red-300/80">Ocorreu um erro ao carregar sua carteira. Por favor, contate o suporte.</p>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
   }
 
   const eurBalance = wallet.balances.find(b => b.currency === 'EUR')?.amount.toNumber() || 0;
@@ -47,51 +69,61 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Visão Geral</h1>
-          <p className="text-gray-500">Bem-vindo de volta, {session.email}</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">{t('title')}</h1>
+          <p className="text-slate-400">{t('welcome')}, {session.email}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
            <Link href="/dashboard/wallet/deposit">
-             <Button className="gap-2 bg-blue-600 hover:bg-blue-700">
-               <ArrowDownLeft className="w-4 h-4" /> Depositar
+             <Button className="gap-2 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold shadow-[0_0_20px_-5px_rgba(6,182,212,0.5)] border-none">
+               <ArrowDownLeft className="w-4 h-4" /> {t('deposit')}
              </Button>
            </Link>
            <Link href="/dashboard/transfers/create">
-             <Button variant="outline" className="gap-2">
-               <ArrowUpRight className="w-4 h-4" /> Transferir
+             <Button variant="outline" className="gap-2 border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+               <ArrowUpRight className="w-4 h-4" /> {t('transfer')}
              </Button>
            </Link>
         </div>
       </div>
 
       {/* Balances */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Saldo Total (EUR)</CardTitle>
-            <span className="text-2xl font-bold text-gray-400">€</span>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* EUR Card */}
+        <Card className="bg-[#111116] border-white/5 backdrop-blur-sm relative overflow-hidden group hover:border-cyan-500/20 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+            <CardTitle className="text-sm font-medium text-slate-400">{t('totalBalance')}</CardTitle>
+            <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+              <span className="font-bold">€</span>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-gray-900">
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-bold text-white tracking-tight">
               {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(eurBalance)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Disponível para transferências
+            <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3 text-emerald-400" />
+              <span className="text-emerald-400">+2.5%</span> {t('thisMonth')}
             </p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Saldo Crypto (USDT)</CardTitle>
-            <span className="text-2xl font-bold text-gray-400">$</span>
+        {/* USDT Card */}
+        <Card className="bg-[#111116] border-white/5 backdrop-blur-sm relative overflow-hidden group hover:border-purple-500/20 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+            <CardTitle className="text-sm font-medium text-slate-400">{t('cryptoBalance')}</CardTitle>
+            <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+              <span className="font-bold">$</span>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-gray-900">
+          <CardContent className="relative z-10">
+            <div className="text-3xl font-bold text-white tracking-tight">
               {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usdtBalance)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Rede Polygon (MATIC)
+            <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+              <Wallet className="w-3 h-3 text-purple-400" />
+              {t('polygonNetwork')}
             </p>
           </CardContent>
         </Card>
@@ -100,25 +132,29 @@ export default async function DashboardPage() {
       {/* Recent Transactions */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-           <h2 className="text-xl font-semibold tracking-tight text-gray-900">Transações Recentes</h2>
-           <Link href="/dashboard/transactions" className="text-sm text-blue-600 hover:underline flex items-center gap-1 font-medium">
-             Ver extrato completo <History className="w-4 h-4" />
+           <h2 className="text-xl font-semibold tracking-tight text-white">{t('recentTransactions')}</h2>
+           <Link href="/dashboard/transactions" className="text-sm text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-medium transition-colors">
+             {t('viewFullStatement')} <History className="w-4 h-4" />
            </Link>
         </div>
         
-        <Card>
+        <Card className="bg-[#111116] border-white/5 backdrop-blur-sm overflow-hidden">
            <CardContent className="p-0">
              {wallet.transactions.length === 0 ? (
-               <div className="p-8 text-center text-gray-500">
-                 Nenhuma transação recente.
+               <div className="p-12 text-center">
+                 <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                   <History className="w-6 h-6 text-slate-500" />
+                 </div>
+                 <h3 className="text-white font-medium mb-1">{t('noRecentTransactions')}</h3>
+                 <p className="text-slate-500 text-sm">{t('activitiesAppearHere')}</p>
                </div>
              ) : (
-               <div className="divide-y divide-gray-100">
+               <div className="divide-y divide-white/5">
                  {wallet.transactions.map((tx) => (
-                   <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                   <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors group">
                      <div className="flex flex-col gap-1">
-                       <span className="font-medium text-gray-900">{tx.description}</span>
-                       <span className="text-xs text-gray-500">
+                       <span className="font-medium text-slate-200 group-hover:text-white transition-colors">{tx.description}</span>
+                       <span className="text-xs text-slate-500">
                          {new Date(tx.createdAt).toLocaleDateString('pt-PT', {
                            day: '2-digit',
                            month: 'long',
@@ -128,7 +164,7 @@ export default async function DashboardPage() {
                          })}
                        </span>
                      </div>
-                     <div className={`font-bold ${['CREDIT', 'DEPOSIT'].includes(tx.type) ? 'text-green-600' : 'text-gray-900'}`}>
+                     <div className={`font-bold font-mono ${['CREDIT', 'DEPOSIT'].includes(tx.type) ? 'text-emerald-400' : 'text-slate-300'}`}>
                        {['CREDIT', 'DEPOSIT'].includes(tx.type) ? '+' : '-'}
                        {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: tx.currency }).format(tx.amount.toNumber())}
                      </div>

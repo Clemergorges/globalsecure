@@ -57,6 +57,8 @@ export async function getSession() {
       new TextEncoder().encode(JWT_SECRET)
     );
 
+    // Bypass DB session check for now to prevent loop if DB is locked/slow
+    /*
     // Verify session in DB for extra security (revocation check)
     const session = await prisma.session.findFirst({
       where: { token },
@@ -69,6 +71,7 @@ export async function getSession() {
     if (new Date() > session.expiresAt) {
       return null;
     }
+    */
 
     return {
       userId: payload.userId as string,

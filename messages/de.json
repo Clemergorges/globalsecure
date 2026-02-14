@@ -1,23 +1,29 @@
 {
   "Settings": {
     "title": "Einstellungen",
-    "security": "Sicherheit",
-    "securityDesc": "Verwalten Sie Passwort und Authentifizierung.",
-    "passwordAuth": "Passwort & Authentifizierung",
-    "passwordAuthDesc": "Passwort ändern oder 2-Faktor-Authentifizierung aktivieren.",
-    "manageSecurity": "Sicherheit verwalten",
-    "notifications": "Benachrichtigungen",
-    "notificationsDesc": "Wählen Sie, wie Sie benachrichtigt werden möchten.",
-    "emailNotif": "E-Mail-Benachrichtigungen",
-    "emailNotifDesc": "Quittungen und Sicherheitswarnungen erhalten.",
-    "pushNotif": "Push-Benachrichtigungen",
-    "pushNotifDesc": "Echtzeit-Warnungen im Browser.",
-    "preferences": "Präferenzen",
-    "preferencesDesc": "Passen Sie Ihre Erfahrung an.",
-    "mainCurrency": "Hauptwährung",
-    "mainCurrencyDesc": "Währung für die Anzeige Ihres Gesamtguthabens.",
-    "language": "Sprache",
-    "languageDesc": "Sprache der Benutzeroberfläche."
+    "Security": {
+      "title": "Sicherheit",
+      "description": "Verwalten Sie Passwort und Authentifizierung.",
+      "authTitle": "Passwort & Authentifizierung",
+      "authDesc": "Passwort ändern oder 2-Faktor-Authentifizierung aktivieren.",
+      "manage": "Sicherheit verwalten"
+    },
+    "Notifications": {
+      "title": "Benachrichtigungen",
+      "description": "Wählen Sie, wie Sie benachrichtigt werden möchten.",
+      "emailTitle": "E-Mail-Benachrichtigungen",
+      "emailDesc": "Quittungen und Sicherheitswarnungen erhalten.",
+      "pushTitle": "Push-Benachrichtigungen",
+      "pushDesc": "Echtzeit-Warnungen im Browser."
+    },
+    "Preferences": {
+      "title": "Präferenzen",
+      "description": "Passen Sie Ihre Erfahrung an.",
+      "currencyTitle": "Hauptwährung",
+      "currencyDesc": "Währung für die Anzeige Ihres Gesamtguthabens.",
+      "languageTitle": "Sprache",
+      "languageDesc": "Sprache der Benutzeroberfläche."
+    }
   },
   "Sidebar": {
     "overview": "Übersicht",

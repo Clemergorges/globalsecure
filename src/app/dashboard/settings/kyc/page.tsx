@@ -8,8 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Upload, CheckCircle2, Shield, Loader2, AlertCircle, ScanFace } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { useTranslations } from 'next-intl';
 
 function KYCContent() {
+  const t = useTranslations('KYC');
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
@@ -41,11 +43,11 @@ function KYCContent() {
         if (data.url) {
             window.location.href = data.url;
         } else {
-            alert('Erro ao iniciar verificação automática.');
+            alert(t('autoVerificationError'));
         }
     } catch (e) {
         console.error(e);
-        alert('Erro ao conectar com Stripe Identity.');
+        alert(t('stripeConnectionError'));
     } finally {
         setLoading(false);
     }
@@ -73,11 +75,11 @@ function KYCContent() {
       if (res.ok) {
         setStep(5); // Sucesso
       } else {
-        alert('Erro ao enviar documentos.');
+        alert(t('documentSendError'));
       }
     } catch (error) {
       console.error(error);
-      alert('Erro de conexão.');
+      alert(t('connectionError'));
     } finally {
       setLoading(false);
     }
@@ -86,8 +88,8 @@ function KYCContent() {
   return (
     <div className="max-w-2xl mx-auto py-8">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Verificação de Identidade</h1>
-        <p className="text-gray-500">Para aumentar seus limites e garantir a segurança, precisamos verificar quem você é.</p>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">{t('identityVerification')}</h1>
+        <p className="text-gray-500">{t('verifyIdentityDescription')}</p>
       </div>
 
       {step === 5 ? (
@@ -96,12 +98,12 @@ function KYCContent() {
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h2 className="text-xl font-bold text-emerald-900 mb-2">Documentos Enviados!</h2>
+            <h2 className="text-xl font-bold text-emerald-900 mb-2">{t('documentsSent')}</h2>
             <p className="text-emerald-700 mb-6 max-w-md mx-auto">
-              Sua verificação está sendo processada. Você receberá um e-mail assim que aprovado.
+              {t('verificationInProgress')}
             </p>
             <Button onClick={() => router.push('/dashboard')} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              Voltar ao Dashboard
+              {t('backToDashboard')}
             </Button>
           </CardContent>
         </Card>

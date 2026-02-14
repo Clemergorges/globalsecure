@@ -1,23 +1,29 @@
 {
   "Settings": {
     "title": "Paramètres",
-    "security": "Sécurité",
-    "securityDesc": "Gérez votre mot de passe et l'authentification.",
-    "passwordAuth": "Mot de passe et authentification",
-    "passwordAuthDesc": "Changer le mot de passe ou activer l'authentification à deux facteurs.",
-    "manageSecurity": "Gérer la sécurité",
-    "notifications": "Notifications",
-    "notificationsDesc": "Choisissez comment vous souhaitez être averti.",
-    "emailNotif": "Notifications par e-mail",
-    "emailNotifDesc": "Recevoir des reçus et des alertes de sécurité.",
-    "pushNotif": "Notifications Push",
-    "pushNotifDesc": "Alertes en temps réel dans le navigateur.",
-    "preferences": "Préférences",
-    "preferencesDesc": "Ajustez votre expérience.",
-    "mainCurrency": "Devise principale",
-    "mainCurrencyDesc": "Devise utilisée pour afficher votre solde total.",
-    "language": "Langue",
-    "languageDesc": "Langue de l'interface."
+    "Security": {
+      "title": "Sécurité",
+      "description": "Gérez votre mot de passe et l'authentification.",
+      "authTitle": "Mot de passe et authentification",
+      "authDesc": "Changer le mot de passe ou activer l'authentification à deux facteurs.",
+      "manage": "Gérer la sécurité"
+    },
+    "Notifications": {
+      "title": "Notifications",
+      "description": "Choisissez comment vous souhaitez être averti.",
+      "emailTitle": "Notifications par e-mail",
+      "emailDesc": "Recevoir des reçus et des alertes de sécurité.",
+      "pushTitle": "Notifications Push",
+      "pushDesc": "Alertes en temps réel dans le navigateur."
+    },
+    "Preferences": {
+      "title": "Préférences",
+      "description": "Ajustez votre expérience.",
+      "currencyTitle": "Devise principale",
+      "currencyDesc": "Devise utilisée pour afficher votre solde total.",
+      "languageTitle": "Langue",
+      "languageDesc": "Langue de l'interface."
+    }
   },
   "Sidebar": {
     "overview": "Aperçu",
