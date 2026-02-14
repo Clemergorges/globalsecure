@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { sendEmail, templates } from '@/lib/services/email';
 
 // This endpoint is called by Vercel Cron every minute
 export async function GET(req: Request) {
@@ -39,13 +40,20 @@ export async function GET(req: Request) {
         // --- JOB LOGIC SWITCH ---
         switch (job.type) {
           case 'EMAIL_WELCOME':
-            // await sendWelcomeEmail(job.payload);
-            console.log('Simulating sending email...');
+            const { email, name } = job.payload as any;
+            if (email) {
+                await sendEmail({
+                    to: email,
+                    subject: 'Bem-vindo à GlobalSecure!',
+                    html: templates.welcome(name || 'Cliente')
+                });
+            }
             break;
             
           case 'SYNC_LEDGER':
             // Logic to reconcile internal ledger vs Stripe/Blockchain
             console.log('Reconciling ledger...');
+            // TODO: Implement actual reconciliation logic with Stripe API
             break;
 
           case 'PROCESS_WITHDRAW':

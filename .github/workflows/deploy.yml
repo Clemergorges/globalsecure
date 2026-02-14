@@ -27,10 +27,14 @@ jobs:
         run: npx prisma generate
 
       - name: Run tests
-        run: npm run test:ci || true # Permite deploy mesmo com testes falhando
+        run: npm run test:ci # Bloqueia deploy se testes falharem (Segurança Sênior)
 
       - name: Build application
         run: npm run build
+        env:
+          REDIS_URL: "redis://mock:6379" # Evita falha de conexão no build
+          DATABASE_URL: ${{ secrets.DATABASE_URL }} # Necessário para build
+          DIRECT_URL: ${{ secrets.DIRECT_URL }} # Necessário para build
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25

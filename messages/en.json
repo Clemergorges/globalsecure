@@ -36,10 +36,13 @@
     "polygonNetwork": "Polygon Network (MATIC)",
     "Sidebar": {
       "overview": "Overview",
+      "transactions": "Transactions",
       "send": "Send Money",
       "cards": "Cards",
       "history": "History",
       "security": "Security",
+      "settings": "Settings",
+      "support": "Support",
       "admin": "Admin Panel",
       "logout": "Logout"
     },

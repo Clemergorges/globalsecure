@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Mail, Phone, ShieldCheck, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, ShieldCheck, Loader2, Flag, Coins } from 'lucide-react';
 
 import { useRouter } from 'next/navigation';
 
@@ -92,6 +92,23 @@ export default function ProfilePage() {
               <div className="relative">
                 <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                 <Input defaultValue={user.phone || 'Não cadastrado'} disabled className="pl-9" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>País</Label>
+                <div className="relative">
+                  <Flag className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <Input defaultValue={user.country || 'N/A'} disabled className="pl-9" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Moeda Principal</Label>
+                <div className="relative">
+                  <Coins className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <Input defaultValue={user.wallet?.primaryCurrency || 'N/A'} disabled className="pl-9" />
+                </div>
               </div>
             </div>
 

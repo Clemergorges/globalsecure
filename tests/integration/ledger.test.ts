@@ -135,7 +135,10 @@ describe('Ledger ACID Compliance', () => {
     
     const promises = Array(5).fill(0).map(() => 
       processInternalTransfer(senderId, senderEmail, recipientEmail, amount, 'EUR')
-        .catch(e => ({ error: e.message }))
+        .catch(e => {
+          console.log('Transfer failed:', e.message);
+          return { error: e.message };
+        })
     );
 
     const results = await Promise.all(promises);

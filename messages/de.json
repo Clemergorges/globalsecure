@@ -110,6 +110,18 @@
       "activeCards": "Aktive Karten",
       "manage": "Verwalten",
       "createNew": "Neue Karte erstellen"
+    },
+    "Sidebar": {
+      "overview": "Übersicht",
+      "transactions": "Transaktionen",
+      "send": "Geld senden",
+      "cards": "Karten",
+      "history": "Verlauf",
+      "security": "Sicherheit",
+      "settings": "Einstellungen",
+      "support": "Support",
+      "admin": "Admin-Panel",
+      "logout": "Abmelden"
     }
   }
 }

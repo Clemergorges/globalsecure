@@ -36,10 +36,13 @@
     "polygonNetwork": "Rede Polygon (MATIC)",
     "Sidebar": {
       "overview": "Visão Geral",
+      "transactions": "Transações",
       "send": "Enviar Dinheiro",
       "cards": "Cartões",
       "history": "Histórico",
       "security": "Segurança",
+      "settings": "Configurações",
+      "support": "Suporte",
       "admin": "Painel Admin",
       "logout": "Sair"
     },
@@ -169,5 +172,27 @@
       "languageTitle": "Idioma",
       "languageDesc": "Idioma da interface."
     }
+  },
+  "WalletDeposit": {
+    "title": "Depositar Fundos",
+    "subtitle": "Escolha como você quer adicionar dinheiro à sua conta.",
+    "tabPix": "PIX (Brasil)",
+    "tabCrypto": "Cripto",
+    "tabBank": "Transferência",
+    "pixTitle": "Depósito Instantâneo via PIX",
+    "pixDesc": "O valor será creditado na sua conta em segundos. (Simulação)",
+    "pixAmountLabel": "Valor (BRL)",
+    "pixHint": "Em ambiente de produção, isso geraria um QR Code. Para testes, o valor é creditado automaticamente.",
+    "pixSubmit": "Gerar PIX e Pagar",
+    "pixSuccessTitle": "Depósito Confirmado",
+    "pixSuccessDesc": "Recebemos seu PIX de R$ {amount} com sucesso!",
+    "cryptoTitle": "Depósito em USDT",
+    "cryptoDesc": "Envie USDT via rede Polygon (MATIC).",
+    "cryptoAddressLabel": "Seu endereço de depósito:",
+    "cryptoWarning": "Apenas envie USDT (Polygon). Outros tokens podem ser perdidos permanentemente.",
+    "bankTitle": "Transferência Bancária (IBAN)",
+    "bankDesc": "Para depósitos maiores via SEPA ou SWIFT.",
+    "bankBeneficiaryLabel": "Beneficiário",
+    "bankWarning": "O tempo de processamento pode levar de 1 a 3 dias úteis."
   }
 }

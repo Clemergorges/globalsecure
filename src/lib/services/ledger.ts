@@ -166,6 +166,8 @@ export async function processInternalTransfer(
     });
 
     return newTransfer;
+  }, {
+    timeout: 10000 // Increase timeout to 10s for high concurrency
   });
 
   // 3. Real-time Notifications (Non-blocking)

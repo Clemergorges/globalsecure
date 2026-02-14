@@ -82,6 +82,9 @@ model User {
   lastName      String?
   phone         String?   @unique
   phoneVerified Boolean   @default(false)
+  documentId    String?   @unique // CPF, CNPJ, Passport
+  birthDate     DateTime?
+  gender        String?
   kycLevel      Int       @default(0)
   kycStatus     KYCStatus @default(PENDING)
   gdprConsent   Boolean   @default(false)

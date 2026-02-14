@@ -8,38 +8,38 @@ import { Mail, MessageCircle, Phone } from 'lucide-react';
 export default function SupportPage() {
   return (
     <div className="space-y-6 max-w-4xl">
-      <h2 className="text-2xl font-bold tracking-tight">Central de Ajuda</h2>
+      <h2 className="text-2xl font-bold tracking-tight text-white">Central de Ajuda</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* FAQs */}
-        <Card className="md:col-span-2">
+        <Card className="md:col-span-2 bg-[#111116] border-white/5 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Perguntas Frequentes</CardTitle>
+            <CardTitle className="text-white">Perguntas Frequentes</CardTitle>
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1">
-                <AccordionTrigger>Como recarregar minha conta?</AccordionTrigger>
-                <AccordionContent>
+                <AccordionTrigger className="text-slate-200 hover:text-white">Como recarregar minha conta?</AccordionTrigger>
+                <AccordionContent className="text-slate-300">
                   Vá até a Visão Geral e clique no botão &quot;Recarregar&quot;. Aceitamos cartões de crédito e débito via Stripe.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-2">
-                <AccordionTrigger>Quanto tempo demora uma transferência?</AccordionTrigger>
-                <AccordionContent>
+                <AccordionTrigger className="text-slate-200 hover:text-white">Quanto tempo demora uma transferência?</AccordionTrigger>
+                <AccordionContent className="text-slate-300">
                   Transferências entre contas são instantâneas. Envios para cartões virtuais também são imediatos.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-3">
-                <AccordionTrigger>O que é o Nível KYC?</AccordionTrigger>
-                <AccordionContent>
+                <AccordionTrigger className="text-slate-200 hover:text-white">O que é o Nível KYC?</AccordionTrigger>
+                <AccordionContent className="text-slate-300">
                   É o nível de verificação da sua identidade. Quanto maior o nível, maiores são os limites de envio.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-4">
-                <AccordionTrigger>Meu cartão virtual funciona no Brasil?</AccordionTrigger>
-                <AccordionContent>
+                <AccordionTrigger className="text-slate-200 hover:text-white">Meu cartão virtual funciona no Brasil?</AccordionTrigger>
+                <AccordionContent className="text-slate-300">
                   Sim! Nossos cartões são emitidos em EUR/USD mas funcionam globalmente. A conversão é feita automaticamente na hora da compra.
                 </AccordionContent>
               </AccordionItem>
@@ -48,25 +48,25 @@ export default function SupportPage() {
         </Card>
 
         {/* Contato */}
-        <Card className="md:col-span-1 h-fit">
+        <Card className="md:col-span-1 h-fit bg-[#111116] border-white/5 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Fale Conosco</CardTitle>
+            <CardTitle className="text-white">Fale Conosco</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button variant="outline" className="w-full justify-start gap-3 h-12">
-              <MessageCircle className="w-5 h-5 text-green-600" />
+            <Button variant="outline" className="w-full justify-start gap-3 h-12 border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+              <MessageCircle className="w-5 h-5 text-green-400" />
               Chat ao Vivo
             </Button>
-            <Button variant="outline" className="w-full justify-start gap-3 h-12">
-              <Mail className="w-5 h-5 text-blue-600" />
+            <Button variant="outline" className="w-full justify-start gap-3 h-12 border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+              <Mail className="w-5 h-5 text-blue-400" />
               Email Suporte
             </Button>
-            <Button variant="outline" className="w-full justify-start gap-3 h-12">
-              <Phone className="w-5 h-5 text-gray-600" />
+            <Button variant="outline" className="w-full justify-start gap-3 h-12 border-white/10 text-slate-300 hover:text-white hover:bg-white/5">
+              <Phone className="w-5 h-5 text-slate-400" />
               +352 691 123 456
             </Button>
             
-            <div className="pt-4 text-xs text-gray-500 text-center">
+            <div className="pt-4 text-xs text-slate-500 text-center">
               Horário de atendimento: Seg-Sex, 9h às 18h (CET).
             </div>
           </CardContent>

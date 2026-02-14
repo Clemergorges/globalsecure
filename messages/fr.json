@@ -110,6 +110,18 @@
       "activeCards": "Cartes Actives",
       "manage": "Gérer",
       "createNew": "Créer Nouvelle Carte"
+    },
+    "Sidebar": {
+      "overview": "Aperçu",
+      "transactions": "Transactions",
+      "send": "Envoyer de l'argent",
+      "cards": "Cartes",
+      "history": "Historique",
+      "security": "Sécurité",
+      "settings": "Paramètres",
+      "support": "Support",
+      "admin": "Panneau d'administration",
+      "logout": "Se déconnecter"
     }
   }
 }

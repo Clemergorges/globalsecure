@@ -9,12 +9,12 @@ import {
   Settings, 
   LogOut,
   HelpCircle,
-  Shield,
-  User
+  Shield
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from 'next-intl';
 
 interface SidebarNavProps {
   userEmail: string;
@@ -24,14 +24,15 @@ interface SidebarNavProps {
 export function SidebarNav({ userEmail, userRole }: SidebarNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations('Dashboard.Sidebar');
 
   const navigation = [
-    { name: 'Visão Geral', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Transações', href: '/dashboard/transactions', icon: ArrowRightLeft },
-    { name: 'Cartões', href: '/dashboard/cards', icon: CreditCard },
-    { name: 'Segurança', href: '/dashboard/settings/security', icon: Shield },
-    { name: 'Configurações', href: '/dashboard/settings', icon: Settings },
-    { name: 'Suporte', href: '/dashboard/support', icon: HelpCircle },
+    { name: t('overview'), href: '/dashboard', icon: LayoutDashboard },
+    { name: t('transactions'), href: '/dashboard/transactions', icon: ArrowRightLeft },
+    { name: t('cards'), href: '/dashboard/cards', icon: CreditCard },
+    { name: t('security'), href: '/dashboard/settings/security', icon: Shield },
+    { name: t('settings'), href: '/dashboard/settings', icon: Settings },
+    { name: t('support'), href: '/dashboard/support', icon: HelpCircle },
   ];
 
   const handleLogout = async () => {
@@ -75,16 +76,16 @@ export function SidebarNav({ userEmail, userRole }: SidebarNavProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden",
                 isActive 
-                  ? "text-cyan-400 bg-cyan-950/30 border border-cyan-500/20 shadow-[0_0_15px_-5px_rgba(6,182,212,0.3)]" 
+                  ? "text-white bg-cyan-500/30 border border-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.6)]" 
                   : "text-slate-400 hover:text-white hover:bg-white/5"
               )}
             >
               {isActive && (
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent opacity-100" />
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-transparent opacity-100" />
               )}
               <item.icon className={cn(
                 "w-5 h-5 transition-colors relative z-10", 
-                isActive ? "text-cyan-400" : "text-slate-500 group-hover:text-cyan-400"
+                isActive ? "text-white" : "text-slate-500 group-hover:text-cyan-400"
               )} />
               <span className="relative z-10">{item.name}</span>
             </Link>
@@ -113,7 +114,7 @@ export function SidebarNav({ userEmail, userRole }: SidebarNavProps) {
           className="w-full flex items-center justify-start gap-3 text-red-400 hover:text-red-300 hover:bg-red-950/20 transition-colors"
         >
           <LogOut className="w-5 h-5" />
-          Sair
+          {t('logout')}
         </Button>
       </div>
     </aside>
