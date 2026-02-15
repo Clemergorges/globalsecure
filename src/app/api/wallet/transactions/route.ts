@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import type { UserTransaction } from '@prisma/client';
 import { getSession } from '@/lib/auth';
 
 export async function GET(req: Request) {
@@ -38,14 +39,14 @@ export async function GET(req: Request) {
 
     const total = await prisma.userTransaction.count({ where: whereClause });
     
-    const transactions = await prisma.userTransaction.findMany({
+    const transactions: UserTransaction[] = await prisma.userTransaction.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit
     });
 
-    const mapped = transactions.map(tx => {
+    const mapped = transactions.map((tx: UserTransaction) => {
         let description = tx.type.replace('_', ' ');
         
         if (tx.metadata && typeof tx.metadata === 'object') {
@@ -76,7 +77,7 @@ export async function GET(req: Request) {
     let finalResult = mapped;
     if (search && isNaN(Number(search))) {
         const lowerSearch = search.toLowerCase();
-        finalResult = mapped.filter(t => 
+        finalResult = mapped.filter((t) => 
             t.description.toLowerCase().includes(lowerSearch) || 
             t.type.toLowerCase().includes(lowerSearch)
         );
