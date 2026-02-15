@@ -48,6 +48,7 @@ export default async function CardsPage() {
   // Fetch cards
   const cards = await prisma.virtualCard.findMany({
     where: { userId: session.userId },
+    include: { claimLink: true, transfer: true },
     orderBy: { createdAt: 'desc' },
   });
 

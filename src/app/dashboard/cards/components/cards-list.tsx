@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Eye, EyeOff, CreditCard, Lock, Unlock, Loader2, AlertCircle, Copy, Plus, Trash2, Send } from 'lucide-react';
@@ -55,6 +55,7 @@ export function CardsList({ initialCards }: CardsListProps) {
   const [cardDetails, setCardDetails] = useState<{ pan: string, cvv: string } | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(0);
 
   // Create Card State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -68,6 +69,22 @@ export function CardsList({ initialCards }: CardsListProps) {
 
   // Secure Transfer State
   const [isTransferOpen, setIsTransferOpen] = useState(false);
+
+  useEffect(() => {
+    setNowMs(Date.now());
+    const id = setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (!isDetailsOpen) return;
+    const id = setTimeout(() => {
+      setIsDetailsOpen(false);
+      setCardDetails(null);
+      setRevealedCardId(null);
+    }, 30_000);
+    return () => clearTimeout(id);
+  }, [isDetailsOpen]);
 
   const handleCreateCard = async () => {
     setCreateLoading(true);
@@ -124,6 +141,14 @@ export function CardsList({ initialCards }: CardsListProps) {
       setTimeout(() => setError(null), 5000);
     } finally {
       setLoadingId(null);
+    }
+  };
+
+  const handleDetailsOpenChange = (open: boolean) => {
+    setIsDetailsOpen(open);
+    if (!open) {
+      setCardDetails(null);
+      setRevealedCardId(null);
     }
   };
 
@@ -278,12 +303,22 @@ export function CardsList({ initialCards }: CardsListProps) {
             </div>
         </button>
 
-        {cards.map((card) => (
-          <Card key={card.id} className="relative overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(6,182,212,0.15)] bg-[#111116] border-white/5 backdrop-blur-md group hover:border-cyan-500/20">
-             <div className={cn(
-              "absolute top-0 left-0 w-1 h-full transition-colors",
-              card.status === 'ACTIVE' ? "bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]" : "bg-slate-600"
-            )} />
+        {cards.map((card) => {
+          const claim = (card as any).claimLink as any | undefined;
+          const transfer = (card as any).transfer as any | undefined;
+          const isClaim = Boolean(claim?.token);
+          const expiresAt = claim?.expiresAt ? new Date(claim.expiresAt) : null;
+          const claimExpiredByTime = isClaim && Boolean(expiresAt) && Boolean(nowMs) && (expiresAt!.getTime() <= nowMs);
+          const claimExpired = isClaim && (claim?.status === 'EXPIRED' || claim?.status === 'CANCELLED' || claimExpiredByTime);
+          const claimUnlocked = isClaim && Boolean((card as any).unlockedAt);
+          const claimStatusLabel = claimExpired ? 'Expirado' : claimUnlocked ? 'Ativo' : 'Pendente';
+
+          return (
+            <Card key={card.id} className="relative overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(6,182,212,0.15)] bg-[#111116] border-white/5 backdrop-blur-md group hover:border-cyan-500/20">
+              <div className={cn(
+                "absolute top-0 left-0 w-1 h-full transition-colors",
+                card.status === 'ACTIVE' ? "bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]" : "bg-slate-600"
+              )} />
             
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
             
@@ -293,21 +328,49 @@ export function CardsList({ initialCards }: CardsListProps) {
                   <VisaLogo className="w-12 h-4 text-white" />
                   <span className="sr-only">Visa</span>
                 </CardTitle>
-                <Badge variant={card.status === 'ACTIVE' ? 'default' : 'secondary'} className={cn(
-                    "uppercase text-[10px] tracking-wider font-bold",
-                    card.status === 'ACTIVE' ? "bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border-cyan-500/20" : "bg-slate-800 text-slate-400"
-                )}>
-                  {card.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-                </Badge>
+                <div className="flex gap-2">
+                  {isClaim && (
+                    <Badge className="uppercase text-[10px] tracking-wider font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                      Claim
+                    </Badge>
+                  )}
+                  <Badge variant={card.status === 'ACTIVE' ? 'default' : 'secondary'} className={cn(
+                      "uppercase text-[10px] tracking-wider font-bold",
+                      card.status === 'ACTIVE' ? "bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border-cyan-500/20" : "bg-slate-800 text-slate-400"
+                  )}>
+                    {card.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
             
             <CardContent className="space-y-6 relative z-10">
+              {isClaim && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Enviado por link</span>
+                  <span className={cn(
+                    "font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded-full border",
+                    claimExpired ? "bg-red-500/10 text-red-300 border-red-500/20" : claimUnlocked ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                  )}>
+                    {claimStatusLabel}
+                  </span>
+                </div>
+              )}
               <div className="space-y-1">
                 <p className="text-xs text-slate-500 uppercase tracking-wider">Número do Cartão</p>
                 <div className="flex items-center gap-2 font-mono text-xl font-medium tracking-widest text-slate-200">
                   <span>•••• •••• •••• {card.last4}</span>
                 </div>
+                {isClaim && transfer?.recipientEmail ? (
+                  <p className="text-xs text-slate-500">
+                    Destinatário: <span className="text-slate-300">{transfer.recipientEmail}</span>
+                  </p>
+                ) : null}
+                {isClaim && expiresAt ? (
+                  <p className="text-xs text-slate-500">
+                    Expira em: <span className="text-slate-300">{expiresAt.toLocaleString('pt-PT')}</span>
+                  </p>
+                ) : null}
               </div>
               
               <div className="flex justify-between">
@@ -376,11 +439,12 @@ export function CardsList({ initialCards }: CardsListProps) {
                 Ver Dados
               </Button>
             </CardFooter>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
 
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+      <Dialog open={isDetailsOpen} onOpenChange={handleDetailsOpenChange}>
         <DialogContent className="bg-[#0A0A0F] border-white/10 text-white sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Dados do Cartão</DialogTitle>
@@ -440,7 +504,7 @@ export function CardsList({ initialCards }: CardsListProps) {
 
               <div className="bg-amber-950/20 text-amber-400 p-3 rounded-lg text-xs flex gap-2 items-start border border-amber-500/20">
                 <Lock className="w-4 h-4 mt-0.5 shrink-0" />
-                <p>Esta janela fechará automaticamente em breve por segurança. Certifique-se de que ninguém está olhando sua tela.</p>
+                <p>Esta janela fechará automaticamente em 30s por segurança. Certifique-se de que ninguém está olhando sua tela.</p>
               </div>
             </div>
           )}

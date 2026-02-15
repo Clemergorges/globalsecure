@@ -30,6 +30,9 @@ GlobalSecureSend connects traditional banking with the speed of blockchain.
 **All-in-One Financial Dashboard.**
 * **Multi-Currency Wallet:** Hold EUR, USD, and Crypto.
 * **Virtual Cards:** Create cards instantly for online spending.
+* **Claim Link Cards:** Send balance via a virtual card through a secure link, no bank account required at destination.
+* **Protected Unlock:** Recipient unlocks with an out-of-band code (secure channel) with attempt limits to reduce fraud.
+* **Full Dashboard Control:** Create cards, track Claims, and see unified statements & analytics.
 * **Instant Transfers:** Send money to other users by email or ID.
 * **Security First:** 2FA, Liveness Detection, and Transaction Guards.
 

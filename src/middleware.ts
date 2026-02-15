@@ -43,7 +43,9 @@ export async function middleware(request: NextRequest) {
     '/auth/register', 
     '/auth/verify', 
     '/api/auth',
+    '/api/claim/',
     '/api/webhooks',
+    '/claim',
     '/' // Landing page
   ];
 

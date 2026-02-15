@@ -8,6 +8,7 @@ export type TransactionItem = {
   status: string;
   amount: number;
   currency: string;
+  expiresAt?: string;
 };
 
 export default function TransactionsList() {

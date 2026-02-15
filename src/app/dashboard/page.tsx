@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowUpRight, ArrowDownLeft, History, Wallet, TrendingUp } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, History, Wallet, TrendingUp, Send } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { getExchangeRate } from '@/lib/services/exchange';
 
@@ -91,6 +91,11 @@ export default async function DashboardPage() {
            <Link href="/dashboard/wallet/deposit">
              <Button className="gap-2 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold shadow-[0_0_20px_-5px_rgba(6,182,212,0.5)] border-none">
                <ArrowDownLeft className="w-4 h-4" /> {t('deposit')}
+             </Button>
+           </Link>
+           <Link href="/dashboard/claim/create">
+             <Button variant="outline" className="gap-2 border-cyan-500/20 text-cyan-300 hover:text-cyan-200 hover:bg-cyan-500/10">
+               <Send className="w-4 h-4" /> Enviar Cartão
              </Button>
            </Link>
            <Link href="/dashboard/transfers/create">

@@ -50,8 +50,8 @@ describe('Security: Account Takeover Scenarios', () => {
 
   // F8 - Login de País Incomum
   it('F8: Should flag login from unusual location', async () => {
-    const usualCountry = 'LU';
-    const loginCountry = 'RU'; // High Risk / Unusual
+    const usualCountry: string = 'LU';
+    const loginCountry: string = 'RU'; // High Risk / Unusual
 
     let riskDetected = false;
 
