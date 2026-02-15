@@ -54,23 +54,23 @@ export async function POST(req: Request) {
              // We use upsert-like logic or just update since wallets are created on registration
             await tx.balance.upsert({
                 where: {
-                    walletId_currency: {
-                        walletId: (await tx.wallet.findUniqueOrThrow({ where: { userId } })).id,
+                    accountId_currency: {
+                        accountId: (await tx.account.findUniqueOrThrow({ where: { userId } })).id,
                         currency
                     }
                 },
                 update: { amount: { increment: amount } },
                 create: {
-                    walletId: (await tx.wallet.findUniqueOrThrow({ where: { userId } })).id,
+                    accountId: (await tx.account.findUniqueOrThrow({ where: { userId } })).id,
                     currency,
                     amount
                 }
             });
 
             // Log Transaction
-            await tx.walletTransaction.create({
+            await tx.accountTransaction.create({
               data: {
-                walletId: (await tx.wallet.findUniqueOrThrow({ where: { userId } })).id,
+                accountId: (await tx.account.findUniqueOrThrow({ where: { userId } })).id,
                 type: 'DEPOSIT',
                 amount,
                 currency,

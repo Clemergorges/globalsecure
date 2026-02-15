@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowUpRight, ArrowDownLeft, History, Wallet, TrendingUp } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { getExchangeRate } from '@/lib/services/exchange';
 
 export default async function DashboardPage() {
   const t = await getTranslations('Dashboard');
@@ -16,21 +17,21 @@ export default async function DashboardPage() {
     redirect('/auth/login');
   }
 
-  let wallet = await prisma.wallet.findUnique({
+  let account = await prisma.account.findUnique({
     where: { userId: session.userId },
     include: {
       balances: true,
-      transactions: {
+      userTransactions: {
         take: 5,
         orderBy: { createdAt: 'desc' }
       }
     }
   });
 
-  if (!wallet) {
+  if (!account) {
     try {
       console.log(`Wallet missing for user ${session.userId}. Attempting to create one.`);
-      wallet = await prisma.wallet.create({
+      account = await prisma.account.create({
         data: {
           userId: session.userId,
           primaryCurrency: 'EUR',
@@ -40,7 +41,7 @@ export default async function DashboardPage() {
         },
         include: {
           balances: true,
-          transactions: {
+          userTransactions: {
             take: 5,
             orderBy: { createdAt: 'desc' }
           }
@@ -61,8 +62,22 @@ export default async function DashboardPage() {
     }
   }
 
-  const eurBalance = wallet.balances.find(b => b.currency === 'EUR')?.amount.toNumber() || 0;
-  const usdtBalance = wallet.balances.find(b => b.currency === 'USDT')?.amount.toNumber() || 0;
+  // Calculate Total Balance in EUR (Multi-currency support)
+  let totalEurBalance = 0;
+  for (const balance of account.balances) {
+    const rate = await getExchangeRate(balance.currency, 'EUR');
+    totalEurBalance += balance.amount.toNumber() * rate;
+  }
+
+  const usdtBalance = account.balances.find(b => b.currency === 'USDT')?.amount.toNumber() || 0;
+  
+  // Helper for transaction description
+  const getTxDescription = (tx: any) => {
+    if (tx.metadata && typeof tx.metadata === 'object' && (tx.metadata as any).method) {
+      return `${tx.type.replace('_', ' ')} - ${(tx.metadata as any).method}`;
+    }
+    return tx.type.replace('_', ' ');
+  };
 
   return (
     <div className="p-6 md:p-8 space-y-8">
@@ -99,7 +114,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="relative z-10">
             <div className="text-3xl font-bold text-white tracking-tight">
-              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(eurBalance)}
+              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(totalEurBalance)}
             </div>
             <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
               <TrendingUp className="w-3 h-3 text-emerald-400" />
@@ -140,7 +155,7 @@ export default async function DashboardPage() {
         
         <Card className="bg-[#111116] border-white/5 backdrop-blur-sm overflow-hidden">
            <CardContent className="p-0">
-             {wallet.transactions.length === 0 ? (
+             {account.userTransactions.length === 0 ? (
                <div className="p-12 text-center">
                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
                    <History className="w-6 h-6 text-slate-500" />
@@ -150,10 +165,12 @@ export default async function DashboardPage() {
                </div>
              ) : (
                <div className="divide-y divide-white/5">
-                 {wallet.transactions.map((tx) => (
+                 {account.userTransactions.map((tx) => (
                    <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors group">
                      <div className="flex flex-col gap-1">
-                       <span className="font-medium text-slate-200 group-hover:text-white transition-colors">{tx.description}</span>
+                       <span className="font-medium text-slate-200 group-hover:text-white transition-colors">
+                         {getTxDescription(tx)}
+                       </span>
                        <span className="text-xs text-slate-500">
                          {new Date(tx.createdAt).toLocaleDateString('pt-PT', {
                            day: '2-digit',
@@ -164,8 +181,8 @@ export default async function DashboardPage() {
                          })}
                        </span>
                      </div>
-                     <div className={`font-bold font-mono ${['CREDIT', 'DEPOSIT'].includes(tx.type) ? 'text-emerald-400' : 'text-slate-300'}`}>
-                       {['CREDIT', 'DEPOSIT'].includes(tx.type) ? '+' : '-'}
+                     <div className={`font-bold font-mono ${['PIX_IN', 'SEPA_IN', 'CRYPTO_IN'].includes(tx.type) ? 'text-emerald-400' : 'text-slate-300'}`}>
+                       {['PIX_IN', 'SEPA_IN', 'CRYPTO_IN'].includes(tx.type) ? '+' : '-'}
                        {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: tx.currency }).format(tx.amount.toNumber())}
                      </div>
                    </div>

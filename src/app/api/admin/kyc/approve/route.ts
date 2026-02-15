@@ -35,6 +35,23 @@ export async function POST(req: Request) {
         }
     });
 
+    // Update KycVerification (New Model)
+    await prisma.kycVerification.upsert({
+        where: { userId },
+        update: {
+            status: status,
+            level: status === 'APPROVED' ? 'ADVANCED' : 'BASIC',
+            rejectionReason: status === 'REJECTED' ? rejectionReason : null,
+            approvedAt: status === 'APPROVED' ? new Date() : null
+        },
+        create: {
+            userId,
+            status: status,
+            level: status === 'APPROVED' ? 'ADVANCED' : 'BASIC',
+            approvedAt: status === 'APPROVED' ? new Date() : null
+        }
+    });
+
     // Notify User
     await createNotification({
         userId,

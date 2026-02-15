@@ -39,12 +39,12 @@ async function main() {
   console.log('🔄 [SETUP] Cleaning up and creating test users...');
   
   // Clean up previous test data
-  const existingUser = await prisma.user.findUnique({ where: { email: TEST_EMAIL }, include: { wallet: true } });
+  const existingUser = await prisma.user.findUnique({ where: { email: TEST_EMAIL }, include: { account: true } });
   if (existingUser) {
-      if (existingUser.wallet) {
-        await prisma.walletTransaction.deleteMany({ where: { walletId: existingUser.wallet.id } });
-        await prisma.balance.deleteMany({ where: { walletId: existingUser.wallet.id } });
-        await prisma.wallet.update({ where: { id: existingUser.wallet.id }, data: { balanceEUR: 0, balanceUSD: 0, balanceGBP: 0 } });
+      if (existingUser.account) {
+        await prisma.accountTransaction.deleteMany({ where: { accountId: existingUser.account.id } });
+        await prisma.balance.deleteMany({ where: { accountId: existingUser.account.id } });
+        await prisma.account.update({ where: { id: existingUser.account.id }, data: { balanceEUR: 0, balanceUSD: 0, balanceGBP: 0 } });
       }
       await prisma.swap.deleteMany({ where: { userId: existingUser.id } });
       await prisma.cryptoDeposit.deleteMany({ where: { userId: existingUser.id } });
@@ -63,10 +63,9 @@ async function main() {
         email: TEST_EMAIL,
         firstName: 'Suite',
         lastName: 'Tester',
-        passwordHash: 'mock',
-        wallet: { create: { primaryCurrency: 'EUR' } }
+        passwordHash: 'mock', account: { create: { primaryCurrency: 'EUR' } }
       },
-      include: { wallet: true }
+      include: { account: true }
     });
   }
 
@@ -102,7 +101,7 @@ async function main() {
   }
   
   // Verify Balance (Should be 0 EUR)
-  const walletCheck = await prisma.wallet.findUnique({ where: { userId: user!.id } });
+  const walletCheck = await prisma.account.findUnique({ where: { userId: user!.id } });
   console.log(`   Final Balance: ${walletCheck?.balanceEUR} EUR (Expected 0)`);
   
   if (Number(walletCheck?.balanceEUR) !== 0) console.error('❌ Balance Divergence!');
@@ -132,7 +131,7 @@ async function main() {
   
   // Generate address
   await request('GET', '/api/crypto/address', userToken);
-  const w = await prisma.wallet.findUnique({ where: { userId: user!.id } });
+  const w = await prisma.account.findUnique({ where: { userId: user!.id } });
   const address = w?.cryptoAddress;
   const txHash = '0x' + crypto.randomBytes(32).toString('hex');
 
@@ -160,7 +159,7 @@ async function main() {
   // Note: Previous test swapped 100 EUR -> ~108 USD. 
   // Current USD balance should be ~108 + 50 = ~158. NOT ~208.
   
-  const walletCheck2 = await prisma.wallet.findUnique({ where: { userId: user!.id } });
+  const walletCheck2 = await prisma.account.findUnique({ where: { userId: user!.id } });
   const deposits = await prisma.cryptoDeposit.count({ where: { txHash: txHash } });
   
   if (deposits === 1) {
@@ -192,7 +191,7 @@ async function main() {
   // 5. FULL CYCLE CONFIRMATION
   // ==========================================
   console.log('📊 FINAL STATE AUDIT');
-  const finalWallet = await prisma.wallet.findUnique({ where: { userId: user!.id } });
+  const finalWallet = await prisma.account.findUnique({ where: { userId: user!.id } });
   console.log(`EUR: ${finalWallet?.balanceEUR}`);
   console.log(`USD: ${finalWallet?.balanceUSD}`);
   

@@ -18,7 +18,7 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
             const user = await getTestUser(2);
 
             // Ensure user has a crypto address
-            await prisma.wallet.update({
+            await prisma.account.update({
                 where: { userId: user.id },
                 data: {
                     cryptoAddress: '0x1234567890123456789012345678901234567890',
@@ -28,7 +28,7 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
 
             // Verify initial balance
             const initialBalanceRecord = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
             });
             const initialBalance = Number(initialBalanceRecord?.amount || 0);
             
@@ -60,7 +60,7 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
 
             // Verify NOT credited yet
             const currentBalanceRecord = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
             });
             expect(Number(currentBalanceRecord?.amount || 0)).toBe(initialBalance);
 
@@ -89,19 +89,19 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
 
                 // Credit wallet (1 USDT = 1 EUR for simplicity)
                 await tx.balance.upsert({
-                    where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
-                    create: { walletId: user.wallet!.id, currency: 'EUR', amount: depositAmount },
+                    where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
+                    create: { accountId: user.account!.id, currency: 'EUR', amount: depositAmount },
                     update: { amount: { increment: depositAmount } }
                 });
 
                 // Create transaction log
-                const wallet = await tx.wallet.findUnique({
+                const account = await tx.account.findUnique({
                     where: { userId: user.id },
                 });
 
-                const walletTx = await tx.walletTransaction.create({
+                const walletTx = await tx.accountTransaction.create({
                     data: {
-                        walletId: wallet!.id,
+                        accountId: account!.id,
                         type: 'DEPOSIT',
                         amount: depositAmount,
                         currency: 'EUR',
@@ -122,7 +122,7 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
 
             // Verify balance credited
             const finalBalanceRecord = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
             });
             expect(Number(finalBalanceRecord?.amount || 0)).toBe(initialBalance + depositAmount);
 
@@ -255,7 +255,7 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
     describe('4.7. Failed/Reverted Transactions', () => {
         it('should NOT credit balance for reverted transaction', async () => {
             const user = await getTestUser(2);
-            const initialBalance = Number(user.wallet!.balances.find(b => b.currency === 'EUR')?.amount || 0);
+            const initialBalance = Number(user.account!.balances.find(b => b.currency === 'EUR')?.amount || 0);
             const depositAmount = 100;
             const txHash = '0xreverted1234567890reverted1234567890reverted1234567890reverted';
 
@@ -278,7 +278,7 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
             });
 
             // Verify balance NOT credited
-            const finalWallet = await prisma.wallet.findUnique({
+            const finalWallet = await prisma.account.findUnique({
                 where: { userId: user.id },
                 include: { balances: true }
             });

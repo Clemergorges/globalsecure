@@ -62,18 +62,18 @@ export async function POST(req: Request) {
 
         // 2. Find User by Deposit Address (Reverse lookup)
         // Now we use the persisted address in Wallet model
-        const wallet = await prisma.wallet.findFirst({
+        const account = await prisma.account.findFirst({
             where: { cryptoAddress: toAddress },
             include: { user: true }
         });
 
-        if (!wallet) {
+        if (!account) {
             console.warn(`[ORPHANED] Deposit to unknown address: ${toAddress}`);
             // TODO: Log to OrphanedDeposits table for manual review
             return NextResponse.json({ received: true, status: 'orphaned' });
         }
 
-        const userId = wallet.userId;
+        const userId = account.userId;
         const amount = parseFloat(value);
 
         // 3. Process Deposit Transaction (Atomic)
@@ -99,8 +99,8 @@ export async function POST(req: Request) {
             // C. Update Wallet Balance (Unified - USD)
             await tx.balance.upsert({
                 where: {
-                    walletId_currency: {
-                        walletId: wallet.id,
+                    accountId_currency: {
+                        accountId: account.id,
                         currency: 'USD'
                     }
                 },
@@ -108,16 +108,16 @@ export async function POST(req: Request) {
                     amount: { increment: amountUsd }
                 },
                 create: {
-                    walletId: wallet.id,
+                    accountId: account.id,
                     currency: 'USD',
                     amount: amountUsd
                 }
             });
 
             // D. Create Wallet Transaction Log
-            await tx.walletTransaction.create({
+            await tx.accountTransaction.create({
                 data: {
-                    walletId: wallet.id,
+                    accountId: account.id,
                     type: 'DEPOSIT', // Using existing enum
                     amount: amountUsd,
                     currency: 'USD',

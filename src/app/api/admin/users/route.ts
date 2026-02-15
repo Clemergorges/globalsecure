@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   try {
     const users = await prisma.user.findMany({
       include: {
-        wallet: {
+        account: {
             include: {
                 balances: true
             }
@@ -28,9 +28,9 @@ export async function GET(req: Request) {
     const sanitizedUsers = users.map(user => {
       // Normalize balances: Combine explicit Balance table with Wallet columns
       const balances: { currency: string; amount: any }[] = [];
-      if (user.wallet) {
+      if (user.account) {
         // Add others from Balance table
-        user.wallet.balances.forEach(b => {
+        user.account.balances.forEach(b => {
             balances.push({ currency: b.currency, amount: b.amount });
         });
       }
@@ -41,9 +41,8 @@ export async function GET(req: Request) {
         firstName: user.firstName,
         lastName: user.lastName,
         kycStatus: user.kycStatus,
-        kycLevel: user.kycLevel,
-        wallet: {
-            ...user.wallet,
+        kycLevel: user.kycLevel, account: {
+            ...user.account,
             balances: balances
         },
         lastKycDoc: user.kycDocuments[0] || null,

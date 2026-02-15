@@ -42,12 +42,12 @@ async function main() {
     if (!admin) throw new Error("Admin user not found.");
 
     // Ensure Test User
-    let user = await prisma.user.findUnique({ where: { email: TEST_EMAIL }, include: { wallet: true } });
+    let user = await prisma.user.findUnique({ where: { email: TEST_EMAIL }, include: { account: true } });
     if (user) {
         // Reset everything
-        if (user.wallet) {
-            await prisma.walletTransaction.deleteMany({ where: { walletId: user.wallet.id } });
-            await prisma.wallet.update({ where: { id: user.wallet.id }, data: { balanceEUR: 0, balanceUSD: 0, balanceGBP: 0 } });
+        if (user.account) {
+            await prisma.accountTransaction.deleteMany({ where: { accountId: user.account.id } });
+            await prisma.account.update({ where: { id: user.account.id }, data: { balanceEUR: 0, balanceUSD: 0, balanceGBP: 0 } });
         }
         await prisma.swap.deleteMany({ where: { userId: user.id } });
         await prisma.cryptoWithdraw.deleteMany({ where: { userId: user.id } });
@@ -57,10 +57,9 @@ async function main() {
                 email: TEST_EMAIL,
                 firstName: 'Stress',
                 lastName: 'Tester',
-                passwordHash: 'mock',
-                wallet: { create: { primaryCurrency: 'USD' } }
+                passwordHash: 'mock', account: { create: { primaryCurrency: 'USD' } }
             },
-            include: { wallet: true }
+            include: { account: true }
         });
     }
 
@@ -75,7 +74,7 @@ async function main() {
     console.log('🧪 [TEST 1] 10 Concurrent Swaps (100 USDT Initial -> 5 USDT per Swap)');
     
     // Set Balance to 100 USD (Using USD field as proxy for USDT/USD)
-    await prisma.wallet.update({ where: { userId: user!.id }, data: { balanceUSD: 100, balanceEUR: 0 } });
+    await prisma.account.update({ where: { userId: user!.id }, data: { balanceUSD: 100, balanceEUR: 0 } });
     
     const swapRequests = Array(10).fill(0).map((_, i) => 
         request('POST', '/api/swap', userToken, { 
@@ -94,7 +93,7 @@ async function main() {
         console.log('   First Failure Reason:', JSON.stringify(firstFail?.data));
     }
     
-    const finalWallet1 = await prisma.wallet.findUnique({ where: { userId: user!.id } });
+    const finalWallet1 = await prisma.account.findUnique({ where: { userId: user!.id } });
     
     console.log(`   Results: ${swapSuccess} Success / ${swapFail} Failed`);
     console.log(`   Final Balance: ${finalWallet1?.balanceUSD} USD`);
@@ -112,7 +111,7 @@ async function main() {
     console.log('🧪 [TEST 2] 10 Concurrent Withdraws (100 USDT Initial -> 5 USDT per Withdraw)');
     
     // Set Balance to 100 USD
-    await prisma.wallet.update({ where: { userId: user!.id }, data: { balanceUSD: 100 } });
+    await prisma.account.update({ where: { userId: user!.id }, data: { balanceUSD: 100 } });
     
     const withdrawRequests = Array(10).fill(0).map((_, i) => 
         request('POST', '/api/crypto/withdraw', userToken, { 
@@ -130,7 +129,7 @@ async function main() {
         console.log('   First Failure Reason:', JSON.stringify(firstFail?.data));
     }
     
-    const finalWallet2 = await prisma.wallet.findUnique({ where: { userId: user!.id } });
+    const finalWallet2 = await prisma.account.findUnique({ where: { userId: user!.id } });
     
     console.log(`   Results: ${withdrawSuccess} Success / ${withdrawFail} Failed`);
     console.log(`   Final Balance: ${finalWallet2?.balanceUSD} USD`);
@@ -148,7 +147,7 @@ async function main() {
     console.log('🧪 [TEST 3] Mixed Concurrency (100 USDT Initial -> 5 USDT per Op)');
     
     // Set Balance to 100 USD
-    await prisma.wallet.update({ where: { userId: user!.id }, data: { balanceUSD: 100 } });
+    await prisma.account.update({ where: { userId: user!.id }, data: { balanceUSD: 100 } });
     
     const mixedRequests = [
         ...Array(5).fill(0).map(() => request('POST', '/api/swap', userToken, { fromAsset: 'USD', toAsset: 'EUR', amount: 5 })),
@@ -162,7 +161,7 @@ async function main() {
     const mixedSuccess = mixedResults.filter(r => r.status === 200).length;
     const mixedFail = mixedResults.filter(r => r.status !== 200).length;
     
-    const finalWallet3 = await prisma.wallet.findUnique({ where: { userId: user!.id } });
+    const finalWallet3 = await prisma.account.findUnique({ where: { userId: user!.id } });
     
     console.log(`   Results: ${mixedSuccess} Success / ${mixedFail} Failed`);
     console.log(`   Final Balance: ${finalWallet3?.balanceUSD} USD`);

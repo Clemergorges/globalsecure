@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const backBlob = await put(`kyc/${userId}/back-${back.name}`, back, { access: 'public' });
     const selfieBlob = await put(`kyc/${userId}/selfie-${selfie.name}`, selfie, { access: 'public' });
 
-    // Create KYCDocument
+    // Create KYCDocument (Historical Record)
     await prisma.kYCDocument.create({
         data: {
             userId,
@@ -46,6 +46,24 @@ export async function POST(req: Request) {
             selfieUrl: selfieBlob.url,
             status: 'PENDING'
         }
+    });
+
+    // Update/Create KycVerification (Active State)
+    await prisma.kycVerification.upsert({
+      where: { userId },
+      update: {
+        status: 'PENDING',
+        documentType: documentType || 'id_card',
+        submittedAt: new Date(),
+        rejectionReason: null
+      },
+      create: {
+        userId,
+        status: 'PENDING',
+        documentType: documentType || 'id_card',
+        level: 'BASIC',
+        submittedAt: new Date()
+      }
     });
 
     // Update User KYC Status

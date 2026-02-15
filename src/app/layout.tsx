@@ -9,6 +9,12 @@ export const metadata = {
   icons: {
     icon: '/globe.svg',
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'GlobalSecure',
+  },
 };
 
 export default async function RootLayout({

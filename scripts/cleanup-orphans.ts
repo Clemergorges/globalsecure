@@ -7,7 +7,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('Cleaning up orphan WalletTransactions...');
+    console.log('Cleaning up orphan AccountTransactions...');
     
     // Find orphans
     // Since we can't easily do "NOT IN" with Prisma fluent API easily for deleteMany without raw query usually,
@@ -16,15 +16,15 @@ async function main() {
     try {
         // 1. Transactions orphans
         const count = await prisma.$executeRaw`
-            DELETE FROM "WalletTransaction"
-            WHERE "walletId" NOT IN (SELECT "id" FROM "Wallet");
+            DELETE FROM "AccountTransaction"
+            WHERE "accountId" NOT IN (SELECT "id" FROM "Wallet");
         `;
-        console.log(`Deleted ${count} orphan WalletTransactions.`);
+        console.log(`Deleted ${count} orphan AccountTransactions.`);
         
         // 2. Balance orphans
         const countBalance = await prisma.$executeRaw`
             DELETE FROM "Balance"
-            WHERE "walletId" NOT IN (SELECT "id" FROM "Wallet");
+            WHERE "accountId" NOT IN (SELECT "id" FROM "Wallet");
         `;
         console.log(`Deleted ${countBalance} orphan Balances.`);
 

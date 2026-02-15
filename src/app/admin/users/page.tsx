@@ -122,10 +122,10 @@ export default function AdminUsersPage() {
                   <TableCell>
                     <Badge variant="outline">{user.country || 'N/A'}</Badge>
                   </TableCell>
-                  <TableCell>{user.wallet?.primaryCurrency || 'USD'}</TableCell>
+                  <TableCell>{user.account?.primaryCurrency || 'USD'}</TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1 text-sm">
-                      {user.wallet?.balances.map((b: any) => (
+                      {user.account?.balances.map((b: any) => (
                         <span key={b.currency}>{b.currency} {parseFloat(b.amount).toFixed(2)}</span>
                       ))}
                     </div>
@@ -135,7 +135,7 @@ export default function AdminUsersPage() {
                       <DialogTrigger asChild>
                         <Button variant="outline" size="sm" onClick={() => {
                           setSelectedUser(user);
-                          setTopupCurrency(user.wallet?.primaryCurrency || 'EUR');
+                          setTopupCurrency(user.account?.primaryCurrency || 'EUR');
                         }}>
                           <PlusCircle className="w-4 h-4 mr-1" /> Add Saldo
                         </Button>

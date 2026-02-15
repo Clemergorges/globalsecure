@@ -21,69 +21,69 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Missing amount or currency' }, { status: 400 });
     }
 
-    // 1. Create a Transfer to track funds (reserved)
-    // Use real email if provided, otherwise placeholder
-    const transferRecipientEmail = recipientEmail || 'claim-placeholder@globalsecuresend.com';
+    // 1. Execute database operations atomically
+    const result = await prisma.$transaction(async (tx) => {
+      // 1a. Create Transfer
+      const transferRecipientEmail = recipientEmail || 'claim-placeholder@globalsecuresend.com';
+      const transfer = await tx.transfer.create({
+          data: {
+              senderId: userId,
+              recipientEmail: transferRecipientEmail,
+              amountSent: amount,
+              currencySent: currency,
+              amountReceived: amount,
+              currencyReceived: currency,
+              fee: 0,
+              type: 'CARD',
+              status: 'COMPLETED' // Funds effectively reserved
+          }
+      });
 
-    const transfer = await prisma.transfer.create({
-        data: {
-            senderId: userId,
-            recipientEmail: transferRecipientEmail,
-            amountSent: amount,
-            currencySent: currency,
-            amountReceived: amount,
-            currencyReceived: currency,
-            fee: 0,
-            type: 'CARD',
-            status: 'COMPLETED' // Funds effectively reserved
-        }
+      // 1b. Create Virtual Card
+      const mockStripeCardId = `ic_claim_${randomBytes(4).toString('hex')}`;
+      const virtualCard = await tx.virtualCard.create({
+          data: {
+              transferId: transfer.id,
+              userId: userId,
+              stripeCardId: mockStripeCardId,
+              stripeCardholderId: `ich_mock_${randomBytes(4).toString('hex')}`,
+              last4: '4242', // Mock
+              brand: 'visa',
+              expMonth: 12,
+              expYear: 2028,
+              amount: amount,
+              currency: currency,
+              status: 'ACTIVE',
+              unlockCode: randomBytes(3).toString('hex'), // 6 chars
+              expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          }
+      });
+
+      // 1c. Create Claim Link
+      const token = randomBytes(16).toString('hex');
+      const claimLink = await tx.claimLink.create({
+          data: {
+              token,
+              creatorId: userId,
+              amount,
+              currency,
+              message,
+              expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000),
+              virtualCardId: virtualCard.id
+          }
+      });
+
+      return { transfer, virtualCard, claimLink, token };
     });
 
-    // 2. Create the Virtual Card (Mocking Stripe Issuing for MVP)
-    // In production, call stripe.issuing.cards.create() here
-    const mockStripeCardId = `ic_claim_${randomBytes(4).toString('hex')}`;
-    
-    const virtualCard = await prisma.virtualCard.create({
-        data: {
-            transferId: transfer.id,
-            userId: userId, // Remains owned by creator
-            stripeCardId: mockStripeCardId,
-            stripeCardholderId: `ich_mock_${randomBytes(4).toString('hex')}`,
-            last4: '4242', // Mock
-            brand: 'visa',
-            expMonth: 12,
-            expYear: 2028,
-            amount: amount,
-            currency: currency,
-            status: 'ACTIVE',
-            // unlockStatus: 'LOCKED', // Starts locked per security flow 
-            unlockCode: randomBytes(3).toString('hex'), // 6 chars
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days card validity
-        }
-    });
-
-    // 3. Create the Claim Link
-    const token = randomBytes(16).toString('hex');
-    
-    const claimLink = await prisma.claimLink.create({
-        data: {
-            token,
-            creatorId: userId,
-            amount,
-            currency,
-            message,
-            expiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000), // Link expires in 48h
-            virtualCardId: virtualCard.id
-        }
-    });
-
+    const { virtualCard, token } = result;
     const claimUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/claim/${token}`;
 
-    // 4. Send Email if recipient is provided
+    // 2. Send Email (Side Effect - outside transaction)
     if (recipientEmail) {
         await sendEmail({
             to: recipientEmail,
-            subject: 'Você recebeu um Cartão Virtual GlobalSecure! 🎁',
+            subject: 'Você recebeu um Pagamento Seguro GlobalSecure 🛡️',
             html: templates.cardClaim(
                 recipientName || 'Usuário',
                 amount.toString(),
@@ -91,19 +91,16 @@ export async function POST(req: Request) {
                 claimUrl
             )
         });
-        
-        // Also send the unlock code in a separate email or same?
-        // For security, usually code is separate or sender gives it. 
-        // The template says: "Você precisará do Código de Desbloqueio fornecido pelo remetente."
-        // So we do NOT send the code here. Correct.
     }
+
+    console.info(`Secure Link Created: Transfer=${result.transfer.id}, Card=${result.virtualCard.id}, Link=${result.token}`);
 
     return NextResponse.json({ 
         success: true, 
         claimUrl,
         token,
         cardId: virtualCard.id,
-        unlockCode: virtualCard.unlockCode // Sender needs to see this to share it!
+        unlockCode: virtualCard.unlockCode 
     });
 
   } catch (error: any) {

@@ -22,7 +22,7 @@ export async function POST(
     }
 
     // 1. Internal Ledger Check (Prevent spending more than owned)
-    // const userWallet = await prisma.wallet.findUnique({ where: { userId } });
+    // const userWallet = await prisma.account.findUnique({ where: { userId } });
     // if (!userWallet || userWallet.balanceUSDT < parseFloat(amountUsdt)) {
     //    return NextResponse.json({ error: 'Insufficient funds' }, { status: 402 });
     // }
@@ -44,7 +44,7 @@ export async function POST(
     }).catch(e => console.error("Log failed", e));
 
     // 5. Deduct Balance (Atomic operation recommended)
-    // await prisma.wallet.update(...)
+    // await prisma.account.update(...)
 
     return NextResponse.json({
       success: true,

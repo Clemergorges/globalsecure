@@ -48,17 +48,17 @@ export async function POST(req: Request) {
 
     // 3. Execute Transaction (ACID)
     const result = await prisma.$transaction(async (tx) => {
-      const wallet = await tx.wallet.findUnique({
+      const account = await tx.account.findUnique({
         where: { userId: (auth as any).userId }
       });
 
-      if (!wallet) throw new Error('Wallet not found');
+      if (!account) throw new Error('Account not found');
 
       // 3.1 Debit Source (Atomic Check via Balance table)
       // Use updateMany with 'gte' guard to prevent negative balance
       const debitResult = await tx.balance.updateMany({
         where: { 
-            walletId: wallet.id,
+            accountId: account.id,
             currency: fromAsset,
             amount: { gte: amount }
         },
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
       if (debitResult.count === 0) {
           // Check if balance exists to give better error
           const balanceExists = await tx.balance.findUnique({
-              where: { walletId_currency: { walletId: wallet.id, currency: fromAsset } }
+              where: { accountId_currency: { accountId: account.id, currency: fromAsset } }
           });
           if (!balanceExists) {
               throw new Error(`Insufficient ${fromAsset} balance (No record found)`);
@@ -82,13 +82,13 @@ export async function POST(req: Request) {
       // Upsert to ensure balance record exists
       await tx.balance.upsert({
         where: { 
-            walletId_currency: { walletId: wallet.id, currency: toAsset } 
+            accountId_currency: { accountId: account.id, currency: toAsset } 
         },
         update: {
           amount: { increment: toAmount }
         },
         create: {
-          walletId: wallet.id,
+          accountId: account.id,
           currency: toAsset,
           amount: toAmount
         }
@@ -109,9 +109,9 @@ export async function POST(req: Request) {
       });
 
       // Create Ledger Entries (One for Debit, One for Credit)
-      await tx.walletTransaction.create({
+      await tx.accountTransaction.create({
         data: {
-          walletId: wallet.id,
+          accountId: account.id,
           type: 'DEBIT', // Was REFUND, but DEBIT is more appropriate for Swap Out
           amount: amount,
           currency: fromAsset,
@@ -119,9 +119,9 @@ export async function POST(req: Request) {
         }
       });
 
-      await tx.walletTransaction.create({
+      await tx.accountTransaction.create({
         data: {
-          walletId: wallet.id,
+          accountId: account.id,
           type: 'CREDIT',
           amount: toAmount,
           currency: toAsset,

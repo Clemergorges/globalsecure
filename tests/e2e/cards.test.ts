@@ -21,9 +21,9 @@ describe('E2E: Virtual Cards', () => {
         });
         const ids = users.map(u => u.id);
         
-        await prisma.walletTransaction.deleteMany({ where: { wallet: { userId: { in: ids } } } });
-        await prisma.balance.deleteMany({ where: { wallet: { userId: { in: ids } } } });
-        await prisma.wallet.deleteMany({ where: { userId: { in: ids } } });
+        await prisma.accountTransaction.deleteMany({ where: { account: { userId: { in: ids } } } });
+        await prisma.balance.deleteMany({ where: { account: { userId: { in: ids } } } });
+        await prisma.account.deleteMany({ where: { userId: { in: ids } } });
         await prisma.virtualCard.deleteMany({ where: { userId: { in: ids } } });
         await prisma.transfer.deleteMany({ where: { senderId: { in: ids } } });
         await prisma.user.deleteMany({ where: { id: { in: ids } } });
@@ -37,9 +37,9 @@ describe('E2E: Virtual Cards', () => {
         });
         const ids = users.map(u => u.id);
         
-        await prisma.walletTransaction.deleteMany({ where: { wallet: { userId: { in: ids } } } });
-        await prisma.balance.deleteMany({ where: { wallet: { userId: { in: ids } } } });
-        await prisma.wallet.deleteMany({ where: { userId: { in: ids } } });
+        await prisma.accountTransaction.deleteMany({ where: { account: { userId: { in: ids } } } });
+        await prisma.balance.deleteMany({ where: { account: { userId: { in: ids } } } });
+        await prisma.account.deleteMany({ where: { userId: { in: ids } } });
         await prisma.virtualCard.deleteMany({ where: { userId: { in: ids } } });
         await prisma.transfer.deleteMany({ where: { senderId: { in: ids } } });
         await prisma.user.deleteMany({ where: { id: { in: ids } } });
@@ -54,8 +54,7 @@ describe('E2E: Virtual Cards', () => {
                 passwordHash: 'hashed',
                 firstName: 'Card',
                 lastName: 'User',
-                kycLevel: 2,
-                wallet: {
+                kycLevel: 2, account: {
                     create: {
                         balances: {
                             create: { currency: 'EUR', amount: 100 }
@@ -63,7 +62,7 @@ describe('E2E: Virtual Cards', () => {
                     }
                 }
             },
-            include: { wallet: true }
+            include: { account: true }
         });
 
         // Mock Stripe Response
@@ -84,7 +83,7 @@ describe('E2E: Virtual Cards', () => {
         // A. Debit Balance
         await prisma.$transaction(async (tx) => {
             const debitResult = await tx.balance.updateMany({
-                where: { walletId: user.wallet!.id, currency: 'EUR', amount: { gte: cardAmount } },
+                where: { accountId: user.account!.id, currency: 'EUR', amount: { gte: cardAmount } },
                 data: { amount: { decrement: cardAmount } }
             });
             if (debitResult.count === 0) throw new Error('Insufficient funds');
@@ -127,7 +126,7 @@ describe('E2E: Virtual Cards', () => {
 
         // 3. Verify DB State
         const finalBalance = await prisma.balance.findUnique({
-            where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+            where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
         });
         const card = await prisma.virtualCard.findFirst({ where: { userId: user.id } });
 

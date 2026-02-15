@@ -23,17 +23,17 @@ async function simulate() {
   // 1. Get User Wallet
   const user = await prisma.user.findUnique({
     where: { email },
-    include: { wallet: true }
+    include: { account: true }
   });
 
-  if (!user || !user.wallet?.cryptoAddress) {
+  if (!user || !user.account?.cryptoAddress) {
     console.error(
       'User or crypto address not found. Open the dashboard and click "Depositar Cripto" first.'
     );
     process.exit(1);
   }
 
-  const toAddress = user.wallet.cryptoAddress.toLowerCase();
+  const toAddress = user.account.cryptoAddress.toLowerCase();
   console.log(`Target Address: ${toAddress}`);
 
   // 2. Convert amount to raw value (Alchemy uses integer strings)

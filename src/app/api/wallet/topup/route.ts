@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const feeMinor = Math.round(feeAmount * 100);
     
     // Total charge = Amount + Fees
-    // But we credit only 'amount' to the wallet.
+    // But we credit only 'amount' to the account.
 
     // Criar Sessão do Checkout
     const checkoutSession = await stripe.checkout.sessions.create({

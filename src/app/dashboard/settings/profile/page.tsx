@@ -107,7 +107,7 @@ export default function ProfilePage() {
                 <Label>Moeda Principal</Label>
                 <div className="relative">
                   <Coins className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <Input defaultValue={user.wallet?.primaryCurrency || 'N/A'} disabled className="pl-9" />
+                  <Input defaultValue={user.account?.primaryCurrency || 'N/A'} disabled className="pl-9" />
                 </div>
               </div>
             </div>

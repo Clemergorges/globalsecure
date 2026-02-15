@@ -22,7 +22,7 @@ describe('Double Spend Prevention Tests', () => {
 
             // Set sender balance to €100
             await prisma.balance.update({
-                where: { walletId_currency: { walletId: sender.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: sender.account!.id, currency: 'EUR' } },
                 data: { amount: 100 },
             });
 
@@ -35,7 +35,7 @@ describe('Double Spend Prevention Tests', () => {
                     if (ids[0] === sender.id) {
                         const debitResult = await tx.balance.updateMany({
                             where: { 
-                                walletId: sender.wallet!.id, 
+                                accountId: sender.account!.id, 
                                 currency: 'EUR',
                                 amount: { gte: transferAmount } 
                             },
@@ -45,22 +45,22 @@ describe('Double Spend Prevention Tests', () => {
                             throw new Error('Insufficient balance');
                         }
                         await tx.balance.upsert({
-                            where: { walletId_currency: { walletId: receiver1.wallet!.id, currency: 'EUR' } },
+                            where: { accountId_currency: { accountId: receiver1.account!.id, currency: 'EUR' } },
                             update: { amount: { increment: transferAmount } },
-                            create: { walletId: receiver1.wallet!.id, currency: 'EUR', amount: transferAmount }
+                            create: { accountId: receiver1.account!.id, currency: 'EUR', amount: transferAmount }
                         });
                     } else {
                         // Canonical ordering: Lock receiver first (since receiver.id < sender.id)
                         await tx.balance.upsert({
-                            where: { walletId_currency: { walletId: receiver1.wallet!.id, currency: 'EUR' } },
+                            where: { accountId_currency: { accountId: receiver1.account!.id, currency: 'EUR' } },
                             update: { amount: { increment: transferAmount } },
-                            create: { walletId: receiver1.wallet!.id, currency: 'EUR', amount: transferAmount }
+                            create: { accountId: receiver1.account!.id, currency: 'EUR', amount: transferAmount }
                         });
                         
                         // Then lock sender
                         const debitResult = await tx.balance.updateMany({
                             where: { 
-                                walletId: sender.wallet!.id, 
+                                accountId: sender.account!.id, 
                                 currency: 'EUR',
                                 amount: { gte: transferAmount } 
                             },
@@ -81,7 +81,7 @@ describe('Double Spend Prevention Tests', () => {
                     if (ids[0] === sender.id) {
                         const debitResult = await tx.balance.updateMany({
                             where: { 
-                                walletId: sender.wallet!.id, 
+                                accountId: sender.account!.id, 
                                 currency: 'EUR',
                                 amount: { gte: transferAmount } 
                             },
@@ -91,22 +91,22 @@ describe('Double Spend Prevention Tests', () => {
                             throw new Error('Insufficient balance');
                         }
                         await tx.balance.upsert({
-                            where: { walletId_currency: { walletId: receiver2.wallet!.id, currency: 'EUR' } },
+                            where: { accountId_currency: { accountId: receiver2.account!.id, currency: 'EUR' } },
                             update: { amount: { increment: transferAmount } },
-                            create: { walletId: receiver2.wallet!.id, currency: 'EUR', amount: transferAmount }
+                            create: { accountId: receiver2.account!.id, currency: 'EUR', amount: transferAmount }
                         });
                     } else {
                         // Canonical ordering: Lock receiver first
                         await tx.balance.upsert({
-                            where: { walletId_currency: { walletId: receiver2.wallet!.id, currency: 'EUR' } },
+                            where: { accountId_currency: { accountId: receiver2.account!.id, currency: 'EUR' } },
                             update: { amount: { increment: transferAmount } },
-                            create: { walletId: receiver2.wallet!.id, currency: 'EUR', amount: transferAmount }
+                            create: { accountId: receiver2.account!.id, currency: 'EUR', amount: transferAmount }
                         });
                         
                         // Then lock sender
                         const debitResult = await tx.balance.updateMany({
                             where: { 
-                                walletId: sender.wallet!.id, 
+                                accountId: sender.account!.id, 
                                 currency: 'EUR',
                                 amount: { gte: transferAmount } 
                             },
@@ -130,7 +130,7 @@ describe('Double Spend Prevention Tests', () => {
 
             // Verify final balance
             const finalSenderBalance = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: sender.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: sender.account!.id, currency: 'EUR' } },
             });
 
             // Only ONE transfer should succeed
@@ -150,7 +150,7 @@ describe('Double Spend Prevention Tests', () => {
 
             // Set balance to €100
             await prisma.balance.update({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
                 data: { amount: 100 },
             });
 
@@ -161,7 +161,7 @@ describe('Double Spend Prevention Tests', () => {
                 return await prisma.$transaction(async (tx) => {
                     const debitResult = await tx.balance.updateMany({
                         where: { 
-                            walletId: user.wallet!.id, 
+                            accountId: user.account!.id, 
                             currency: 'EUR',
                             amount: { gte: withdrawAmount } 
                         },
@@ -189,7 +189,7 @@ describe('Double Spend Prevention Tests', () => {
                 return await prisma.$transaction(async (tx) => {
                     const debitResult = await tx.balance.updateMany({
                         where: { 
-                            walletId: user.wallet!.id, 
+                            accountId: user.account!.id, 
                             currency: 'EUR',
                             amount: { gte: withdrawAmount } 
                         },
@@ -221,7 +221,7 @@ describe('Double Spend Prevention Tests', () => {
 
             // Verify final balance
             const finalWalletBalance = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
             });
 
             // Only ONE withdrawal should succeed
@@ -239,13 +239,13 @@ describe('Double Spend Prevention Tests', () => {
 
             // Set balance to €100
             await prisma.balance.update({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
                 data: { amount: 100 },
             });
             await prisma.balance.upsert({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'USD' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'USD' } },
                 update: { amount: 0 },
-                create: { walletId: user.wallet!.id, currency: 'USD', amount: 0 }
+                create: { accountId: user.account!.id, currency: 'USD', amount: 0 }
             });
 
             const amount = 80;
@@ -255,7 +255,7 @@ describe('Double Spend Prevention Tests', () => {
                 return await prisma.$transaction(async (tx) => {
                     const debitResult = await tx.balance.updateMany({
                         where: { 
-                            walletId: user.wallet!.id, 
+                            accountId: user.account!.id, 
                             currency: 'EUR',
                             amount: { gte: amount } 
                         },
@@ -265,7 +265,7 @@ describe('Double Spend Prevention Tests', () => {
                         throw new Error('Insufficient balance');
                     }
                     await tx.balance.update({
-                        where: { walletId_currency: { walletId: user.wallet!.id, currency: 'USD' } },
+                        where: { accountId_currency: { accountId: user.account!.id, currency: 'USD' } },
                         data: { amount: { increment: amount * 1.1 } },
                     });
 
@@ -293,7 +293,7 @@ describe('Double Spend Prevention Tests', () => {
                     if (ids[0] === user.id) {
                         const debitResult = await tx.balance.updateMany({
                             where: { 
-                                walletId: user.wallet!.id, 
+                                accountId: user.account!.id, 
                                 currency: 'EUR',
                                 amount: { gte: amount } 
                             },
@@ -303,14 +303,14 @@ describe('Double Spend Prevention Tests', () => {
                             throw new Error('Insufficient balance');
                         }
                         await tx.balance.upsert({
-                            where: { walletId_currency: { walletId: receiver.wallet!.id, currency: 'EUR' } },
+                            where: { accountId_currency: { accountId: receiver.account!.id, currency: 'EUR' } },
                             update: { amount: { increment: amount } },
-                            create: { walletId: receiver.wallet!.id, currency: 'EUR', amount: amount }
+                            create: { accountId: receiver.account!.id, currency: 'EUR', amount: amount }
                         });
                     } else {
                         const debitResult = await tx.balance.updateMany({
                             where: { 
-                                walletId: user.wallet!.id, 
+                                accountId: user.account!.id, 
                                 currency: 'EUR',
                                 amount: { gte: amount } 
                             },
@@ -320,9 +320,9 @@ describe('Double Spend Prevention Tests', () => {
                             throw new Error('Insufficient balance');
                         }
                         await tx.balance.upsert({
-                            where: { walletId_currency: { walletId: receiver.wallet!.id, currency: 'EUR' } },
+                            where: { accountId_currency: { accountId: receiver.account!.id, currency: 'EUR' } },
                             update: { amount: { increment: amount } },
-                            create: { walletId: receiver.wallet!.id, currency: 'EUR', amount: amount }
+                            create: { accountId: receiver.account!.id, currency: 'EUR', amount: amount }
                         });
                     }
 
@@ -338,7 +338,7 @@ describe('Double Spend Prevention Tests', () => {
 
             // Verify final balance
             const finalWalletBalance = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
             });
 
             // Only ONE operation should succeed
@@ -355,9 +355,9 @@ describe('Double Spend Prevention Tests', () => {
 
             // Set balance to €100
             await prisma.balance.upsert({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
                 update: { amount: 100 },
-                create: { walletId: user.wallet!.id, currency: 'EUR', amount: 100 }
+                create: { accountId: user.account!.id, currency: 'EUR', amount: 100 }
             });
 
             // Create a virtual card

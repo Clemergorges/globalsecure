@@ -15,7 +15,7 @@ interface User {
   firstName: string;
   lastName: string;
   kycStatus: string;
-  wallet: {
+  account: {
     balances: { currency: string; amount: string }[];
   };
   lastKycDoc?: {
@@ -126,8 +126,8 @@ export default function AdminDashboard() {
                         <div>
                             <h3 className="font-bold mb-2 flex items-center gap-2"><DollarSign className="w-4 h-4" /> {t('balances')}</h3>
                             <div className="space-y-1">
-                                {user.wallet?.balances && user.wallet.balances.length > 0 ? (
-                                    user.wallet.balances.map(b => (
+                                {user.account?.balances && user.account.balances.length > 0 ? (
+                                    user.account.balances.map(b => (
                                         <div key={b.currency} className="flex justify-between p-2 bg-gray-100 rounded">
                                             <span>{b.currency}</span>
                                             <span className="font-mono font-bold">{b.amount}</span>

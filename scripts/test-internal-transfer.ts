@@ -25,8 +25,7 @@ async function createTestUser(name: string, balance: number) {
       passwordHash: 'hash',
       firstName: name,
       lastName: 'Test',
-      phone: `+352${Math.floor(Math.random() * 1000000000)}`,
-      wallet: {
+      phone: `+352${Math.floor(Math.random() * 1000000000)}`, account: {
         create: {
           balanceEUR: balance,
           balanceUSD: 0,
@@ -35,7 +34,7 @@ async function createTestUser(name: string, balance: number) {
         }
       }
     },
-    include: { wallet: true }
+    include: { account: true }
   });
   return user;
 }
@@ -68,13 +67,13 @@ async function main() {
     
     const transfer = await prisma.$transaction(async (tx) => {
       // Debit Sender
-      const updatedSenderWallet = await tx.wallet.update({
+      const updatedSenderWallet = await tx.account.update({
         where: { userId: sender.id },
         data: { balanceEUR: { decrement: totalDeduction } }
       });
 
       // Credit Recipient
-      const updatedRecipientWallet = await tx.wallet.update({
+      const updatedRecipientWallet = await tx.account.update({
         where: { userId: recipient.id },
         data: { balanceEUR: { increment: amount } }
       });
@@ -122,7 +121,7 @@ async function main() {
     // 4. Test Insufficient Funds
     console.log('\n🧪 Testing Insufficient Funds...');
     try {
-      await prisma.wallet.update({
+      await prisma.account.update({
         where: { userId: sender.id },
         data: { balanceEUR: { decrement: 10000 } } // Force negative if check fails (but Prisma prevents negative if unsigned? No, Decimal is signed)
       });

@@ -41,22 +41,22 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
 export const templates = {
   cardClaim: (name: string, amount: string, currency: string, claimLink: string) => `
     <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-      <h2 style="color: #2563eb;">Você recebeu um Cartão Virtual! 🎁</h2>
+      <h2 style="color: #2563eb;">Pagamento Seguro Recebido 🛡️</h2>
       <p>Olá, <strong>${name}</strong>!</p>
-      <p>Alguém enviou um cartão virtual GlobalSecure para você.</p>
+      <p>Você recebeu um link de pagamento seguro via GlobalSecure.</p>
       
       <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <p style="margin: 5px 0;"><strong>Valor:</strong> ${currency} ${amount}</p>
-        <p style="margin: 5px 0;"><strong>Status:</strong> Aguardando Desbloqueio 🔒</p>
+        <p style="margin: 5px 0;"><strong>Valor Disponível:</strong> ${currency} ${amount}</p>
+        <p style="margin: 5px 0;"><strong>Status:</strong> Protegido por Senha 🔒</p>
       </div>
 
-      <p>Para resgatar e visualizar seu cartão, clique no link abaixo:</p>
-      <a href="${claimLink}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Resgatar Cartão</a>
+      <p>Para acessar os fundos e visualizar o cartão virtual associado, clique no link abaixo:</p>
+      <a href="${claimLink}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Acessar Fundos</a>
       
-      <p style="margin-top: 20px;"><em>Você precisará do Código de Desbloqueio fornecido pelo remetente.</em></p>
+      <p style="margin-top: 20px;"><em>Você precisará do Código de Segurança fornecido pelo remetente para desbloquear este valor.</em></p>
       
       <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-      <p style="font-size: 12px; color: #666;">Se você não esperava este e-mail, entre em contato com nosso suporte.</p>
+      <p style="font-size: 12px; color: #666;">Transação processada via protocolo GlobalSecure Decentralized Link.</p>
     </div>
   `,
 

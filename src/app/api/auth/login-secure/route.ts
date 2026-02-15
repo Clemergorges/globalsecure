@@ -17,9 +17,10 @@ export const POST = createHandler(
   async (req) => { 
     const { email, password } = req.validatedBody 
 
-    // 1. Find User
+    // 1. Find User & Account
     const user = await prisma.user.findUnique({
-        where: { email }
+        where: { email },
+        include: { account: true }
     });
 
     if (!user) {
@@ -33,17 +34,17 @@ export const POST = createHandler(
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-
-
     // 3. Generate Token (JOSE)
     // Check if user is admin (hardcoded for now based on env or specific email)
     const isAdmin = email === process.env.ADMIN_EMAIL || email === 'clemergorges@hotmail.com';
     const role = isAdmin ? 'ADMIN' : 'USER';
+    const accountStatus = user.account?.status || 'UNVERIFIED';
 
     const token = await new SignJWT({ 
         userId: user.id, 
         email: user.email, 
-        role: role
+        role: role,
+        status: accountStatus
     })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

@@ -11,12 +11,12 @@ describe('E2E: Deposit Flows', () => {
     beforeAll(async () => {
         // Cleanup potential leftovers
         await prisma.balance.deleteMany({
-            where: { wallet: { userId: { in: (await prisma.user.findMany({ where: { email: { startsWith: E2E_PREFIX } } })).map(u => u.id) } } }
+            where: { account: { userId: { in: (await prisma.user.findMany({ where: { email: { startsWith: E2E_PREFIX } } })).map(u => u.id) } } }
         });
-        await prisma.walletTransaction.deleteMany({
-            where: { wallet: { userId: { in: (await prisma.user.findMany({ where: { email: { startsWith: E2E_PREFIX } } })).map(u => u.id) } } }
+        await prisma.accountTransaction.deleteMany({
+            where: { account: { userId: { in: (await prisma.user.findMany({ where: { email: { startsWith: E2E_PREFIX } } })).map(u => u.id) } } }
         });
-        await prisma.wallet.deleteMany({
+        await prisma.account.deleteMany({
             where: { userId: { in: (await prisma.user.findMany({ where: { email: { startsWith: E2E_PREFIX } } })).map(u => u.id) } }
         });
         await prisma.user.deleteMany({
@@ -27,12 +27,12 @@ describe('E2E: Deposit Flows', () => {
     afterAll(async () => {
         // Cleanup
         await prisma.balance.deleteMany({
-            where: { wallet: { userId: { in: (await prisma.user.findMany({ where: { email: { startsWith: E2E_PREFIX } } })).map(u => u.id) } } }
+            where: { account: { userId: { in: (await prisma.user.findMany({ where: { email: { startsWith: E2E_PREFIX } } })).map(u => u.id) } } }
         });
-        await prisma.walletTransaction.deleteMany({
-            where: { wallet: { userId: { in: (await prisma.user.findMany({ where: { email: { startsWith: E2E_PREFIX } } })).map(u => u.id) } } }
+        await prisma.accountTransaction.deleteMany({
+            where: { account: { userId: { in: (await prisma.user.findMany({ where: { email: { startsWith: E2E_PREFIX } } })).map(u => u.id) } } }
         });
-        await prisma.wallet.deleteMany({
+        await prisma.account.deleteMany({
             where: { userId: { in: (await prisma.user.findMany({ where: { email: { startsWith: E2E_PREFIX } } })).map(u => u.id) } }
         });
         await prisma.user.deleteMany({
@@ -50,8 +50,7 @@ describe('E2E: Deposit Flows', () => {
                 passwordHash: 'hashed_password',
                 firstName: 'E2E',
                 lastName: 'CardUser',
-                kycLevel: 2,
-                wallet: {
+                kycLevel: 2, account: {
                     create: {
                         balances: {
                             create: [
@@ -62,11 +61,11 @@ describe('E2E: Deposit Flows', () => {
                     }
                 }
             },
-            include: { wallet: true }
+            include: { account: true }
         });
 
         const initialBalanceRecord = await prisma.balance.findUnique({
-            where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+            where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
         });
         const initialBalance = Number(initialBalanceRecord?.amount || 0);
         expect(initialBalance).toBe(0);
@@ -82,16 +81,16 @@ describe('E2E: Deposit Flows', () => {
         await prisma.$transaction(async (tx) => {
             // Credit user wallet
             await tx.balance.updateMany({
-                where: { walletId: user.wallet!.id, currency: 'EUR' },
+                where: { accountId: user.account!.id, currency: 'EUR' },
                 data: {
                     amount: { increment: topupAmount }
                 }
             });
 
             // Create transaction record
-            await tx.walletTransaction.create({
+            await tx.accountTransaction.create({
                 data: {
-                    walletId: user.wallet!.id,
+                    accountId: user.account!.id,
                     type: 'DEPOSIT',
                     amount: topupAmount,
                     currency: 'EUR',
@@ -101,16 +100,16 @@ describe('E2E: Deposit Flows', () => {
         });
 
         // 3. Verify Final State
-        const finalWallet = await prisma.wallet.findUnique({
+        const finalWallet = await prisma.account.findUnique({
             where: { userId: user.id }
         });
 
         const finalBalanceRecord = await prisma.balance.findUnique({
-            where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+            where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
         });
 
-        const finalTransactions = await prisma.walletTransaction.findMany({
-            where: { walletId: finalWallet!.id }
+        const finalTransactions = await prisma.accountTransaction.findMany({
+            where: { accountId: finalWallet!.id }
         });
 
         // Assertions
@@ -131,8 +130,7 @@ describe('E2E: Deposit Flows', () => {
                 passwordHash: 'hashed_password',
                 firstName: 'E2E',
                 lastName: 'CryptoUser',
-                kycLevel: 2,
-                wallet: {
+                kycLevel: 2, account: {
                     create: {
                         balances: {
                             create: [
@@ -143,7 +141,7 @@ describe('E2E: Deposit Flows', () => {
                     }
                 }
             },
-            include: { wallet: true }
+            include: { account: true }
         });
 
         const depositAmountUSDT = 500;
@@ -152,9 +150,9 @@ describe('E2E: Deposit Flows', () => {
         // Logic: Create pending tx -> Wait for confirmations -> Credit Balance
 
         // Step A: Create Transaction Record for USDT deposit
-        const createdTx = await prisma.walletTransaction.create({
+        const createdTx = await prisma.accountTransaction.create({
             data: {
-                walletId: user.wallet!.id,
+                accountId: user.account!.id,
                 type: 'CREDIT',
                 amount: depositAmountUSDT,
                 currency: 'USD',
@@ -166,7 +164,7 @@ describe('E2E: Deposit Flows', () => {
         await prisma.$transaction(async (tx) => {
             // Credit User Balance
             await tx.balance.updateMany({
-                where: { walletId: user.wallet!.id, currency: 'USD' },
+                where: { accountId: user.account!.id, currency: 'USD' },
                 data: {
                     amount: { increment: depositAmountUSDT }
                 }
@@ -174,15 +172,15 @@ describe('E2E: Deposit Flows', () => {
         });
 
         // 3. Verify Final State
-        const finalWallet = await prisma.wallet.findUnique({
+        const finalWallet = await prisma.account.findUnique({
             where: { userId: user.id }
         });
 
         const finalBalanceRecord = await prisma.balance.findUnique({
-            where: { walletId_currency: { walletId: user.wallet!.id, currency: 'USD' } }
+            where: { accountId_currency: { accountId: user.account!.id, currency: 'USD' } }
         });
 
-        const txRecord = await prisma.walletTransaction.findUnique({ where: { id: createdTx.id } });
+        const txRecord = await prisma.accountTransaction.findUnique({ where: { id: createdTx.id } });
 
         // Assertions
         expect(Number(finalBalanceRecord!.amount)).toBe(500);

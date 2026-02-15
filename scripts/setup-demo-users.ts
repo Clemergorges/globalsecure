@@ -35,8 +35,7 @@ async function main() {
                 lastName: u.lastName,
                 passwordHash: hash,
                 emailVerified: true,
-                country: 'BR',
-                wallet: {
+                country: 'BR', account: {
                     create: {
                         primaryCurrency: 'BRL',
                         balances: {
@@ -51,13 +50,13 @@ async function main() {
                     }
                 }
             },
-            include: { wallet: true }
+            include: { account: true }
         });
         
         // Ensure wallet exists (if user existed but had no wallet)
-        if (!user.wallet) {
+        if (!user.account) {
             console.log('Creating wallet for existing user...');
-            await prisma.wallet.create({
+            await prisma.account.create({
                 data: {
                     userId: user.id,
                     primaryCurrency: 'BRL',

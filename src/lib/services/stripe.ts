@@ -38,6 +38,21 @@ export async function createVirtualCard(params: CreateCardParams) {
   throw new Error('Not implemented');
 }
 
+export async function issueCard(userId: string, type: 'virtual' | 'physical', currency: 'eur' | 'usd' | 'gbp', limit?: number) {
+    // Mock Implementation for now
+    // In production: Create Cardholder -> Create Card
+    console.log(`[Stripe] Issuing ${type} card for user ${userId} in ${currency}`);
+    
+    return {
+      id: 'ic_' + Math.random().toString(36).substr(2, 9),
+      last4: Math.floor(1000 + Math.random() * 9000).toString(),
+      exp_month: 12,
+      exp_year: new Date().getFullYear() + 4,
+      brand: Math.random() > 0.5 ? 'visa' : 'mastercard',
+      status: 'active'
+    };
+}
+
 export async function updateCardStatus(cardId: string, status: 'active' | 'inactive') {
   if (!process.env.STRIPE_SECRET_KEY) return { status };
   

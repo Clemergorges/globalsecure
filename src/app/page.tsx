@@ -13,8 +13,7 @@ import {
   Lock, 
   CreditCard,
   ChevronRight,
-  Activity,
-  Wallet,
+  Activity, Wallet,
   Eye,
   EyeOff
 } from 'lucide-react';

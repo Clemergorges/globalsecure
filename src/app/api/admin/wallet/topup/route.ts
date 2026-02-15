@@ -18,21 +18,21 @@ export async function POST(req: Request) {
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            include: { wallet: true }
+            include: { account: true }
         });
 
-        if (!user || !user.wallet) {
+        if (!user || !user.account) {
             return NextResponse.json({ error: 'User or wallet not found' }, { status: 404 });
         }
 
         // Atomic TopUp
         await prisma.$transaction(async (tx) => {
             // 1. Update Wallet Balance directly (matching the current app structure)
-            const wallet = await tx.wallet.findUnique({
-                where: { id: user.wallet!.id }
+            const account = await tx.account.findUnique({
+                where: { id: user.account!.id }
             });
 
-            if (!wallet) throw new Error("Wallet not found");
+            if (!account) throw new Error("Account not found");
 
             const balanceField =
                 currency === 'EUR' ? 'balanceEUR' :
@@ -41,8 +41,8 @@ export async function POST(req: Request) {
 
             if (balanceField) {
                 // @ts-ignore
-                await tx.wallet.update({
-                    where: { id: wallet.id },
+                await tx.account.update({
+                    where: { id: account.id },
                     data: {
                         [balanceField]: { increment: amount }
                     }
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
             } else {
                 // Fallback to Balance table if it's a new currency
                 const balance = await tx.balance.findUnique({
-                    where: { walletId_currency: { walletId: user.wallet!.id, currency } }
+                    where: { accountId_currency: { accountId: user.account!.id, currency } }
                 });
 
                 if (balance) {
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
                 } else {
                     await tx.balance.create({
                         data: {
-                            walletId: user.wallet!.id,
+                            accountId: user.account!.id,
                             currency,
                             amount
                         }
@@ -70,9 +70,9 @@ export async function POST(req: Request) {
             }
 
             // 2. Create Transaction Record
-            await tx.walletTransaction.create({
+            await tx.accountTransaction.create({
                 data: {
-                    walletId: user.wallet!.id,
+                    accountId: user.account!.id,
                     type: 'DEPOSIT',
                     amount: amount,
                     currency: currency,

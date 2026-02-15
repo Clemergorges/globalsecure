@@ -18,7 +18,7 @@ describe('Stripe Webhooks Tests', () => {
             const user = await getTestUser(1);
             
             const initialBalanceRecord = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
             });
             const initialBalance = Number(initialBalanceRecord?.amount || 0);
             const topupAmount = 100;
@@ -62,15 +62,15 @@ describe('Stripe Webhooks Tests', () => {
 
                 // Credit wallet
                 await tx.balance.upsert({
-                    where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                    where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
                     update: { amount: { increment: topupAmount } },
-                    create: { walletId: user.wallet!.id, currency: 'EUR', amount: topupAmount }
+                    create: { accountId: user.account!.id, currency: 'EUR', amount: topupAmount }
                 });
 
                 // Create transaction log
-                await tx.walletTransaction.create({
+                await tx.accountTransaction.create({
                     data: {
-                        walletId: user.wallet!.id,
+                        accountId: user.account!.id,
                         type: 'DEPOSIT',
                         amount: topupAmount,
                         currency: 'EUR',
@@ -81,7 +81,7 @@ describe('Stripe Webhooks Tests', () => {
 
             // Verify balance increased
             const updatedBalance = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
             });
 
             expect(Number(updatedBalance!.amount)).toBe(initialBalance + topupAmount);
@@ -107,14 +107,14 @@ describe('Stripe Webhooks Tests', () => {
                 });
 
                 await tx.balance.upsert({
-                    where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                    where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
                     update: { amount: { increment: topupAmount } },
-                    create: { walletId: user.wallet!.id, currency: 'EUR', amount: topupAmount }
+                    create: { accountId: user.account!.id, currency: 'EUR', amount: topupAmount }
                 });
             });
 
             const balanceAfterFirst = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
             });
 
             // Second webhook (duplicate)
@@ -134,7 +134,7 @@ describe('Stripe Webhooks Tests', () => {
 
             // Verify balance didn't change
             const balanceAfterSecond = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
             });
 
             expect(Number(balanceAfterSecond!.amount)).toBe(Number(balanceAfterFirst!.amount));
@@ -147,7 +147,7 @@ describe('Stripe Webhooks Tests', () => {
         it('should NOT credit balance on failed payment', async () => {
             const user = await getTestUser(1);
             const initialBalanceRecord = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
             });
             const initialBalance = Number(initialBalanceRecord?.amount || 0);
             const attemptedAmount = 100;
@@ -171,7 +171,7 @@ describe('Stripe Webhooks Tests', () => {
 
             // Verify balance unchanged
             const finalBalance = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
             });
 
             expect(Number(finalBalance?.amount || 0)).toBe(initialBalance);

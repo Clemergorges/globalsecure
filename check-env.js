@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Testar variáveis de ambiente
 console.log('🔍 Verificando variáveis de ambiente...');
 console.log('SMTP_HOST:', process.env.SMTP_HOST);

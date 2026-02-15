@@ -95,8 +95,29 @@
       "kycUpdateError": "Erro ao atualizar KYC",
       "depositSuccess": "Depósito realizado!",
       "depositError": "Erro ao depositar",
-      "processingError": "Erro ao processar",
+      "processingError": "Erro ao processar"
+    },
+    "Notifications": {
+      "title": "Notificações",
+      "description": "Escolha como você quer ser avisado.",
+      "emailTitle": "Notificações por Email",
+      "emailDesc": "Receber comprovantes e alertas de segurança.",
+      "pushTitle": "Notificações Push",
+      "pushDesc": "Alertas em tempo real no navegador."
+    },
+    "Preferences": {
+      "title": "Preferências",
+      "description": "Ajuste sua experiência.",
+      "currencyTitle": "Moeda Principal",
+      "currencyDesc": "Moeda usada para exibir seu saldo total.",
+      "languageTitle": "Idioma",
+      "languageDesc": "Idioma da interface."
+    }
+  },
   "Cards": {
+    "title": "Meus Cartões",
+    "description": "Gerencie seus cartões virtuais e visualize detalhes",
+    "createCard": "Criar Cartão Virtual",
     "noCardsFound": "Nenhum cartão encontrado",
     "noActiveCards": "Você ainda não possui cartões virtuais ativos.",
     "virtualCard": "Cartão Virtual",
@@ -112,7 +133,7 @@
     "blocked": "Bloqueado",
     "cancelled": "Cancelado",
     "loading": "Carregando...",
-      "error": "Erro"
+    "error": "Erro"
   },
   "KYC": {
     "identityVerification": "Verificação de Identidade",
@@ -154,24 +175,6 @@
     "noDocumentsSubmitted": "Nenhum documento enviado",
     "enterDepositAmount": "Valor para depositar (ex: 1000):",
     "enterCurrency": "Moeda (EUR, USD, BRL):"
-  }
-    },
-    "Notifications": {
-      "title": "Notificações",
-      "description": "Escolha como você quer ser avisado.",
-      "emailTitle": "Notificações por Email",
-      "emailDesc": "Receber comprovantes e alertas de segurança.",
-      "pushTitle": "Notificações Push",
-      "pushDesc": "Alertas em tempo real no navegador."
-    },
-    "Preferences": {
-      "title": "Preferências",
-      "description": "Ajuste sua experiência.",
-      "currencyTitle": "Moeda Principal",
-      "currencyDesc": "Moeda usada para exibir seu saldo total.",
-      "languageTitle": "Idioma",
-      "languageDesc": "Idioma da interface."
-    }
   },
   "WalletDeposit": {
     "title": "Depositar Fundos",

@@ -33,9 +33,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId } });
-    if (!wallet) {
-      return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+    const account = await prisma.account.findUnique({ where: { userId } });
+    if (!account) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
     }
 
     const currency = 'BRL';
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
     await prisma.$transaction(async (tx) => {
       const balance = await tx.balance.findUnique({
-        where: { walletId_currency: { walletId: wallet.id, currency } }
+        where: { accountId_currency: { accountId: account.id, currency } }
       });
       if (balance) {
         await tx.balance.update({
@@ -52,13 +52,13 @@ export async function POST(req: Request) {
         });
       } else {
         await tx.balance.create({
-          data: { walletId: wallet.id, currency, amount: creditAmount }
+          data: { accountId: account.id, currency, amount: creditAmount }
         });
       }
 
-      await tx.walletTransaction.create({
+      await tx.accountTransaction.create({
         data: {
-          walletId: wallet.id,
+          accountId: account.id,
           type: 'DEPOSIT',
           amount: creditAmount,
           currency,

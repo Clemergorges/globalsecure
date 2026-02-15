@@ -17,14 +17,14 @@ export default async function CardsPage() {
   }
 
   // Fetch wallet to ensure user is fully onboarded
-  let wallet = await prisma.wallet.findUnique({
+  let account = await prisma.account.findUnique({
     where: { userId: session.userId },
   });
 
-  if (!wallet) {
+  if (!account) {
     try {
       console.log(`Wallet missing for user ${session.userId} in cards page. Creating...`);
-      wallet = await prisma.wallet.create({
+      account = await prisma.account.create({
         data: {
           userId: session.userId,
           primaryCurrency: 'EUR',

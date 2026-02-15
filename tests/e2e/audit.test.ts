@@ -23,11 +23,11 @@ describe('E2E: Audit & Reconciliation', () => {
     });
 
     it('should ensure every completed transaction has a valid wallet reference', async () => {
-        const wallets = await prisma.wallet.findMany({ select: { id: true } });
-        const walletIds = wallets.map(w => w.id);
-        const orphans = await prisma.walletTransaction.findMany({
+        const wallets = await prisma.account.findMany({ select: { id: true } });
+        const accountIds = wallets.map(w => w.id);
+        const orphans = await prisma.accountTransaction.findMany({
             where: {
-                walletId: { notIn: walletIds }
+                accountId: { notIn: accountIds }
             }
         });
         expect(orphans.length).toBe(0);

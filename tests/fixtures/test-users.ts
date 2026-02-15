@@ -47,7 +47,7 @@ export async function createTestUsers() {
             const user = await prisma.user.create({ data: userData });
 
             // Create wallet
-            const wallet = await prisma.wallet.create({
+            const account = await prisma.account.create({
                 data: {
                     userId: user.id,
                     primaryCurrency: 'EUR',
@@ -61,7 +61,7 @@ export async function createTestUsers() {
                 },
             });
 
-            createdUsers.push({ user, wallet });
+            createdUsers.push({ user, account });
         } catch (error) {
             console.error(`Failed to create user ${userData.email}:`, error);
             throw error;
@@ -86,12 +86,12 @@ export async function cleanupTestUsers() {
     }
 
     try {
-        await prisma.walletTransaction.deleteMany({
-            where: { wallet: { userId: { in: ids } } }
+        await prisma.accountTransaction.deleteMany({
+            where: { account: { userId: { in: ids } } }
         });
         // Cleanup balances first (if cascade not set)
         await prisma.balance.deleteMany({
-            where: { wallet: { userId: { in: ids } } }
+            where: { account: { userId: { in: ids } } }
         });
         await prisma.transactionLog.deleteMany({
             where: {
@@ -152,7 +152,7 @@ export async function cleanupTestUsers() {
         await prisma.notification.deleteMany({
             where: { userId: { in: ids } }
         });
-        await prisma.wallet.deleteMany({
+        await prisma.account.deleteMany({
             where: { userId: { in: ids } }
         });
         await prisma.user.deleteMany({
@@ -178,7 +178,7 @@ export async function getTestUser(kycLevel: number) {
     // Force explicit include to ensure wallet is returned
     const user = await prisma.user.findFirst({
         where: { kycLevel, email: { startsWith: SUITE_TAG } },
-        include: { wallet: { include: { balances: true } } },
+        include: { account: { include: { balances: true } } },
         orderBy: { createdAt: 'desc' }
     });
 
@@ -186,13 +186,13 @@ export async function getTestUser(kycLevel: number) {
         throw new Error(`Test user with KYC level ${kycLevel} not found in suite ${SUITE_TAG}`);
     }
 
-    if (!user.wallet) {
+    if (!user.account) {
         // Fallback: try to find wallet if relation didn't load properly (though include should work)
-        const wallet = await prisma.wallet.findUnique({ where: { userId: user.id }, include: { balances: true } });
-        if (!wallet) {
+        const account = await prisma.account.findUnique({ where: { userId: user.id }, include: { balances: true } });
+        if (!account) {
              throw new Error(`Wallet not found for user ${user.email} (ID: ${user.id})`);
         }
-        return { ...user, wallet };
+        return { ...user, account };
     }
 
     return user;

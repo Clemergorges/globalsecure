@@ -8,7 +8,7 @@ async function main() {
     // Explicitly quoted table names to match Prisma's case-sensitive creation
     const tables = [
         '"Transfer"',
-        '"WalletTransaction"',
+        '"AccountTransaction"',
         '"Wallet"',
         '"Session"',
         '"KYCVerification"',
@@ -56,7 +56,7 @@ async function main() {
     for (const userData of users) {
         const user = await prisma.user.create({ data: userData });
 
-        await prisma.wallet.create({
+        await prisma.account.create({
             data: {
                 userId: user.id,
                 primaryCurrency: 'EUR',

@@ -1,4 +1,5 @@
 import { redis } from '@/lib/redis';
+import { alertService } from '@/lib/services/alert';
 
 interface RateLimitResult {
   success: boolean;
@@ -19,6 +20,17 @@ export async function checkRateLimit(
     
     if (requests === 1) {
       await redis.expire(key, windowSeconds);
+    }
+
+    // Alert if rate limit exceeded significantly (e.g. 2x limit) - Potential DoS/Brute Force
+    if (requests === limit * 2) {
+      await alertService.notify({
+        title: 'Rate Limit Exceeded (2x)',
+        message: `Identifier ${identifier} exceeded rate limit by 200% (${requests}/${limit})`,
+        severity: 'WARNING',
+        source: 'RATE_LIMITER',
+        metadata: { identifier, limit, requests }
+      });
     }
     
     const ttl = await redis.ttl(key);

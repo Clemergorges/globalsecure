@@ -53,9 +53,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'SEPA disponível apenas para contas UE' }, { status: 400 });
     }
 
-    const wallet = await prisma.wallet.findUnique({ where: { userId } });
-    if (!wallet) {
-      return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+    const account = await prisma.account.findUnique({ where: { userId } });
+    if (!account) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
     }
 
     const feeInstant = instant ? Number(process.env.SEPA_INSTANT_FEE_EUR || '0') : 0;
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     await prisma.$transaction(async (tx) => {
       // Upsert balance
       const existingBalance = await tx.balance.findUnique({
-          where: { walletId_currency: { walletId: wallet.id, currency: 'EUR' } }
+          where: { accountId_currency: { accountId: account.id, currency: 'EUR' } }
       });
 
       if (existingBalance) {
@@ -76,16 +76,16 @@ export async function POST(req: Request) {
       } else {
           await tx.balance.create({
               data: {
-                  walletId: wallet.id,
+                  accountId: account.id,
                   currency: 'EUR',
                   amount: creditAmount
               }
           });
       }
 
-      await tx.walletTransaction.create({
+      await tx.accountTransaction.create({
         data: {
-          walletId: wallet.id,
+          accountId: account.id,
           type: 'DEPOSIT',
           amount: creditAmount,
           currency,
@@ -94,9 +94,9 @@ export async function POST(req: Request) {
       });
 
       if (feeInstant && feeInstant > 0) {
-        await tx.walletTransaction.create({
+        await tx.accountTransaction.create({
           data: {
-            walletId: wallet.id,
+            accountId: account.id,
             type: 'FEE',
             amount: feeInstant,
             currency,

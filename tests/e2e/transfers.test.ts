@@ -22,12 +22,12 @@ describe('E2E: Transfer Flows', () => {
         
         // Delete wallets first to avoid FK violation
         await prisma.balance.deleteMany({
-            where: { wallet: { userId: { in: ids } } }
+            where: { account: { userId: { in: ids } } }
         });
-        await prisma.walletTransaction.deleteMany({
-            where: { wallet: { userId: { in: ids } } }
+        await prisma.accountTransaction.deleteMany({
+            where: { account: { userId: { in: ids } } }
         });
-        await prisma.wallet.deleteMany({
+        await prisma.account.deleteMany({
             where: { userId: { in: ids } }
         });
 
@@ -54,12 +54,12 @@ describe('E2E: Transfer Flows', () => {
 
         // Delete wallets first to avoid FK violation
         await prisma.balance.deleteMany({
-            where: { wallet: { userId: { in: ids } } }
+            where: { account: { userId: { in: ids } } }
         });
-        await prisma.walletTransaction.deleteMany({
-            where: { wallet: { userId: { in: ids } } }
+        await prisma.accountTransaction.deleteMany({
+            where: { account: { userId: { in: ids } } }
         });
-        await prisma.wallet.deleteMany({
+        await prisma.account.deleteMany({
             where: { userId: { in: ids } }
         });
 
@@ -80,8 +80,7 @@ describe('E2E: Transfer Flows', () => {
                 passwordHash: 'hashed',
                 firstName: 'Sender',
                 lastName: 'E2E',
-                kycLevel: 2,
-                wallet: {
+                kycLevel: 2, account: {
                     create: {
                         balances: {
                             create: { currency: 'EUR', amount: 100 }
@@ -89,7 +88,7 @@ describe('E2E: Transfer Flows', () => {
                     }
                 }
             },
-            include: { wallet: true }
+            include: { account: true }
         });
 
         const receiver = await prisma.user.create({
@@ -98,8 +97,7 @@ describe('E2E: Transfer Flows', () => {
                 passwordHash: 'hashed',
                 firstName: 'Receiver',
                 lastName: 'E2E',
-                kycLevel: 2,
-                wallet: {
+                kycLevel: 2, account: {
                     create: {
                         balances: {
                             create: { currency: 'EUR', amount: 0 }
@@ -107,7 +105,7 @@ describe('E2E: Transfer Flows', () => {
                     }
                 }
             },
-            include: { wallet: true }
+            include: { account: true }
         });
 
         const transferAmount = 50;
@@ -116,13 +114,13 @@ describe('E2E: Transfer Flows', () => {
         await prisma.$transaction(async (tx) => {
             // Debit Sender
             await tx.balance.updateMany({
-                where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                where: { accountId: sender.account!.id, currency: 'EUR' },
                 data: { amount: { decrement: transferAmount } }
             });
 
             // Credit Receiver
             await tx.balance.updateMany({
-                where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                where: { accountId: receiver.account!.id, currency: 'EUR' },
                 data: { amount: { increment: transferAmount } }
             });
 
@@ -145,10 +143,10 @@ describe('E2E: Transfer Flows', () => {
 
         // 3. Verify Balances
         const finalSenderBalance = await prisma.balance.findUnique({
-            where: { walletId_currency: { walletId: sender.wallet!.id, currency: 'EUR' } }
+            where: { accountId_currency: { accountId: sender.account!.id, currency: 'EUR' } }
         });
         const finalReceiverBalance = await prisma.balance.findUnique({
-            where: { walletId_currency: { walletId: receiver.wallet!.id, currency: 'EUR' } }
+            where: { accountId_currency: { accountId: receiver.account!.id, currency: 'EUR' } }
         });
 
         expect(Number(finalSenderBalance!.amount)).toBe(50);
@@ -162,8 +160,7 @@ describe('E2E: Transfer Flows', () => {
                 passwordHash: 'hashed',
                 firstName: 'Poor',
                 lastName: 'User',
-                kycLevel: 2,
-                wallet: {
+                kycLevel: 2, account: {
                     create: {
                         balances: {
                             create: { currency: 'EUR', amount: 10 }
@@ -171,14 +168,14 @@ describe('E2E: Transfer Flows', () => {
                     }
                 }
             },
-            include: { wallet: true }
+            include: { account: true }
         });
 
         const attemptAmount = 100;
 
         // Simulate API check
         const balance = await prisma.balance.findUnique({
-            where: { walletId_currency: { walletId: poorUser.wallet!.id, currency: 'EUR' } }
+            where: { accountId_currency: { accountId: poorUser.account!.id, currency: 'EUR' } }
         });
         try {
             if (Number(balance!.amount) < attemptAmount) {

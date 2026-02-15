@@ -28,16 +28,16 @@ describe('Ledger ACID Compliance', () => {
     if (ids.length > 0) {
       // 1. Logs & Transactions linked to Transfer
       await prisma.transactionLog.deleteMany({ where: { transfer: { OR: [{ senderId: { in: ids } }, { recipientId: { in: ids } }] } } });
-      await prisma.walletTransaction.deleteMany({ where: { wallet: { userId: { in: ids } } } });
+      await prisma.accountTransaction.deleteMany({ where: { account: { userId: { in: ids } } } });
       
       // 2. Balances
-      await prisma.balance.deleteMany({ where: { wallet: { userId: { in: ids } } } });
+      await prisma.balance.deleteMany({ where: { account: { userId: { in: ids } } } });
       
       // 3. Transfers
       await prisma.transfer.deleteMany({ where: { OR: [{ senderId: { in: ids } }, { recipientId: { in: ids } }] } });
       
       // 4. Wallet & User
-      await prisma.wallet.deleteMany({ where: { userId: { in: ids } } });
+      await prisma.account.deleteMany({ where: { userId: { in: ids } } });
       await prisma.user.deleteMany({ where: { id: { in: ids } } });
     }
   });
@@ -56,8 +56,7 @@ describe('Ledger ACID Compliance', () => {
         email: senderEmail,
         passwordHash: 'hash',
         firstName: 'Sender',
-        lastName: 'Test',
-        wallet: {
+        lastName: 'Test', account: {
           create: {
             primaryCurrency: 'EUR',
             balances: {
@@ -66,7 +65,7 @@ describe('Ledger ACID Compliance', () => {
           }
         }
       },
-      include: { wallet: true }
+      include: { account: true }
     });
     senderId = sender.id;
 
@@ -75,8 +74,7 @@ describe('Ledger ACID Compliance', () => {
         email: recipientEmail,
         passwordHash: 'hash',
         firstName: 'Recipient',
-        lastName: 'Test',
-        wallet: {
+        lastName: 'Test', account: {
           create: {
             primaryCurrency: 'EUR',
             balances: {
@@ -85,7 +83,7 @@ describe('Ledger ACID Compliance', () => {
           }
         }
       },
-      include: { wallet: true }
+      include: { account: true }
     });
     recipientId = recipient.id;
   });
@@ -99,10 +97,10 @@ describe('Ledger ACID Compliance', () => {
 
     // Verify Balances Unchanged
     const senderBalance = await prisma.balance.findFirst({
-      where: { wallet: { userId: senderId }, currency: 'EUR' }
+      where: { account: { userId: senderId }, currency: 'EUR' }
     });
     const recipientBalance = await prisma.balance.findFirst({
-      where: { wallet: { userId: recipientId }, currency: 'EUR' }
+      where: { account: { userId: recipientId }, currency: 'EUR' }
     });
 
     expect(Number(senderBalance?.amount)).toBe(100.00);
@@ -118,10 +116,10 @@ describe('Ledger ACID Compliance', () => {
     await processInternalTransfer(senderId, senderEmail, recipientEmail, amount, 'EUR');
 
     const senderBalance = await prisma.balance.findFirst({
-      where: { wallet: { userId: senderId }, currency: 'EUR' }
+      where: { account: { userId: senderId }, currency: 'EUR' }
     });
     const recipientBalance = await prisma.balance.findFirst({
-      where: { wallet: { userId: recipientId }, currency: 'EUR' }
+      where: { account: { userId: recipientId }, currency: 'EUR' }
     });
 
     expect(Number(senderBalance?.amount)).toBeCloseTo(100.00 - totalDeduction, 2);
@@ -158,10 +156,10 @@ describe('Ledger ACID Compliance', () => {
     const totalDeducted = totalDeductionPerTx * 3; // 91.62
 
     const senderBalance = await prisma.balance.findFirst({
-      where: { wallet: { userId: senderId }, currency: 'EUR' }
+      where: { account: { userId: senderId }, currency: 'EUR' }
     });
     const recipientBalance = await prisma.balance.findFirst({
-      where: { wallet: { userId: recipientId }, currency: 'EUR' }
+      where: { account: { userId: recipientId }, currency: 'EUR' }
     });
 
     expect(Number(senderBalance?.amount)).toBeCloseTo(100.00 - totalDeducted, 2); // 8.38

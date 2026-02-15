@@ -40,8 +40,7 @@ export async function POST(req: Request) {
         firstName: 'Admin',
         lastName: 'GlobalSecure',
         emailVerified: true,
-        kycLevel: 2,
-        wallet: {
+        kycLevel: 2, account: {
           create: {
             primaryCurrency: 'EUR',
             balances: {

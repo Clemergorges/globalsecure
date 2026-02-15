@@ -1,3 +1,4 @@
+
 module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
@@ -9,10 +10,11 @@ module.exports = {
     ],
     testMatch: [
         '**/tests/**/*.test.ts',
+        '**/tests/**/*.test.tsx',
         '**/smoke.test.js',
     ],
     transform: {
-        '^.+\.(t|j)sx?$': ['ts-jest', {
+        '^.+\\.(t|j)sx?$': ['ts-jest', {
             tsconfig: 'tsconfig.json',
             useESM: true,
         }],
@@ -23,4 +25,3 @@ module.exports = {
     ],
     testTimeout: 30000,
 }
-

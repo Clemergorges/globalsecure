@@ -5,14 +5,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🔄 Starting balance migration...');
 
-  const wallets = await prisma.wallet.findMany();
+  const wallets = await prisma.account.findMany();
   console.log(`Found ${wallets.length} wallets to migrate.`);
 
   for (const wallet of wallets) {
     const balancesToMigrate = [
-      { currency: 'EUR', amount: wallet.balanceEUR },
-      { currency: 'USD', amount: wallet.balanceUSD },
-      { currency: 'GBP', amount: wallet.balanceGBP },
+      { currency: 'EUR', amount: account.balanceEUR },
+      { currency: 'USD', amount: account.balanceUSD },
+      { currency: 'GBP', amount: account.balanceGBP },
     ];
 
     for (const { currency, amount } of balancesToMigrate) {
@@ -20,8 +20,8 @@ async function main() {
       // Using upsert to be safe
       await prisma.balance.upsert({
         where: {
-          walletId_currency: {
-            walletId: wallet.id,
+          accountId_currency: {
+            accountId: account.id,
             currency: currency,
           },
         },
@@ -29,7 +29,7 @@ async function main() {
           amount: amount,
         },
         create: {
-          walletId: wallet.id,
+          accountId: account.id,
           currency: currency,
           amount: amount,
         },

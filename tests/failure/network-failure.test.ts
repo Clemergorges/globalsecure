@@ -16,13 +16,13 @@ describe('Network Failure Simulation', () => {
       await prisma.oTP.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.session.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.kYCDocument.deleteMany({ where: { userId: { in: userIds } } });
-      await prisma.walletTransaction.deleteMany({ where: { wallet: { userId: { in: userIds } } } });
+      await prisma.accountTransaction.deleteMany({ where: { account: { userId: { in: userIds } } } });
       await prisma.transactionLog.deleteMany({ where: { transfer: { senderId: { in: userIds } } } });
       await prisma.transfer.deleteMany({ where: { senderId: { in: userIds } } });
       await prisma.cryptoDeposit.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.topUp.deleteMany({ where: { userId: { in: userIds } } });
-      await prisma.balance.deleteMany({ where: { wallet: { userId: { in: userIds } } } });
-      await prisma.wallet.deleteMany({ where: { userId: { in: userIds } } });
+      await prisma.balance.deleteMany({ where: { account: { userId: { in: userIds } } } });
+      await prisma.account.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.user.deleteMany({ where: { id: { in: userIds } } });
     }
   });
@@ -122,7 +122,7 @@ describe('Network Failure Simulation', () => {
       data: { email, passwordHash: '$2a$10$test.hash', kycLevel: 1, kycStatus: 'APPROVED' }
     });
     
-    const wallet = await prisma.wallet.create({
+    const account = await prisma.account.create({
       data: {
         userId: user.id,
         primaryCurrency: 'EUR',
@@ -137,7 +137,7 @@ describe('Network Failure Simulation', () => {
       include: { balances: true }
     });
     
-    const startBalanceEUR = wallet.balances.find(b => b.currency === 'EUR')?.amount ?? 0;
+    const startBalanceEUR = account.balances.find(b => b.currency === 'EUR')?.amount ?? 0;
     const sessionId = 'sess_api_500';
     const amount = 60;
 
@@ -157,8 +157,8 @@ describe('Network Failure Simulation', () => {
         
         await tx.balance.update({
           where: {
-            walletId_currency: {
-              walletId: wallet.id,
+            accountId_currency: {
+              accountId: account.id,
               currency: 'EUR'
             }
           },
@@ -167,7 +167,7 @@ describe('Network Failure Simulation', () => {
       });
     }
 
-    const finalWallet = await prisma.wallet.findUnique({ 
+    const finalWallet = await prisma.account.findUnique({ 
       where: { userId: user.id },
       include: { balances: true }
     });

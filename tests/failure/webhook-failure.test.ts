@@ -13,9 +13,9 @@ describe('Webhook Failure Scenarios', () => {
       
       // Delete dependent records first to avoid foreign key constraints
       await prisma.topUp.deleteMany({ where: { userId: { in: userIds } } });
-      await prisma.walletTransaction.deleteMany({ where: { wallet: { userId: { in: userIds } } } });
-      await prisma.balance.deleteMany({ where: { wallet: { userId: { in: userIds } } } });
-      await prisma.wallet.deleteMany({ where: { userId: { in: userIds } } });
+      await prisma.accountTransaction.deleteMany({ where: { account: { userId: { in: userIds } } } });
+      await prisma.balance.deleteMany({ where: { account: { userId: { in: userIds } } } });
+      await prisma.account.deleteMany({ where: { userId: { in: userIds } } });
       await prisma.user.deleteMany({ where: { id: { in: userIds } } });
     }
   });
@@ -47,7 +47,7 @@ describe('Webhook Failure Scenarios', () => {
     const user = await prisma.user.create({
       data: { email, passwordHash: '$2a$10$test.hash', kycLevel: 1, kycStatus: 'APPROVED' }
     });
-    const wallet = await prisma.wallet.create({
+    const account = await prisma.account.create({
       data: {
         userId: user.id,
         primaryCurrency: 'EUR',
@@ -77,7 +77,7 @@ describe('Webhook Failure Scenarios', () => {
           }
         });
         await tx.balance.updateMany({
-          where: { walletId: wallet.id, currency: 'EUR' },
+          where: { accountId: account.id, currency: 'EUR' },
           data: { amount: { increment: amount } }
         });
       });
@@ -86,7 +86,7 @@ describe('Webhook Failure Scenarios', () => {
     await processOnce();
     await processOnce();
 
-    const balanceRecord = await prisma.balance.findUnique({ where: { walletId_currency: { walletId: wallet.id, currency: 'EUR' } } });
+    const balanceRecord = await prisma.balance.findUnique({ where: { accountId_currency: { accountId: account.id, currency: 'EUR' } } });
     const topups = await prisma.topUp.findMany({ where: { stripeSessionId: sessionId } });
     expect(topups.length).toBe(1);
     expect(Number(balanceRecord!.amount)).toBe(1000 + 30);

@@ -1,7 +1,11 @@
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import * as jose from 'jose';
 
-export function middleware(request: NextRequest) {
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-change-me';
+
+export async function middleware(request: NextRequest) {
   const requestId = crypto.randomUUID();
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-request-id', requestId);
@@ -10,15 +14,13 @@ export function middleware(request: NextRequest) {
   const origin = request.headers.get('origin');
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3012',
-    'http://localhost:3000', // Explicitly allow localhost:3000 for validation script
+    'http://localhost:3000',
     'https://app.globalsecuresend.com',
     'https://globalsecuresend.com'
   ];
   
-  // Check if origin is allowed
   const isAllowedOrigin = origin && allowedOrigins.includes(origin);
   
-  // Handle Preflight (OPTIONS)
   if (request.method === 'OPTIONS') {
     const response = new NextResponse(null, { status: 204 });
     if (isAllowedOrigin) {
@@ -31,14 +33,78 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // 2. Process Request
+  // 2. Authentication & Account Status Check
+  const token = request.cookies.get('auth_token')?.value;
+  const { pathname } = request.nextUrl;
+
+  // Define public paths that don't require auth
+  const publicPaths = [
+    '/auth/login', 
+    '/auth/register', 
+    '/auth/verify', 
+    '/api/auth',
+    '/api/webhooks',
+    '/' // Landing page
+  ];
+
+  // Define onboarding paths
+  const onboardingPaths = ['/onboarding'];
+
+  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
+  const isOnboardingPath = onboardingPaths.some(path => pathname.startsWith(path));
+
+  // If user is logged in
+  if (token) {
+    try {
+      const { payload } = await jose.jwtVerify(
+        token,
+        new TextEncoder().encode(JWT_SECRET)
+      );
+
+      const accountStatus = payload.status as string; // 'UNVERIFIED', 'PENDING', 'ACTIVE', 'FROZEN'
+
+      // Logic: If status is UNVERIFIED or PENDING, force to Onboarding
+      // Unless already on onboarding path or calling onboarding API
+      const isOnboardingAPI = pathname.startsWith('/api/onboarding');
+      
+      if (
+        (accountStatus === 'UNVERIFIED' || accountStatus === 'PENDING') &&
+        !isOnboardingPath && 
+        !isOnboardingAPI &&
+        !pathname.startsWith('/auth/logout') // Allow logout
+      ) {
+        // Allow access to public pages? Maybe not dashboard.
+        if (pathname.startsWith('/dashboard')) {
+            return NextResponse.redirect(new URL('/onboarding/personal', request.url));
+        }
+      }
+
+      // If status is ACTIVE, block access to Onboarding (except status page?)
+      if (accountStatus === 'ACTIVE' && isOnboardingPath && !pathname.includes('/status')) {
+         return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+
+    } catch (err) {
+      // Invalid token, treat as logged out
+      if (!isPublicPath) {
+        return NextResponse.redirect(new URL('/auth/login', request.url));
+      }
+    }
+  } else {
+    // Not logged in
+    if (!isPublicPath) {
+        return NextResponse.redirect(new URL('/auth/login', request.url));
+    }
+  }
+
+  // 3. Process Request
   const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
 
-  // 3. Security Headers (Helmet-like)
+  // 4. Security Headers
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://va.vercel-scripts.com;
@@ -61,26 +127,16 @@ export function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', "camera=(), microphone=(), geolocation=()");
 
-  // Set CORS headers on response too
   if (isAllowedOrigin && origin) {
     response.headers.set('Access-Control-Allow-Origin', origin);
     response.headers.set('Access-Control-Allow-Credentials', 'true');
   }
-
-  // Log to console (Edge-safe logging)
-  // console.log(`[${request.method}] ${request.nextUrl.pathname} - ID: ${requestId}`);
 
   return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

@@ -22,7 +22,7 @@ export async function processInternalTransfer(
 
   const recipient = await prisma.user.findUnique({
     where: { email: recipientEmail },
-    include: { wallet: true }
+    include: { account: true }
   });
 
   if (!recipient) {
@@ -33,11 +33,11 @@ export async function processInternalTransfer(
     throw new Error('Cannot transfer to yourself');
   }
 
-  if (!recipient.wallet) {
+  if (!recipient.account) {
     throw new Error('Recipient wallet not active');
   }
 
-  const senderWallet = await prisma.wallet.findUnique({
+  const senderWallet = await prisma.account.findUnique({
     where: { userId: senderId }
   });
 
@@ -59,7 +59,7 @@ export async function processInternalTransfer(
     // And ensure amount >= totalDeduction
     const debitResult = await tx.balance.updateMany({
       where: {
-        walletId: senderWallet.id,
+        accountId: senderWallet.id,
         currency: currency,
         amount: { gte: totalDeduction } // Crucial: WHERE balance >= total
       },
@@ -71,7 +71,7 @@ export async function processInternalTransfer(
     if (debitResult.count === 0) {
       // Fallback: Check if balance record exists at all to give better error
       const balanceExists = await tx.balance.findUnique({
-        where: { walletId_currency: { walletId: senderWallet.id, currency } }
+        where: { accountId_currency: { accountId: senderWallet.id, currency } }
       });
       if (!balanceExists) {
         throw new Error(`Saldo em ${currency} não encontrado.`);
@@ -82,7 +82,7 @@ export async function processInternalTransfer(
     // 2.2 Credit Recipient
     // We use upsert to ensure the balance row exists
     const recipientBalance = await tx.balance.findUnique({
-      where: { walletId_currency: { walletId: recipient.wallet!.id, currency } }
+      where: { accountId_currency: { accountId: recipient.account!.id, currency } }
     });
 
     if (recipientBalance) {
@@ -93,7 +93,7 @@ export async function processInternalTransfer(
     } else {
       await tx.balance.create({
         data: {
-          walletId: recipient.wallet!.id,
+          accountId: recipient.account!.id,
           currency: currency,
           amount: amount
         }
@@ -130,9 +130,9 @@ export async function processInternalTransfer(
     });
 
     // 2.4 Create Wallet Transactions (Sender Debit)
-    await tx.walletTransaction.create({
+    await tx.accountTransaction.create({
       data: {
-        walletId: senderWallet.id,
+        accountId: senderWallet.id,
         type: 'DEBIT',
         amount: amount,
         currency: currency,
@@ -142,9 +142,9 @@ export async function processInternalTransfer(
     });
 
     // Fee Transaction
-    await tx.walletTransaction.create({
+    await tx.accountTransaction.create({
       data: {
-        walletId: senderWallet.id,
+        accountId: senderWallet.id,
         type: 'FEE',
         amount: feeAmount,
         currency: currency,
@@ -154,9 +154,9 @@ export async function processInternalTransfer(
     });
 
     // 2.5 Create Wallet Transaction (Recipient Credit)
-    await tx.walletTransaction.create({
+    await tx.accountTransaction.create({
       data: {
-        walletId: recipient.wallet!.id,
+        accountId: recipient.account!.id,
         type: 'CREDIT',
         amount: amount,
         currency: currency,

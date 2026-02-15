@@ -37,11 +37,11 @@ export async function GET(_req: Request) {
     }) : [];
 
     // 3. Fees
-    const wallet = await prisma.wallet.findUnique({
+    const account = await prisma.account.findUnique({
         where: { userId: session.userId }
     });
-    const fees = wallet ? await prisma.walletTransaction.findMany({
-        where: { walletId: wallet.id, type: 'FEE' },
+    const fees = account ? await prisma.accountTransaction.findMany({
+        where: { accountId: account.id, type: 'FEE' },
         orderBy: { createdAt: 'desc' }
     }) : [];
 

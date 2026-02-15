@@ -28,29 +28,28 @@ async function main() {
         email: ADMIN_EMAIL,
         firstName: 'Admin',
         lastName: 'User',
-        passwordHash: await hashPassword('admin123'),
-        wallet: { create: { primaryCurrency: 'EUR' } }
+        passwordHash: await hashPassword('admin123'), account: { create: { primaryCurrency: 'EUR' } }
       },
-      include: { wallet: true }
+      include: { account: true }
     });
   }
 
   // Ensure Test User
   let user = await prisma.user.findUnique({ 
       where: { email: TEST_EMAIL },
-      include: { wallet: true }
+      include: { account: true }
   });
   
   if (user) {
     // Reset Balance for clean test
     // Find wallet first
-    const w = await prisma.wallet.findUnique({ where: { userId: user.id } });
+    const w = await prisma.account.findUnique({ where: { userId: user.id } });
     if (w) {
-        await prisma.wallet.update({
+        await prisma.account.update({
             where: { id: w.id },
             data: { balanceEUR: 0, balanceUSD: 0, balanceGBP: 0 } 
         });
-        await prisma.walletTransaction.deleteMany({ where: { walletId: w.id } });
+        await prisma.accountTransaction.deleteMany({ where: { accountId: w.id } });
     }
     
     await prisma.swap.deleteMany({ where: { userId: user.id } });
@@ -64,15 +63,14 @@ async function main() {
         email: TEST_EMAIL,
         firstName: 'Beta',
         lastName: 'Tester',
-        passwordHash: await hashPassword('test1234'),
-        wallet: { create: { primaryCurrency: 'EUR' } }
+        passwordHash: await hashPassword('test1234'), account: { create: { primaryCurrency: 'EUR' } }
       },
-      include: { wallet: true }
+      include: { account: true }
     });
   }
 
   console.log(`   Test User ID: ${user.id}`);
-  console.log(`   Test Wallet ID: ${user.wallet?.id}`);
+  console.log(`   Test Wallet ID: ${user.account?.id}`);
 
   // Generate Tokens
   const adminToken = jwt.sign({ userId: admin.id, email: admin.email }, JWT_SECRET, { expiresIn: '1h' });
@@ -117,7 +115,7 @@ async function main() {
   }
 
   // Verify Balance
-  const walletAfterTopup = await prisma.wallet.findUnique({ where: { userId: user.id } });
+  const walletAfterTopup = await prisma.account.findUnique({ where: { userId: user.id } });
   console.log(`   Current Balance: €${walletAfterTopup?.balanceEUR}`);
 
   // ==========================================
@@ -142,13 +140,13 @@ async function main() {
   // ==========================================
   console.log('\nTesting 3: Crypto Deposit (50 USDT)...');
   // Need to know the user's crypto address first
-  const wallet = await prisma.wallet.findUnique({ where: { userId: user.id } });
+  const account = await prisma.account.findUnique({ where: { userId: user.id } });
   let address = wallet?.cryptoAddress;
   
   if (!address) {
       // Generate it
       await request('GET', '/api/crypto/address', userToken);
-      const w = await prisma.wallet.findUnique({ where: { userId: user.id } });
+      const w = await prisma.account.findUnique({ where: { userId: user.id } });
       address = w?.cryptoAddress;
   }
   
@@ -203,7 +201,7 @@ async function main() {
   // FINAL REPORT
   // ==========================================
   console.log('\n📊 FINAL REPORT');
-  const finalWallet = await prisma.wallet.findUnique({ 
+  const finalWallet = await prisma.account.findUnique({ 
       where: { userId: user.id },
       include: { transactions: { orderBy: { createdAt: 'desc' }, take: 10 } }
   });

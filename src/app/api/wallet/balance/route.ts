@@ -16,28 +16,28 @@ export const GET = createHandler(
     // Optional: Parse query params manually if needed, or use a helper
     // const { currency: requestedCurrency } = validateQuery(req, balanceQuerySchema);
     
-    const wallet = await prisma.wallet.findUnique({
+    const account = await prisma.account.findUnique({
       where: { userId },
       include: { balances: true }
     });
 
-    if (!wallet) {
-      return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+    if (!account) {
+      return NextResponse.json({ error: 'Account not found' }, { status: 404 });
     }
 
     // Transform balances into a clean map
-    const balances = wallet.balances.reduce((acc, curr) => {
+    const balances = account.balances.reduce((acc, curr) => {
         acc[curr.currency] = Number(curr.amount);
         return acc;
     }, {} as Record<string, number>);
 
     return NextResponse.json({
       userId,
-      primaryCurrency: wallet.primaryCurrency,
+      primaryCurrency: account.primaryCurrency,
       balances: balances,
       // Backward compatibility for single balance view
-      balance: balances[wallet.primaryCurrency] || 0,
-      currency: wallet.primaryCurrency
+      balance: balances[account.primaryCurrency] || 0,
+      currency: account.primaryCurrency
     });
   },
   {

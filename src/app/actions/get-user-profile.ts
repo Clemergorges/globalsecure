@@ -10,8 +10,7 @@ export async function getUserProfile() {
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: {
-      country: true,
-      wallet: {
+      country: true, account: {
         select: { primaryCurrency: true }
       }
     }
@@ -19,6 +18,6 @@ export async function getUserProfile() {
 
   return {
     country: user?.country || 'US',
-    currency: user?.wallet?.primaryCurrency || 'USD'
+    currency: user?.account?.primaryCurrency || 'USD'
   };
 }

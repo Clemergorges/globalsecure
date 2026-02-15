@@ -37,11 +37,11 @@ export async function POST(req: Request) {
     // 2. Check Balance & Create Transaction (ACID)
     const result = await prisma.$transaction(async (tx) => {
       // Lock wallet
-      const wallet = await tx.wallet.findUnique({
+      const account = await tx.account.findUnique({
         where: { userId: (auth as any).userId }
       });
 
-      if (!wallet) throw new Error('Wallet not found');
+      if (!account) throw new Error('Account not found');
 
       // Check Balance via Balance table (assuming USDT uses USD currency code in balance)
       const currency = 'USD';
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       // Debit Ledger with Atomic Check
       const debitResult = await tx.balance.updateMany({
         where: { 
-            walletId: wallet.id,
+            accountId: account.id,
             currency: currency,
             amount: { gte: amount }
         },
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       if (debitResult.count === 0) {
           // Check if balance exists for better error
           const balanceExists = await tx.balance.findUnique({
-              where: { walletId_currency: { walletId: wallet.id, currency } }
+              where: { accountId_currency: { accountId: account.id, currency } }
           });
           if (!balanceExists || balanceExists.amount.toNumber() < amount) {
                throw new Error('Insufficient USDT/USD balance');
@@ -81,9 +81,9 @@ export async function POST(req: Request) {
       });
 
       // Create Ledger Entry
-      await tx.walletTransaction.create({
+      await tx.accountTransaction.create({
         data: {
-          walletId: wallet.id,
+          accountId: account.id,
           type: 'WITHDRAW',
           amount: amount,
           currency: 'USD',

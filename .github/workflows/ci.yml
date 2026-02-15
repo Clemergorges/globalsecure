@@ -83,3 +83,20 @@ jobs:
         run: npm run test:failure
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
+
+      - name: Build & Start Server for Load Testing
+        run: |
+          npm run build
+          nohup npm run start > server.log 2>&1 &
+          echo "Server starting..."
+          sleep 10
+        env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          # Add other required envs here or reuse from previous steps if context allows
+
+      - name: Run Load Test (Smoke Test)
+        run: |
+          # Ensure server is up (simple retry logic could be added)
+          curl -I http://localhost:3000/api/health || echo "Server might not be ready"
+          npx ts-node scripts/load-test.ts light

@@ -19,7 +19,7 @@ describe('ACID Ledger Consistency Tests', () => {
             const user = await getTestUser(2); // KYC Level 2
             
             const initialBalanceRecord = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } }
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } }
             });
             const initialBalance = Number(initialBalanceRecord?.amount || 0);
             
@@ -35,15 +35,15 @@ describe('ACID Ledger Consistency Tests', () => {
                 return await prisma.$transaction(async (tx) => {
                     // Simulate deposit
                     const balance = await tx.balance.upsert({
-                        where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                        where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
                         update: { amount: { increment: depositAmount } },
-                        create: { walletId: user.wallet!.id, currency: 'EUR', amount: depositAmount }
+                        create: { accountId: user.account!.id, currency: 'EUR', amount: depositAmount }
                     });
 
                     // Create transaction log
-                    await tx.walletTransaction.create({
+                    await tx.accountTransaction.create({
                         data: {
-                            walletId: user.wallet!.id,
+                            accountId: user.account!.id,
                             type: 'DEPOSIT',
                             amount: depositAmount,
                             currency: 'EUR',
@@ -62,7 +62,7 @@ describe('ACID Ledger Consistency Tests', () => {
 
             // Verify final balance
             const finalWalletBalance = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
             });
 
             const expectedBalance = initialBalance + (depositAmount * numDeposits);
@@ -89,14 +89,14 @@ describe('ACID Ledger Consistency Tests', () => {
 
             // Ensure balance records exist to prevent INSERT race conditions in Serializable mode
             await prisma.balance.upsert({
-                where: { walletId_currency: { walletId: sender.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: sender.account!.id, currency: 'EUR' } },
                 update: { amount: initialSenderBalance },
-                create: { walletId: sender.wallet!.id, currency: 'EUR', amount: initialSenderBalance }
+                create: { accountId: sender.account!.id, currency: 'EUR', amount: initialSenderBalance }
             });
             await prisma.balance.upsert({
-                where: { walletId_currency: { walletId: receiver.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: receiver.account!.id, currency: 'EUR' } },
                 update: { amount: initialReceiverBalance },
-                create: { walletId: receiver.wallet!.id, currency: 'EUR', amount: initialReceiverBalance }
+                create: { accountId: receiver.account!.id, currency: 'EUR', amount: initialReceiverBalance }
             });
 
             const transferAmount = 5; // €5 each
@@ -114,7 +114,7 @@ describe('ACID Ledger Consistency Tests', () => {
                         // Sender first (Debit then Credit)
                         const debitResult = await tx.balance.updateMany({
                             where: { 
-                                walletId: sender.wallet!.id, 
+                                accountId: sender.account!.id, 
                                 currency: 'EUR',
                                 amount: { gte: transferAmount } 
                             },
@@ -125,19 +125,19 @@ describe('ACID Ledger Consistency Tests', () => {
                         }
                         
                         await tx.balance.update({
-                            where: { walletId_currency: { walletId: receiver.wallet!.id, currency: 'EUR' } },
+                            where: { accountId_currency: { accountId: receiver.account!.id, currency: 'EUR' } },
                             data: { amount: { increment: transferAmount } }
                         });
                     } else {
                         // Receiver first (Credit then Debit)
                         await tx.balance.update({
-                            where: { walletId_currency: { walletId: receiver.wallet!.id, currency: 'EUR' } },
+                            where: { accountId_currency: { accountId: receiver.account!.id, currency: 'EUR' } },
                             data: { amount: { increment: transferAmount } }
                         });
                         
                         const debitResult = await tx.balance.updateMany({
                             where: { 
-                                walletId: sender.wallet!.id, 
+                                accountId: sender.account!.id, 
                                 currency: 'EUR',
                                 amount: { gte: transferAmount } 
                             },
@@ -148,8 +148,8 @@ describe('ACID Ledger Consistency Tests', () => {
                         }
                     }
 
-                    const senderWallet = await tx.wallet.findUnique({ where: { userId: sender.id } });
-                    const receiverWallet = await tx.wallet.findUnique({ where: { userId: receiver.id } });
+                    const senderWallet = await tx.account.findUnique({ where: { userId: sender.id } });
+                    const receiverWallet = await tx.account.findUnique({ where: { userId: receiver.id } });
 
                     // Create transfer record
                     await tx.transfer.create({
@@ -180,10 +180,10 @@ describe('ACID Ledger Consistency Tests', () => {
 
             // Verify final balances
             const finalSenderBalance = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: sender.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: sender.account!.id, currency: 'EUR' } },
             });
             const finalReceiverBalance = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: receiver.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: receiver.account!.id, currency: 'EUR' } },
             });
 
             const expectedSenderBalance = initialSenderBalance - (transferAmount * numTransfers);
@@ -208,13 +208,13 @@ describe('ACID Ledger Consistency Tests', () => {
 
             // Set initial balances
             await prisma.balance.update({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
                 data: { amount: 1000 },
             });
             await prisma.balance.upsert({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'USD' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'USD' } },
                 update: { amount: 0 },
-                create: { walletId: user.wallet!.id, currency: 'USD', amount: 0 }
+                create: { accountId: user.account!.id, currency: 'USD', amount: 0 }
             });
 
             const swapAmount = 10; // €10 each
@@ -226,7 +226,7 @@ describe('ACID Ledger Consistency Tests', () => {
                 return await prisma.$transaction(async (tx) => {
                     const debitResult = await tx.balance.updateMany({
                         where: { 
-                            walletId: user.wallet!.id, 
+                            accountId: user.account!.id, 
                             currency: 'EUR',
                             amount: { gte: swapAmount } 
                         },
@@ -236,9 +236,9 @@ describe('ACID Ledger Consistency Tests', () => {
                         throw new Error('Insufficient balance');
                     }
                     const balance = await tx.balance.upsert({
-                        where: { walletId_currency: { walletId: user.wallet!.id, currency: 'USD' } },
+                        where: { accountId_currency: { accountId: user.account!.id, currency: 'USD' } },
                         update: { amount: { increment: swapAmount * exchangeRate } },
-                        create: { walletId: user.wallet!.id, currency: 'USD', amount: swapAmount * exchangeRate }
+                        create: { accountId: user.account!.id, currency: 'USD', amount: swapAmount * exchangeRate }
                     });
 
                     // Create swap record
@@ -264,10 +264,10 @@ describe('ACID Ledger Consistency Tests', () => {
 
             // Verify final balances
             const finalWalletBalanceEUR = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
             });
             const finalWalletBalanceUSD = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'USD' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'USD' } },
             });
 
             const expectedEUR = 1000 - (swapAmount * numSwaps);
@@ -287,7 +287,7 @@ describe('ACID Ledger Consistency Tests', () => {
 
             // Set balance to €100
             await prisma.balance.update({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
                 data: { amount: 100 },
             });
 
@@ -300,7 +300,7 @@ describe('ACID Ledger Consistency Tests', () => {
                 return await prisma.$transaction(async (tx) => {
                     const debitResult = await tx.balance.updateMany({
                         where: { 
-                            walletId: user.wallet!.id, 
+                            accountId: user.account!.id, 
                             currency: 'EUR',
                             amount: { gte: withdrawAmount } 
                         },
@@ -309,7 +309,7 @@ describe('ACID Ledger Consistency Tests', () => {
                     if (debitResult.count !== 1) {
                         throw new Error('Insufficient balance');
                     }
-                    return await tx.balance.findUnique({ where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } } });
+                    return await tx.balance.findUnique({ where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } } });
                 }, { isolationLevel: 'Serializable' });
             });
 
@@ -321,7 +321,7 @@ describe('ACID Ledger Consistency Tests', () => {
 
             // Verify final balance is not negative
             const finalWalletBalance = await prisma.balance.findUnique({
-                where: { walletId_currency: { walletId: user.wallet!.id, currency: 'EUR' } },
+                where: { accountId_currency: { accountId: user.account!.id, currency: 'EUR' } },
             });
 
             expect(Number(finalWalletBalance!.amount)).toBeGreaterThanOrEqual(0);

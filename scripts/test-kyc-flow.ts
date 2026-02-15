@@ -22,10 +22,9 @@ async function main() {
         firstName: 'KYC',
         lastName: 'Tester',
         kycStatus: 'PENDING', // Default is PENDING/Level 0 in schema logic usually, but let's be explicit
-        kycLevel: 0,
-        wallet: { create: { balanceEUR: 20000 } } // Rich but unverified
+        kycLevel: 0, account: { create: { balanceEUR: 20000 } } // Rich but unverified
       },
-      include: { wallet: true }
+      include: { account: true }
     });
 
     console.log(`\n👤 User Created: ${user.email} (Level: ${user.kycLevel}, Status: ${user.kycStatus})`);
@@ -85,12 +84,12 @@ async function main() {
     
     if (approvedUser?.kycLevel === 2) {
       // Simulate transfer logic
-      await prisma.wallet.update({
+      await prisma.account.update({
         where: { userId: user.id },
         data: { balanceEUR: { decrement: amount3 } }
       });
       console.log('✅ SUCCESS: Transfer allowed for verified user.');
-      console.log(`New Balance: €${Number(approvedUser.wallet?.balanceEUR || 20000) - amount3} (Logic checked)`);
+      console.log(`New Balance: €${Number(approvedUser.account?.balanceEUR || 20000) - amount3} (Logic checked)`);
     } else {
       console.error('❌ FAILURE: Transfer blocked despite approval!');
     }

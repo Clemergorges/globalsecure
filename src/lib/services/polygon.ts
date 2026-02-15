@@ -63,7 +63,7 @@ const getDecimals = async (contract: ethers.Contract): Promise<number> => {
  */
 export const deriveUserAddress = async (userId: string): Promise<string> => {
   // 1. Check if user already has an address stored
-  const existingWallet = await prisma.wallet.findUnique({
+  const existingWallet = await prisma.account.findUnique({
     where: { userId },
     select: { cryptoAddress: true, cryptoAddressIndex: true }
   });
@@ -98,7 +98,7 @@ export const deriveUserAddress = async (userId: string): Promise<string> => {
   }
 
   // 3. Save to Database
-  await prisma.wallet.update({
+  await prisma.account.update({
     where: { userId },
     data: {
       cryptoAddress: address,
@@ -137,8 +137,8 @@ export const sendUsdtFromHotWallet = async (to: string, amountUsdt: string): Pro
 
   try {
     const provider = getProvider();
-    const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-    const contract = getUsdtContract(wallet);
+    const account = new ethers.Wallet(PRIVATE_KEY, provider);
+    const contract = getUsdtContract(account);
 
     const decimals = await getDecimals(contract);
     const amountUnits = ethers.parseUnits(amountUsdt, decimals);

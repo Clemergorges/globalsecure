@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 async function testEmail() {
   console.log('🧪 Testando configuração SMTP...');

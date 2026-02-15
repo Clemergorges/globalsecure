@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
@@ -11,150 +10,85 @@ export async function GET(req: Request) {
   const page = Number(searchParams.get('page')) || 1;
   const limit = Number(searchParams.get('limit')) || 20;
   const search = searchParams.get('search') || '';
-  const type = searchParams.get('type') || 'ALL'; // ALL, TRANSFER, CARD, FEE
-  const startDate = searchParams.get('startDate');
-  const endDate = searchParams.get('endDate');
-
-  // Date filters for Prisma
-  const dateFilter: { gte?: Date; lte?: Date } = {};
-  if (startDate) {
-    dateFilter.gte = new Date(startDate);
-  }
-  if (endDate) {
-    dateFilter.lte = new Date(endDate);
-  }
-
-  const hasDateFilter = startDate || endDate;
+  const type = searchParams.get('type') || 'ALL';
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let allTransactions: any[] = [];
+    const whereClause: any = {
+      userId: session.userId,
+    };
 
-    // 1. Fetch Internal Transfers (Account)
-    if (type === 'ALL' || type === 'TRANSFER') {
-      const transfers = await prisma.transfer.findMany({
-        where: {
-          OR: [
-            { senderId: session.userId },
-            { recipientId: session.userId }
-          ],
-          createdAt: hasDateFilter ? dateFilter : undefined,
-          // Search filter (naive implementation for MVP)
-          ...(search ? {
-             OR: [
-               { recipientEmail: { contains: search, mode: 'insensitive' } },
-               { recipientName: { contains: search, mode: 'insensitive' } }
-             ]
-          } : {})
-        },
-        orderBy: { createdAt: 'desc' },
-        take: limit * 2 // Fetch more to allow merging and slicing later
-      });
-
-      allTransactions = allTransactions.concat(transfers.map(t => ({
-        id: t.id,
-        type: t.senderId === session.userId ? 'TRANSFER_SENT' : 'TRANSFER_RECEIVED',
-        amount: Number(t.amountSent),
-        currency: t.currencySent,
-        description: t.senderId === session.userId ? `Sent to ${t.recipientName || t.recipientEmail}` : `Received from ${t.senderId}`,
-        status: t.status,
-        date: t.createdAt
-      })));
+    // Type Filter
+    if (type !== 'ALL') {
+        if (type === 'TRANSFER') {
+            whereClause.type = { in: ['TRANSFER', 'PIX_IN', 'SEPA_IN', 'CRYPTO_IN', 'CRYPTO_OUT'] };
+        } else if (type === 'CARD') {
+            whereClause.type = { in: ['CARD_PURCHASE', 'CARD_FUNDING', 'CARD_OUT'] };
+        } else if (type === 'FEE') {
+            whereClause.type = 'FEE';
+        }
     }
 
-    // 2. Fetch Card Transactions (Spend)
-    if (type === 'ALL' || type === 'CARD') {
-      const cards = await prisma.virtualCard.findMany({
-        where: {
-          OR: [
-            { transfer: { recipientId: session.userId } },
-            { userId: session.userId }
-          ]
-        },
-        select: { id: true }
-      });
-      const cardIds = cards.map(c => c.id);
-
-      if (cardIds.length > 0) {
-        const spendTransactions = await prisma.spendTransaction.findMany({
-          where: {
-            cardId: { in: cardIds },
-            createdAt: hasDateFilter ? dateFilter : undefined,
-            ...(search ? {
-              merchantName: { contains: search, mode: 'insensitive' }
-            } : {})
-          },
-          orderBy: { createdAt: 'desc' },
-          take: limit * 2
-        });
-
-        allTransactions = allTransactions.concat(spendTransactions.map(t => ({
-          id: t.id,
-          type: 'CARD_PURCHASE',
-          amount: Number(t.amount),
-          currency: t.currency,
-          description: `${t.merchantName} (${t.merchantCategory})`,
-          status: t.status,
-          date: t.createdAt
-        })));
-      }
+    // Search (Basic implementation)
+    // Note: Searching inside JSON metadata efficiently requires PostgreSQL specific features or Raw Query.
+    // For MVP, we won't filter by search in DB to avoid complexity, relying on client or simplified backend filter if needed.
+    // However, if we want to search by amount:
+    if (search && !isNaN(Number(search))) {
+        whereClause.amount = { equals: Number(search) };
     }
 
-    // 3. Fetch Wallet Transactions (Fees)
-    if (type === 'ALL' || type === 'FEE') {
-      const wallet = await prisma.wallet.findUnique({
-        where: { userId: session.userId }
-      });
-
-      if (wallet) {
-        const walletTransactions = await prisma.walletTransaction.findMany({
-          where: { 
-            walletId: wallet.id,
-            type: 'FEE',
-            createdAt: hasDateFilter ? dateFilter : undefined,
-            ...(search ? {
-              description: { contains: search, mode: 'insensitive' }
-            } : {})
-          },
-          orderBy: { createdAt: 'desc' },
-          take: limit * 2
-        });
-
-        allTransactions = allTransactions.concat(walletTransactions.map(t => ({
-          id: t.id,
-          type: 'FEE',
-          amount: Number(t.amount),
-          currency: t.currency,
-          description: t.description,
-          status: 'COMPLETED',
-          date: t.createdAt
-        })));
-      }
-    }
-
-    // 4. Merge, Sort and Paginate (In-memory for MVP due to dispersed data sources)
-    // For a production app with high volume, this strategy would move to a unified "Activity" table or view.
+    const total = await prisma.userTransaction.count({ where: whereClause });
     
-    // Search filtering (Post-fetch for fields not covered by DB queries if needed, though we tried to cover basic ones)
-    if (search) {
-      allTransactions = allTransactions.filter(t => 
-        t.description.toLowerCase().includes(search.toLowerCase()) ||
-        String(t.amount).includes(search)
-      );
-    }
+    const transactions = await prisma.userTransaction.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit
+    });
 
-    const sorted = allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    const startIndex = (page - 1) * limit;
-    const paginated = sorted.slice(startIndex, startIndex + limit);
+    const mapped = transactions.map(tx => {
+        let description = tx.type.replace('_', ' ');
+        
+        if (tx.metadata && typeof tx.metadata === 'object') {
+            const meta = tx.metadata as any;
+            if (meta.description) description = meta.description;
+            else if (meta.merchantName) description = meta.merchantName;
+            else if (meta.recipientEmail) description = `Sent to ${meta.recipientEmail}`;
+            else if (meta.senderName) description = `Received from ${meta.senderName}`;
+        }
+
+        // Format Description for known types
+        if (tx.type === 'PIX_IN') description = 'Depósito PIX Recebido';
+        if (tx.type === 'SEPA_IN') description = 'Depósito SEPA Recebido';
+
+        return {
+          id: tx.id,
+          type: tx.type,
+          amount: Number(tx.amount),
+          currency: tx.currency,
+          description: description,
+          status: tx.status,
+          date: tx.createdAt
+        };
+    });
+
+    // In-memory search filter for text (since we didn't do it in DB)
+    // Only effective for the current page, which is a limitation, but acceptable for MVP
+    let finalResult = mapped;
+    if (search && isNaN(Number(search))) {
+        const lowerSearch = search.toLowerCase();
+        finalResult = mapped.filter(t => 
+            t.description.toLowerCase().includes(lowerSearch) || 
+            t.type.toLowerCase().includes(lowerSearch)
+        );
+    }
 
     return NextResponse.json({
-      transactions: paginated,
+      transactions: finalResult,
       pagination: {
         page,
         limit,
-        total: sorted.length,
-        totalPages: Math.ceil(sorted.length / limit)
+        total,
+        totalPages: Math.ceil(total / limit)
       }
     });
 

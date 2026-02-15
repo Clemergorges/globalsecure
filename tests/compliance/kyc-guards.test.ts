@@ -36,12 +36,12 @@ describe('KYC Guards and Limits Enforcement', () => {
                     }
 
                     await tx.balance.updateMany({
-                        where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                        where: { accountId: sender.account!.id, currency: 'EUR' },
                         data: { amount: { decrement: transferAmount } },
                     });
 
                     await tx.balance.updateMany({
-                        where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                        where: { accountId: receiver.account!.id, currency: 'EUR' },
                         data: { amount: { increment: transferAmount } },
                     });
                 });
@@ -63,12 +63,12 @@ describe('KYC Guards and Limits Enforcement', () => {
                 }
 
                 await tx.balance.updateMany({
-                    where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                    where: { accountId: sender.account!.id, currency: 'EUR' },
                     data: { amount: { decrement: transferAmount } },
                 });
 
                 await tx.balance.updateMany({
-                    where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                    where: { accountId: receiver.account!.id, currency: 'EUR' },
                     data: { amount: { increment: transferAmount } },
                 });
             });
@@ -89,12 +89,12 @@ describe('KYC Guards and Limits Enforcement', () => {
                 }
 
                 await tx.balance.updateMany({
-                    where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                    where: { accountId: sender.account!.id, currency: 'EUR' },
                     data: { amount: { decrement: transferAmount } },
                 });
 
                 await tx.balance.updateMany({
-                    where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                    where: { accountId: receiver.account!.id, currency: 'EUR' },
                     data: { amount: { increment: transferAmount } },
                 });
             });
@@ -116,12 +116,12 @@ describe('KYC Guards and Limits Enforcement', () => {
                     }
 
                     await tx.balance.updateMany({
-                        where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                        where: { accountId: sender.account!.id, currency: 'EUR' },
                         data: { amount: { decrement: transferAmount } },
                     });
 
                     await tx.balance.updateMany({
-                        where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                        where: { accountId: receiver.account!.id, currency: 'EUR' },
                         data: { amount: { increment: transferAmount } },
                     });
                 });
@@ -138,7 +138,7 @@ describe('KYC Guards and Limits Enforcement', () => {
 
             // Ensure sender has enough balance
             await prisma.balance.updateMany({
-                where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                where: { accountId: sender.account!.id, currency: 'EUR' },
                 data: { amount: 10000 },
             });
 
@@ -149,12 +149,12 @@ describe('KYC Guards and Limits Enforcement', () => {
                 }
 
                 await tx.balance.updateMany({
-                    where: { walletId: sender.wallet!.id, currency: 'EUR' },
+                    where: { accountId: sender.account!.id, currency: 'EUR' },
                     data: { amount: { decrement: transferAmount } },
                 });
 
                 await tx.balance.updateMany({
-                    where: { walletId: receiver.wallet!.id, currency: 'EUR' },
+                    where: { accountId: receiver.account!.id, currency: 'EUR' },
                     data: { amount: { increment: transferAmount } },
                 });
             });
@@ -254,7 +254,7 @@ describe('KYC Guards and Limits Enforcement', () => {
                 }
 
                 await tx.balance.updateMany({
-                    where: { walletId: user.wallet!.id, currency: 'EUR' },
+                    where: { accountId: user.account!.id, currency: 'EUR' },
                     data: { amount: { decrement: amount } },
                 });
             });
@@ -269,7 +269,7 @@ describe('KYC Guards and Limits Enforcement', () => {
                 }
 
                 await tx.balance.updateMany({
-                    where: { walletId: user.wallet!.id, currency: 'EUR' },
+                    where: { accountId: user.account!.id, currency: 'EUR' },
                     data: { amount: { decrement: amount } },
                 });
             });

@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 import { createVirtualCard } from '@/lib/services/stripe';
 import { calculateTransferAmounts } from '@/lib/services/exchange';
 import { pusherService } from '@/lib/services/pusher';
+import { logAudit } from '@/lib/logger'; // Import logAudit
 import { z } from 'zod';
 
 const transferSchema = z.object({
@@ -45,11 +46,11 @@ export async function POST(req: Request) {
     // 0. KYC Check
     const user = await prisma.user.findUnique({ 
         where: { id: (session as any).userId },
-        include: { wallet: true }
+        include: { account: true }
     });
 
-    if (!user || !user.wallet) {
-        return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+    if (!user || !user.account) {
+        return NextResponse.json({ error: 'Account not found' }, { status: 404 });
     }
 
     // SCA CHECK (Strong Customer Authentication)
@@ -108,8 +109,8 @@ export async function POST(req: Request) {
         // 2.1 Check Balance & Debit
         const balanceRecord = await tx.balance.findUnique({
             where: {
-                walletId_currency: {
-                    walletId: user.wallet!.id,
+                accountId_currency: {
+                    accountId: user.account!.id,
                     currency: currencySource
                 }
             }
@@ -126,9 +127,9 @@ export async function POST(req: Request) {
         });
 
         // Log Debit Transaction
-        await tx.walletTransaction.create({
+        await tx.accountTransaction.create({
             data: {
-                walletId: user.wallet!.id,
+                accountId: user.account!.id,
                 type: 'DEBIT',
                 amount: totalDeduction,
                 currency: currencySource,
@@ -173,13 +174,19 @@ export async function POST(req: Request) {
 
     // 4. If Card Mode, create Virtual Card (OUTSIDE Transaction because it calls External API)
     if (mode === 'CARD_EMAIL') {
-      console.log('[Transfer] Mode is CARD_EMAIL. Initiating Stripe Card creation...');
+      await logAudit({ 
+          userId: (session as any).userId, 
+          action: 'TRANSFER_CARD_INIT', 
+          status: 'PENDING',
+          metadata: { amount: amountSource, currency: currencySource }
+      });
+
       const supportedCurrencies = ['eur', 'usd', 'gbp'];
       let issueCurrency = currencyTarget.toLowerCase();
       let issueAmount = calculation.amountReceived;
 
       if (!supportedCurrencies.includes(issueCurrency)) {
-        console.log(`[Transfer] Currency ${issueCurrency} not supported for card issuing. Converting to EUR.`);
+        // Log currency conversion attempt
         const { getExchangeRate } = await import('@/lib/services/exchange');
         const exchangeRate = await getExchangeRate(currencyTarget, 'EUR');
         issueAmount = calculation.amountReceived * exchangeRate;
@@ -195,7 +202,13 @@ export async function POST(req: Request) {
           recipientName: receiverName!,
           transferId: result.id
         });
-        console.log('[Transfer] Stripe Card created successfully:', cardData.cardId);
+        
+        await logAudit({ 
+            userId: (session as any).userId, 
+            action: 'TRANSFER_CARD_CREATED', 
+            status: 'SUCCESS',
+            metadata: { cardId: cardData.cardId, transferId: result.id }
+        });
         
         await prisma.virtualCard.create({
             data: {
@@ -245,8 +258,8 @@ export async function POST(req: Request) {
              // 1. Creditar o valor de volta ao saldo (Refund)
              await tx.balance.update({
                where: { 
-                 walletId_currency: {
-                    walletId: user.wallet!.id,
+                 accountId_currency: {
+                    accountId: user.account!.id,
                     currency: currencySource
                  }
                },

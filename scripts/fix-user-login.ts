@@ -40,8 +40,7 @@ async function main() {
         emailVerified: true,
         phoneVerified: true,
         phone: '+554799999999', // Placeholder
-        country: 'BR',
-        wallet: {
+        country: 'BR', account: {
             create: {
                 primaryCurrency: 'BRL',
                 balances: {
