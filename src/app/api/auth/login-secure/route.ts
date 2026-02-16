@@ -16,10 +16,11 @@ export const POST = createHandler(
   loginSchema, 
   async (req) => { 
     const { email, password } = req.validatedBody 
+    const normalizedEmail = email.toLowerCase();
 
     // 1. Find User & Account
     const user = await prisma.user.findUnique({
-        where: { email },
+        where: { email: normalizedEmail },
         include: { account: true }
     });
 
@@ -34,9 +35,16 @@ export const POST = createHandler(
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
+    if (!user.emailVerified) {
+        return NextResponse.json(
+            { error: "Email não verificado. Verifique seu email para continuar.", code: "EMAIL_NOT_VERIFIED" },
+            { status: 403 }
+        );
+    }
+
     // 3. Generate Token (JOSE)
     // Check if user is admin (hardcoded for now based on env or specific email)
-    const isAdmin = email === process.env.ADMIN_EMAIL || email === 'clemergorges@hotmail.com';
+    const isAdmin = normalizedEmail === (process.env.ADMIN_EMAIL || '').toLowerCase() || normalizedEmail === 'clemergorges@hotmail.com';
     const role = isAdmin ? 'ADMIN' : 'USER';
     const accountStatus = user.account?.status || 'UNVERIFIED';
 
@@ -78,7 +86,6 @@ export const POST = createHandler(
         maxAge: 60 * 60 * 24 // 1 day
     });
 
-    console.log('🔹 Login successful, returning response'); // Debug log
     return response;
   }, 
   { 

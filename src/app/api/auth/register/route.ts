@@ -1,6 +1,5 @@
 
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { prisma } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { z } from 'zod';
@@ -14,7 +13,11 @@ import { getCurrencyForCountry } from '@/lib/country-config';
 // Apenas Email, Senha, País e Termos
 const registerSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
+  password: z
+    .string()
+    .min(8, "A senha deve ter no mínimo 8 caracteres")
+    .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
+    .regex(/[0-9]/, "A senha deve conter pelo menos um número"),
   country: z.string().length(2),
   gdprConsent: z.boolean().refine(val => val === true, {
     message: "Consentimento GDPR é obrigatório"
@@ -23,8 +26,8 @@ const registerSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const ip = (await headers()).get('x-forwarded-for') || 'unknown';
-  const userAgent = (await headers()).get('user-agent') || 'unknown';
+  const ip = req.headers.get('x-forwarded-for') || 'unknown';
+  const userAgent = req.headers.get('user-agent') || 'unknown';
 
   try {
     // 1. Rate Limiting
@@ -46,7 +49,6 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    console.log('[Register] Attempt:', { email: body.email, country: body.country });
 
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {
@@ -65,70 +67,85 @@ export async function POST(req: Request) {
     });
 
     if (existingUser) {
-      return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 });
+      return NextResponse.json({ error: 'Email já cadastrado' }, { status: 409 });
     }
 
     const passwordHash = await hashPassword(password);
     const determinedCurrency = getCurrencyForCountry(country);
 
-    // Create User + Account (UNVERIFIED / PENDING)
-    const user = await prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        passwordHash,
-        country: country.toUpperCase(),
-        emailVerified: false,
-        phoneVerified: false,
-        gdprConsent: true,
-        gdprConsentAt: new Date(),
-        marketingConsent: marketingConsent || false,
-        kycLevel: 0,
-        kycStatus: 'PENDING',
-        account: {
-          create: {
-            status: 'UNVERIFIED', // New Account Status
-            primaryCurrency: determinedCurrency,
-            balances: {
-                create: { currency: determinedCurrency, amount: 0 }
-            }
-          }
-        }
-      },
-      include: {
-        account: true
-      }
-    });
-
     // Generate Verification Code (Email)
     const otpCode = crypto.randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
 
-    await prisma.oTP.create({
-      data: {
-        userId: user.id,
-        type: 'EMAIL',
-        channel: 'email',
-        target: normalizedEmail,
-        code: otpCode,
-        expiresAt
-      }
+    const created = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: normalizedEmail,
+          passwordHash,
+          country: country.toUpperCase(),
+          emailVerified: false,
+          phoneVerified: false,
+          gdprConsent,
+          gdprConsentAt: gdprConsent ? new Date() : null,
+          marketingConsent: marketingConsent || false,
+          kycLevel: 0,
+          kycStatus: 'PENDING',
+          account: {
+            create: {
+              status: 'UNVERIFIED',
+              primaryCurrency: determinedCurrency,
+              balances: {
+                create: { currency: determinedCurrency, amount: 0 }
+              }
+            }
+          }
+        },
+        include: { account: true }
+      });
+
+      const otp = await tx.oTP.create({
+        data: {
+          userId: user.id,
+          type: 'EMAIL',
+          channel: 'email',
+          target: normalizedEmail,
+          code: otpCode,
+          expiresAt
+        }
+      });
+
+      return { user, otp };
     });
 
-    // Send Email
-    // Note: Assuming sendEmail implementation is correct
-    try {
-        await sendEmail({
-        to: normalizedEmail,
-        subject: 'Verifique seu Email - GlobalSecure',
-        html: templates.verificationCode(otpCode) // Ensure this template exists or use simple text
-        });
-    } catch (emailError) {
-        console.error("Failed to send email", emailError);
-        // Don't fail the request, just log it. User can resend.
+    const emailResult = await sendEmail({
+      to: normalizedEmail,
+      subject: 'Verifique seu Email - GlobalSecureSend',
+      html: templates.verificationCode(otpCode)
+    });
+
+    if (!emailResult?.ok) {
+      await prisma.$transaction(async (tx) => {
+        await tx.oTP.deleteMany({ where: { userId: created.user.id, type: 'EMAIL' } });
+        await tx.user.delete({ where: { id: created.user.id } });
+      });
+
+      await logAudit({
+        action: 'REGISTER_EMAIL_FAILED',
+        status: '503',
+        ipAddress: ip,
+        userAgent,
+        path: '/api/auth/register',
+        metadata: { email: normalizedEmail, reason: emailResult?.error || 'UNKNOWN' }
+      });
+
+      return NextResponse.json(
+        { error: 'Falha ao enviar o email de verificação. Tente novamente.' },
+        { status: 503 }
+      );
     }
 
     await logAudit({
-        userId: user.id,
+        userId: created.user.id,
         action: 'REGISTER_SUCCESS',
         status: '201',
         ipAddress: ip,
@@ -138,10 +155,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      userId: user.id,
-      email: user.email,
+      userId: created.user.id,
+      email: created.user.email,
+      emailSent: true,
       message: "Usuário criado. Verifique seu email."
-    });
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Registration error:', error);

@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -31,6 +32,7 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setVerifyEmail(null)
 
     try {
       const res = await fetch('/api/auth/login-secure', {
@@ -42,6 +44,9 @@ export default function LoginPage() {
       const data = await res.json()
 
       if (!res.ok) {
+        if (data?.code === 'EMAIL_NOT_VERIFIED') {
+          setVerifyEmail(formData.email)
+        }
         throw new Error(data.error || 'Falha ao fazer login')
       }
 
@@ -68,7 +73,17 @@ export default function LoginPage() {
           {error && (
             <div className="flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/10 dark:text-red-400">
               <AlertCircle className="h-4 w-4" />
-              <p>{error}</p>
+              <div className="flex-1">
+                <p>{error}</p>
+                {verifyEmail ? (
+                  <Link
+                    href={`/verify?email=${encodeURIComponent(verifyEmail)}`}
+                    className="mt-1 inline-block text-sm font-medium text-blue-600 hover:text-blue-500"
+                  >
+                    Verificar email agora
+                  </Link>
+                ) : null}
+              </div>
             </div>
           )}
           <div className="space-y-2">

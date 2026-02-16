@@ -17,9 +17,13 @@ export async function POST(req: Request) {
     }
 
     const { email, code } = parsed.data;
+    const normalizedEmail = email.toLowerCase();
 
     // Find the user
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      include: { account: true }
+    });
     if (!user) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
@@ -28,31 +32,44 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, message: 'Email já verificado' });
     }
 
-    // Find valid OTP
     const otp = await prisma.oTP.findFirst({
       where: {
         userId: user.id,
         type: 'EMAIL',
         code: code,
-        used: false,
-        expiresAt: { gt: new Date() }
-      }
+      },
+      orderBy: { createdAt: 'desc' }
     });
 
     if (!otp) {
-      return NextResponse.json({ error: 'Código inválido ou expirado' }, { status: 400 });
+      return NextResponse.json({ error: 'Código inválido', code: 'OTP_INVALID' }, { status: 400 });
     }
 
-    // Mark OTP as used
-    await prisma.oTP.update({
-      where: { id: otp.id },
-      data: { used: true, usedAt: new Date() }
-    });
+    if (otp.used) {
+      return NextResponse.json({ error: 'Código já usado', code: 'OTP_USED' }, { status: 400 });
+    }
 
-    // Verify User
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { emailVerified: true }
+    if (otp.expiresAt <= new Date()) {
+      return NextResponse.json({ error: 'Código expirado', code: 'OTP_EXPIRED' }, { status: 400 });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.oTP.update({
+        where: { id: otp.id },
+        data: { used: true, usedAt: new Date() }
+      });
+
+      await tx.user.update({
+        where: { id: user.id },
+        data: { emailVerified: true }
+      });
+
+      if (user.account && user.account.status === 'UNVERIFIED') {
+        await tx.account.update({
+          where: { userId: user.id },
+          data: { status: 'PENDING' }
+        });
+      }
     });
 
     return NextResponse.json({ success: true });

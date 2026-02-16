@@ -66,11 +66,10 @@ export default function RegisterPage() {
       setSuccess(true);
       toast({
         title: "Conta criada com sucesso!",
-        description: "Verifique seu email para ativar sua conta.",
+        description: "Enviamos um código para seu email. Verifique para continuar.",
       });
 
-      // Optional: Auto redirect to login or show success screen
-      setTimeout(() => router.push('/auth/login?registered=true'), 3000);
+      router.push(`/verify?email=${encodeURIComponent(data.email)}`);
 
     } catch (error: any) {
       toast({
@@ -95,12 +94,12 @@ export default function RegisterPage() {
                     <CardDescription className="text-slate-400">
                         Enviamos um código de verificação para <strong>{form.getValues('email')}</strong>.
                         <br/><br/>
-                        Clique no link ou use o código para ativar sua conta e prosseguir para a abertura da conta financeira.
+                        Use o código para ativar sua conta e continuar.
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>
-                    <Button onClick={() => router.push('/auth/login')} className="w-full bg-cyan-500 hover:bg-cyan-600 text-black">
-                        Ir para Login
+                    <Button onClick={() => router.push(`/verify?email=${encodeURIComponent(form.getValues('email'))}`)} className="w-full bg-cyan-500 hover:bg-cyan-600 text-black">
+                        Continuar
                     </Button>
                 </CardFooter>
             </Card>
@@ -130,6 +129,7 @@ export default function RegisterPage() {
                 <Input 
                   {...register('email')} 
                   placeholder="nome@exemplo.com" 
+                  disabled={loading}
                   className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20" 
                 />
               </div>
@@ -144,6 +144,7 @@ export default function RegisterPage() {
                   type="password"
                   {...register('password')} 
                   placeholder="••••••••" 
+                  disabled={loading}
                   className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20" 
                 />
               </div>
@@ -155,6 +156,7 @@ export default function RegisterPage() {
               <Select 
                 onValueChange={(val) => setValue('country', val)} 
                 defaultValue={watchedCountry}
+                disabled={loading}
               >
                 <SelectTrigger className="bg-white/5 border-white/10 text-white">
                   <SelectValue placeholder="Selecione" />
@@ -175,6 +177,7 @@ export default function RegisterPage() {
                 <Checkbox 
                   id="gdpr" 
                   onCheckedChange={(c) => setValue('gdprConsent', c === true)}
+                  disabled={loading}
                   className="border-white/20 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-black"
                 />
                 <label htmlFor="gdpr" className="text-xs text-slate-400 leading-tight">

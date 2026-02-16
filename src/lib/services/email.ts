@@ -1,39 +1,57 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.resend.com',
-  port: Number(process.env.SMTP_PORT) || 465,
-  secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER || 'resend',
-    pass: process.env.SMTP_PASS,
-  },
-});
-
 interface EmailParams {
   to: string;
   subject: string;
   html: string;
 }
 
+let cachedTransporter: nodemailer.Transporter | null = null;
+
+function getTransporter() {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 465);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!host || !user || !pass) return null;
+
+  if (cachedTransporter) return cachedTransporter;
+
+  cachedTransporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+
+  return cachedTransporter;
+}
+
 export async function sendEmail({ to, subject, html }: EmailParams) {
-  if (!process.env.SMTP_PASS) {
-    console.warn('⚠️ SMTP_PASS not configured. Email simulation:', { to, subject });
-    return;
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.warn('[Email] SMTP not configured', { to, subject });
+    return { ok: false as const, error: 'SMTP_NOT_CONFIGURED' as const };
   }
 
   try {
+    const from =
+      process.env.EMAIL_FROM ||
+      process.env.SMTP_FROM ||
+      '"GlobalSecureSend" <noreply@globalsecuresend.com>';
+
     const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"GlobalSecure Send" <noreply@globalsecuresend.com>',
+      from,
       to,
       subject,
       html,
     });
-    console.log('📧 Email sent:', info.messageId);
-    return info;
-  } catch (error) {
-    console.error('❌ Email failed:', error);
-    // Don't throw error to avoid breaking the transaction flow
+    console.log('[Email] Sent', { to, messageId: info.messageId });
+    return { ok: true as const, messageId: info.messageId };
+  } catch (error: any) {
+    console.error('[Email] Failed', { to, subject, error: error?.message || String(error) });
+    return { ok: false as const, error: 'SMTP_SEND_FAILED' as const };
   }
 }
 
