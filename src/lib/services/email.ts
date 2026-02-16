@@ -13,8 +13,9 @@ function getTransporter() {
   const port = Number(process.env.SMTP_PORT || 465);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
+  const from = process.env.EMAIL_FROM;
 
-  if (!host || !user || !pass) return null;
+  if (!host || !user || !pass || !from) return null;
 
   if (cachedTransporter) return cachedTransporter;
 
@@ -23,6 +24,7 @@ function getTransporter() {
     port,
     secure: port === 465,
     auth: { user, pass },
+    requireTLS: port === 587,
   });
 
   return cachedTransporter;
@@ -36,10 +38,7 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
   }
 
   try {
-    const from =
-      process.env.EMAIL_FROM ||
-      process.env.SMTP_FROM ||
-      '"GlobalSecureSend" <noreply@globalsecuresend.com>';
+    const from = process.env.EMAIL_FROM as string;
 
     const info = await transporter.sendMail({
       from,

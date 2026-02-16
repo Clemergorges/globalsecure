@@ -58,15 +58,26 @@ export default function ClaimCreatePage() {
         }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        if ((data as any)?.claimUrl && (data as any)?.unlockCode) {
+          setSuccess({
+            claimUrl: (data as any).claimUrl,
+            unlockCode: (data as any).unlockCode,
+            recipientEmail: formData.recipientEmail,
+            amount,
+            currency: formData.currency,
+          });
+          setError((data as any)?.error || 'O link foi criado, mas o email não foi enviado.');
+          return;
+        }
         throw new Error((data as any)?.error || 'Falha ao processar envio.');
       }
 
-      const data = await res.json();
       setSuccess({
-        claimUrl: data.claimUrl,
-        unlockCode: data.unlockCode,
+        claimUrl: (data as any).claimUrl,
+        unlockCode: (data as any).unlockCode,
         recipientEmail: formData.recipientEmail,
         amount,
         currency: formData.currency,
@@ -266,4 +277,3 @@ export default function ClaimCreatePage() {
     </div>
   );
 }
-

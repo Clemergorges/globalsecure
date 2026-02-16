@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { randomBytes } from 'crypto';
 import { sendEmail, templates } from '@/lib/services/email';
+import { logAudit } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
@@ -81,16 +82,37 @@ export async function POST(req: Request) {
 
     // 2. Send Email (Side Effect - outside transaction)
     if (recipientEmail) {
-        await sendEmail({
-            to: recipientEmail,
-            subject: 'Você recebeu um Pagamento Seguro GlobalSecure 🛡️',
-            html: templates.cardClaim(
-                recipientName || 'Usuário',
-                amount.toString(),
-                currency,
-                claimUrl
-            )
+        const subject = 'Você recebeu um Pagamento Seguro GlobalSecure 🛡️';
+        const emailResult = await sendEmail({
+          to: recipientEmail,
+          subject,
+          html: templates.cardClaim(
+            recipientName || 'Usuário',
+            amount.toString(),
+            currency,
+            claimUrl
+          )
         });
+
+        if (emailResult?.ok) {
+          console.log('[Email] CLAIM_SENT', { to: recipientEmail, subject });
+        } else {
+          console.error('[Email] CLAIM_FAILED', { to: recipientEmail, subject, error: emailResult?.error || 'UNKNOWN' });
+          await logAudit({
+            userId,
+            action: 'CLAIM_EMAIL_FAILED',
+            status: '503',
+            ipAddress: req.headers.get('x-forwarded-for') || 'unknown',
+            userAgent: req.headers.get('user-agent') || 'unknown',
+            path: '/api/claim-links',
+            metadata: { to: recipientEmail, reason: emailResult?.error || 'UNKNOWN' }
+          });
+
+          return NextResponse.json(
+            { error: 'Falha ao enviar email do Pagamento Seguro. O link foi criado.', claimUrl, token, cardId: virtualCard.id, unlockCode: virtualCard.unlockCode },
+            { status: 503 }
+          );
+        }
     }
 
     console.info(`Secure Link Created: Transfer=${result.transfer.id}, Card=${result.virtualCard.id}, Link=${result.token}`);
