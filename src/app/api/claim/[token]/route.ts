@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
-export async function GET(req: Request, { params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+export async function GET(req: Request, { params }: { params: { token: string } }) {
+  const { token } = params;
   const now = new Date();
 
   try {
@@ -44,4 +44,3 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     return NextResponse.json({ ok: false, error: 'INTERNAL_ERROR' }, { status: 500 });
   }
 }
-

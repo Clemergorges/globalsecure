@@ -58,7 +58,7 @@ describe('Claim link unlock flow', () => {
     });
 
     const req = new NextRequest('http://localhost/api/claim/t1', { method: 'GET' });
-    const res = await claimGET(req as any, { params: Promise.resolve({ token: 't1' }) });
+    const res = await claimGET(req as any, { params: { token: 't1' } });
     const json = await res.json();
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
@@ -86,7 +86,7 @@ describe('Claim link unlock flow', () => {
     });
 
     const req = new NextRequest('http://localhost/api/claim/t1', { method: 'GET' });
-    const res = await claimGET(req as any, { params: Promise.resolve({ token: 't1' }) });
+    const res = await claimGET(req as any, { params: { token: 't1' } });
     const json = await res.json();
     expect(res.status).toBe(410);
     expect(json.error).toBe('CLAIM_EXPIRED');
@@ -119,7 +119,7 @@ describe('Claim link unlock flow', () => {
       body: JSON.stringify({ unlockCode: 'A1B2C3' }),
     });
 
-    const res = await claimUnlockPOST(req as any, { params: Promise.resolve({ token: 't1' }) });
+    const res = await claimUnlockPOST(req as any, { params: { token: 't1' } });
     const json = await res.json();
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
@@ -154,7 +154,7 @@ describe('Claim link unlock flow', () => {
       body: JSON.stringify({ unlockCode: 'ZZZZZZ' }),
     });
 
-    const res = await claimUnlockPOST(req as any, { params: Promise.resolve({ token: 't1' }) });
+    const res = await claimUnlockPOST(req as any, { params: { token: 't1' } });
     const json = await res.json();
     expect(res.status).toBe(400);
     expect(json.error).toBe('INVALID_UNLOCK_CODE');
@@ -186,7 +186,7 @@ describe('Claim link unlock flow', () => {
       body: JSON.stringify({ unlockCode: 'ZZZZZZ' }),
     });
 
-    const res = await claimUnlockPOST(req as any, { params: Promise.resolve({ token: 't1' }) });
+    const res = await claimUnlockPOST(req as any, { params: { token: 't1' } });
     const json = await res.json();
     expect(res.status).toBe(429);
     expect(json.error).toBe('TOO_MANY_ATTEMPTS');

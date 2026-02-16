@@ -12,6 +12,8 @@ Permitir que um remetente envie um cartão virtual por e-mail/link para um desti
 - APIs (não modificar contratos):
   - `POST /api/claim-links`
   - `POST /api/claim/[id]/unlock`
+  - `GET /api/claim/[token]`
+  - `POST /api/claim/[token]/unlock`
 
 ## Fluxo do remetente (passo a passo)
 1. Acessa `/dashboard/claim/create`.
@@ -35,10 +37,11 @@ Permitir que um remetente envie um cartão virtual por e-mail/link para um desti
    - “Você recebeu um cartão pré-pago GlobalSecureSend”
    - Valor/moeda
    - Tempo até expiração (quando aplicável)
-4. Digita o código de desbloqueio.
-5. O frontend chama `POST /api/claim/[id]/unlock` (onde `id` é o `transferId` associado ao claim).
-6. Em sucesso, vê a tela pós-desbloqueio:
-   - Dados do cartão (em modo demonstração no momento)
+4. A tela valida o token via `GET /api/claim/[token]` (dados públicos).
+5. Digita o código de desbloqueio.
+6. O frontend chama `POST /api/claim/[token]/unlock` (rate-limit por IP+token).
+7. Em sucesso, vê a tela pós-desbloqueio:
+   - Dados do cartão (PAN/CVC) retornam apenas uma vez
    - Botões “Adicionar ao Apple Pay” e “Adicionar ao Google Pay” (placeholder “Em breve”)
    - “Onde posso usar?” (explicação simples)
 
@@ -51,8 +54,9 @@ Permitir que um remetente envie um cartão virtual por e-mail/link para um desti
   - Seção “Envios via Cartão (Claim)” no topo (para visibilidade rápida)
 
 ## Limitações atuais (camada 2)
-- Cartão na tela do destinatário está em “modo demonstração”:
-  - PAN/CVC/valores visuais não vêm de um emissor real ainda
+- Dados sensíveis do cartão dependem das permissões do Stripe Issuing:
+  - Em produção, o backend tenta recuperar PAN/CVC via Stripe com `expand: ['number','cvc']` para cartões virtuais
+  - Se o ambiente não permitir (permissão/conta/chave) ou em erro, o backend retorna dados mascarados/mock para não quebrar o fluxo
 - Apple Pay / Google Pay:
   - Botões existem, mas exibem “Em breve” (sem push provisioning)
 - Expiração:
@@ -73,4 +77,3 @@ Permitir que um remetente envie um cartão virtual por e-mail/link para um desti
 4. Abrir `/claim/[token]` em aba anônima.
 5. Inserir o código e verificar tela pós-desbloqueio.
 6. Verificar badge e status em `/dashboard/cards` e seção em `/dashboard/transactions`.
-

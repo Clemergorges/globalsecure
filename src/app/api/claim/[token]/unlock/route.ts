@@ -13,8 +13,8 @@ const unlockSchema = z.object({
     .regex(/^[a-zA-Z0-9]{6}$/),
 });
 
-export async function POST(req: Request, { params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+export async function POST(req: Request, { params }: { params: { token: string } }) {
+  const { token } = params;
   const ip = req.headers.get('x-forwarded-for') || 'unknown';
   const userAgent = req.headers.get('user-agent') || 'unknown';
   const proto = req.headers.get('x-forwarded-proto');
@@ -63,6 +63,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     if (expected !== inputCode) {
       const rl = await checkRateLimit(`claim_unlock:${token}:${ip}`, 3, 15 * 60);
       const attemptsRemaining = rl.remaining;
+      const retryAfterSeconds = Math.max(0, Math.ceil((rl.reset - Date.now()) / 1000));
+      const rateLimitHeaders = {
+        'X-RateLimit-Limit': String(rl.limit),
+        'X-RateLimit-Remaining': String(rl.remaining),
+        'Retry-After': String(retryAfterSeconds),
+      };
 
       await logAudit({
         action: 'CLAIM_UNLOCK_FAILED',
@@ -84,13 +90,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
       if (!rl.success) {
         return NextResponse.json(
           { ok: false, error: 'TOO_MANY_ATTEMPTS', attemptsRemaining: 0 },
-          { status: 429 }
+          { status: 429, headers: rateLimitHeaders }
         );
       }
 
       return NextResponse.json(
         { ok: false, error: 'INVALID_UNLOCK_CODE', attemptsRemaining },
-        { status: 400 }
+        { status: 400, headers: rateLimitHeaders }
       );
     }
 
@@ -161,4 +167,3 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     return NextResponse.json({ ok: false, error: 'INTERNAL_ERROR' }, { status: 500 });
   }
 }
-
