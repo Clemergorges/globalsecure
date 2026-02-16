@@ -13,8 +13,8 @@ const unlockSchema = z.object({
     .regex(/^[a-zA-Z0-9]{6}$/),
 });
 
-export async function POST(req: Request, { params }: { params: { token: string } }) {
-  const { token } = params;
+export async function POST(req: Request, { params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
   const ip = req.headers.get('x-forwarded-for') || 'unknown';
   const userAgent = req.headers.get('user-agent') || 'unknown';
   const proto = req.headers.get('x-forwarded-proto');

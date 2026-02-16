@@ -79,7 +79,7 @@ export default function ClaimClient(props: ClaimClientProps) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/claim/${props.transferId}/unlock`, {
+      const res = await fetch(`/api/claim/by-transfer/${props.transferId}/unlock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code }),

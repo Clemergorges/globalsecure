@@ -11,9 +11,9 @@ Permitir que um remetente envie um cartão virtual por e-mail/link para um desti
   - Tela: `/claim/[token]`
 - APIs (não modificar contratos):
   - `POST /api/claim-links`
-  - `POST /api/claim/[id]/unlock`
   - `GET /api/claim/[token]`
   - `POST /api/claim/[token]/unlock`
+  - `POST /api/claim/by-transfer/[id]/unlock` (legado)
 
 ## Fluxo do remetente (passo a passo)
 1. Acessa `/dashboard/claim/create`.
