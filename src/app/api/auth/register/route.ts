@@ -124,10 +124,26 @@ export async function POST(req: Request) {
     });
 
     if (!emailResult?.ok) {
-      await prisma.$transaction(async (tx) => {
-        await tx.oTP.deleteMany({ where: { userId: created.user.id, type: 'EMAIL' } });
-        await tx.user.delete({ where: { id: created.user.id } });
-      });
+      try {
+        await prisma.$transaction(async (tx) => {
+          const userId = created.user.id;
+          const accountId = created.user.account?.id;
+
+          await tx.oTP.deleteMany({ where: { userId, type: 'EMAIL' } });
+
+          if (accountId) {
+            await tx.balance.deleteMany({ where: { accountId } });
+            await tx.accountTransaction.deleteMany({ where: { accountId } });
+            await tx.account.deleteMany({ where: { id: accountId } });
+          } else {
+            await tx.account.deleteMany({ where: { userId } });
+          }
+
+          await tx.user.delete({ where: { id: userId } });
+        });
+      } catch (rollbackError) {
+        console.error('Registration rollback error:', rollbackError);
+      }
 
       await logAudit({
         action: 'REGISTER_EMAIL_FAILED',

@@ -7,7 +7,15 @@ const mockTx = {
     update: jest.fn(),
   },
   account: {
+    delete: jest.fn(),
+    deleteMany: jest.fn(),
     update: jest.fn(),
+  },
+  balance: {
+    deleteMany: jest.fn(),
+  },
+  accountTransaction: {
+    deleteMany: jest.fn(),
   },
   oTP: {
     create: jest.fn(),
@@ -26,7 +34,15 @@ const mockPrisma = {
     update: jest.fn(),
   },
   account: {
+    delete: jest.fn(),
+    deleteMany: jest.fn(),
     update: jest.fn(),
+  },
+  balance: {
+    deleteMany: jest.fn(),
+  },
+  accountTransaction: {
+    deleteMany: jest.fn(),
   },
   oTP: {
     create: jest.fn(),
@@ -147,7 +163,7 @@ describe('Auth: Email verification flow', () => {
     mockTx.user.create.mockResolvedValue({
       id: 'u1',
       email: 'user@test.com',
-      account: { status: 'UNVERIFIED' },
+      account: { id: 'a1', status: 'UNVERIFIED' },
     });
     mockTx.oTP.create.mockResolvedValue({ id: 'otp1' });
 
@@ -163,7 +179,14 @@ describe('Auth: Email verification flow', () => {
     const json = await res.json();
     expect(res.status).toBe(503);
     expect(json.error).toMatch(/Falha ao enviar/i);
+    expect(mockTx.oTP.deleteMany).toHaveBeenCalledTimes(1);
+    expect(mockTx.balance.deleteMany).toHaveBeenCalledTimes(1);
+    expect(mockTx.account.deleteMany).toHaveBeenCalledTimes(1);
     expect(mockTx.user.delete).toHaveBeenCalledTimes(1);
+
+    const accountDeleteOrder = mockTx.account.deleteMany.mock.invocationCallOrder[0];
+    const userDeleteOrder = mockTx.user.delete.mock.invocationCallOrder[0];
+    expect(accountDeleteOrder).toBeLessThan(userDeleteOrder);
   });
 
   test('verify-email: correct code marks emailVerified and updates account', async () => {
