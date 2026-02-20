@@ -5,6 +5,9 @@ import { createVirtualCard } from '@/lib/services/stripe';
 import { calculateTransferAmounts } from '@/lib/services/exchange';
 import { pusherService } from '@/lib/services/pusher';
 import { logAudit } from '@/lib/logger'; // Import logAudit
+import { applyFiatMovement } from '@/lib/services/fiat-ledger';
+import { checkUserCanTransact } from '@/lib/services/risk-gates';
+import { checkAndCreateAmlCasesForTransfer } from '@/lib/services/aml-rules';
 import { z } from 'zod';
 
 const transferSchema = z.object({
@@ -51,6 +54,11 @@ export async function POST(req: Request) {
 
     if (!user || !user.account) {
         return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+    }
+
+    const gate = await checkUserCanTransact(user.id);
+    if (!gate.allowed) {
+      return NextResponse.json({ error: 'Forbidden', code: gate.code, details: gate.details }, { status: gate.status });
     }
 
     // SCA CHECK (Strong Customer Authentication)
@@ -106,25 +114,13 @@ export async function POST(req: Request) {
 
     // 2. Transaction: Debit & Create Transfer
     const result = await prisma.$transaction(async (tx) => {
-        // 2.1 Check Balance & Debit
-        const balanceRecord = await tx.balance.findUnique({
-            where: {
-                accountId_currency: {
-                    accountId: user.account!.id,
-                    currency: currencySource
-                }
-            }
-        });
-
-        if (!balanceRecord || balanceRecord.amount.toNumber() < totalDeduction) {
-            throw new Error(`Insufficient funds. You have ${balanceRecord?.amount || 0} ${currencySource} but need ${totalDeduction} ${currencySource}`);
+        try {
+          await applyFiatMovement(tx, (session as any).userId, currencySource, -totalDeduction);
+        } catch (e: any) {
+          if (e?.message === 'BALANCE_NOT_FOUND') throw new Error('BALANCE_NOT_FOUND');
+          if (e?.message === 'INSUFFICIENT_FUNDS') throw new Error('INSUFFICIENT_FUNDS');
+          throw e;
         }
-
-        // Debit Balance
-        await tx.balance.update({
-            where: { id: balanceRecord.id },
-            data: { amount: { decrement: totalDeduction } }
-        });
 
         // Log Debit Transaction
         await tx.accountTransaction.create({
@@ -139,10 +135,19 @@ export async function POST(req: Request) {
 
         // 2.2 Find Receiver if Account mode
         let receiverId = null;
+        let receiverCountry: string | null = null;
         if (mode === 'ACCOUNT_CONTROLLED' && receiverEmail) {
-            const receiver = await tx.user.findUnique({ where: { email: receiverEmail } });
-            if (receiver) receiverId = receiver.id;
+            const receiver = await tx.user.findUnique({ where: { email: receiverEmail }, select: { id: true, country: true } });
+            if (receiver) {
+              receiverId = receiver.id;
+              receiverCountry = receiver.country || null;
+            }
         }
+
+        const now = new Date();
+        const velocityWindowMinutes = Number(process.env.AML_VELOCITY_WINDOW_MINUTES || 10);
+        const since = new Date(now.getTime() - (Number.isFinite(velocityWindowMinutes) && velocityWindowMinutes > 0 ? velocityWindowMinutes : 10) * 60 * 1000);
+        const velocityCountBefore = await tx.transfer.count({ where: { senderId: (session as any).userId, createdAt: { gte: since } } });
 
         // 2.3 Create Transfer Record
         const transfer = await tx.transfer.create({
@@ -168,6 +173,22 @@ export async function POST(req: Request) {
                 }
             }
         });
+
+        await checkAndCreateAmlCasesForTransfer(
+          tx,
+          (session as any).userId,
+          {
+            transferId: transfer.id,
+            transferType: transfer.type,
+            currencySent: currencySource,
+            currencyReceived: currencyTarget,
+            recipientEmail: receiverEmail || null,
+            recipientId: receiverId,
+            senderCountry: user.country || null,
+            recipientCountry: receiverCountry,
+          },
+          { now, velocityCountBefore },
+        );
         
         return transfer;
     });
@@ -256,17 +277,7 @@ export async function POST(req: Request) {
 
            await prisma.$transaction(async (tx) => {
              // 1. Creditar o valor de volta ao saldo (Refund)
-             await tx.balance.update({
-               where: { 
-                 accountId_currency: {
-                    accountId: user.account!.id,
-                    currency: currencySource
-                 }
-               },
-               data: { 
-                 amount: { increment: totalDeduction } 
-               }
-             });
+             await applyFiatMovement(tx, (session as any).userId, currencySource, totalDeduction);
      
              // 2. Atualizar status da transferência
              await tx.transfer.update({ 
@@ -352,6 +363,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, transferId: result.id });
   } catch (error: any) {
     console.error('Transfer creation failed:', error);
+    if (error?.message === 'BALANCE_NOT_FOUND') {
+      return NextResponse.json({ error: 'Balance not found' }, { status: 400 });
+    }
+    if (error?.message === 'INSUFFICIENT_FUNDS') {
+      return NextResponse.json({ error: 'Insufficient funds' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'Transfer creation failed', details: error.message }, { status: 500 });
   }
 }
