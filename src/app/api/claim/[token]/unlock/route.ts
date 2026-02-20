@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { logAudit } from '@/lib/logger';
 import { getCardData } from '@/lib/services/card';
+import { closeEtherFiPosition } from '@/lib/services/etherfiService';
 
 const unlockSchema = z.object({
   unlockCode: z
@@ -134,6 +135,33 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
     if (!updated.ok) {
       const status = updated.error === 'CLAIM_EXPIRED' ? 410 : updated.error === 'CLAIM_ALREADY_CLAIMED' ? 409 : 404;
       return NextResponse.json({ ok: false, error: updated.error }, { status });
+    }
+
+    const transferId = claim.virtualCard?.transferId;
+    if (transferId) {
+      const transfer = await prisma.transfer.findUnique({ where: { id: transferId } });
+      if (transfer?.yieldPositionId) {
+        try {
+          await closeEtherFiPosition({
+            positionId: transfer.yieldPositionId,
+            reason: 'OTP_UNLOCK',
+          });
+        } catch (err: any) {
+          await logAudit({
+            action: 'ETHERFI_CLOSE_FAILED',
+            status: 'ERROR',
+            ipAddress: ip,
+            userAgent,
+            method: 'POST',
+            path: `/api/claim/${token}/unlock`,
+            metadata: {
+              transferId,
+              positionId: transfer.yieldPositionId,
+              message: String(err?.message || err),
+            },
+          });
+        }
+      }
     }
 
     const cardData = await getCardData(updated.cardId);

@@ -1,8 +1,8 @@
-# GlobalSecureSend - Guia de Deploy 🚀
+# GlobalSecureSend - Guia de Deploy 
 
 Este documento descreve os passos necessários para realizar o deploy da aplicação em produção.
 
-## 🏗️ Requisitos Prévios
+##  Requisitos Prévios
 
 1.  **Node.js 20+**
 2.  **Conta na Vercel** (ou servidor Docker/VPS)
@@ -15,7 +15,7 @@ Este documento descreve os passos necessários para realizar o deploy da aplica�
 
 ---
 
-## ☁️ Opção 1: Deploy na Vercel (Recomendado)
+##  Opção 1: Deploy na Vercel (Recomendado)
 
 A Vercel é a plataforma nativa para Next.js e oferece a melhor performance.
 
@@ -43,7 +43,7 @@ npx prisma generate && npx prisma migrate deploy && next build
 
 ---
 
-## 🐳 Opção 2: Deploy com Docker
+##  Opção 2: Deploy com Docker
 
 Para deploy em infraestrutura própria (AWS EC2, DigitalOcean, Azure).
 
@@ -70,7 +70,7 @@ docker run -p 3000:3000 --env-file .env globalsecuresend
 
 ---
 
-## 🚨 Troubleshooting
+##  Troubleshooting
 
 *   **Erro 500 no Login:** Verifique `JWT_SECRET` e `DATABASE_URL`.
 *   **Erro de Migração:** Certifique-se que `DIRECT_URL` aponta para a porta 5432 e o banco permite conexões externas.

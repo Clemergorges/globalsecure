@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User, Mail, Phone, ShieldCheck, Loader2, Flag, Coins } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const t = useTranslations('Settings.Profile');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,11 +25,11 @@ export default function ProfilePage() {
   }, []);
 
   if (loading) return <div className="p-8"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
-  if (!user) return <div className="p-8">Erro ao carregar perfil.</div>;
+  if (!user) return <div className="p-8">{t('loadError')}</div>;
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <h2 className="text-2xl font-bold tracking-tight">Meu Perfil</h2>
+      <h2 className="text-2xl font-bold tracking-tight">{t('title')}</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
@@ -42,7 +44,7 @@ export default function ProfilePage() {
             
             <div className="w-full py-2 px-4 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium flex items-center justify-center gap-2 mb-4">
               <ShieldCheck className="w-4 h-4" />
-              Nível KYC: {user.kycLevel === 2 ? 'Premium' : user.kycLevel === 1 ? 'Verificado' : 'Básico'}
+              {t('kycLevelLabel')}: {user.kycLevel === 2 ? t('kycLevels.premium') : user.kycLevel === 1 ? t('kycLevels.verified') : t('kycLevels.basic')}
             </div>
 
             {user.kycLevel < 2 && (
@@ -50,7 +52,7 @@ export default function ProfilePage() {
                 onClick={() => router.push('/dashboard/settings/kyc')} 
                 className="w-full bg-[var(--color-primary)] text-white"
               >
-                {user.kycStatus === 'PENDING' ? 'Verificação em Análise' : 'Aumentar Limites'}
+                {user.kycStatus === 'PENDING' ? t('kycPending') : t('increaseLimits')}
               </Button>
             )}
           </CardContent>
@@ -59,19 +61,19 @@ export default function ProfilePage() {
         {/* Dados Pessoais */}
         <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Dados Pessoais</CardTitle>
+            <CardTitle>{t('personalDataTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Nome</Label>
+                <Label>{t('firstName')}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                   <Input defaultValue={user.firstName} disabled className="pl-9" />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Sobrenome</Label>
+                <Label>{t('lastName')}</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                   <Input defaultValue={user.lastName} disabled className="pl-9" />
@@ -80,7 +82,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>{t('email')}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                 <Input defaultValue={user.email} disabled className="pl-9" />
@@ -88,32 +90,32 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Telefone</Label>
+              <Label>{t('phone')}</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                <Input defaultValue={user.phone || 'Não cadastrado'} disabled className="pl-9" />
+                <Input defaultValue={user.phone || t('notProvided')} disabled className="pl-9" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>País</Label>
+                <Label>{t('country')}</Label>
                 <div className="relative">
                   <Flag className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <Input defaultValue={user.country || 'N/A'} disabled className="pl-9" />
+                  <Input defaultValue={user.country || t('notAvailable')} disabled className="pl-9" />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Moeda Principal</Label>
+                <Label>{t('primaryCurrency')}</Label>
                 <div className="relative">
                   <Coins className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <Input defaultValue={user.account?.primaryCurrency || 'N/A'} disabled className="pl-9" />
+                  <Input defaultValue={user.account?.primaryCurrency || t('notAvailable')} disabled className="pl-9" />
                 </div>
               </div>
             </div>
 
             <div className="pt-4 flex justify-end">
-              <Button disabled variant="outline">Editar (Em breve)</Button>
+              <Button disabled variant="outline">{t('editComingSoon')}</Button>
             </div>
           </CardContent>
         </Card>

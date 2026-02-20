@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/db';
 import { getUsdtPriceUsd } from '@/lib/services/polygon';
+import { applyFiatMovement } from '@/lib/services/fiat-ledger';
 
 // Webhook to receive deposit notifications from Alchemy
 export async function POST(req: Request) {
@@ -96,23 +97,7 @@ export async function POST(req: Request) {
             const usdtPrice = await getUsdtPriceUsd();
             const amountUsd = amount * usdtPrice;
 
-            // C. Update Wallet Balance (Unified - USD)
-            await tx.balance.upsert({
-                where: {
-                    accountId_currency: {
-                        accountId: account.id,
-                        currency: 'USD'
-                    }
-                },
-                update: {
-                    amount: { increment: amountUsd }
-                },
-                create: {
-                    accountId: account.id,
-                    currency: 'USD',
-                    amount: amountUsd
-                }
-            });
+            await applyFiatMovement(tx, userId, 'USD', amountUsd);
 
             // D. Create Wallet Transaction Log
             await tx.accountTransaction.create({

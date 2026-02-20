@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { checkAuth } from '@/lib/auth';
 import { ethers } from 'ethers';
+import { applyFiatMovement } from '@/lib/services/fiat-ledger';
 
 // Helper: Validate Polygon Address
 function isValidAddress(address: string) {
@@ -46,27 +47,12 @@ export async function POST(req: Request) {
       // Check Balance via Balance table (assuming USDT uses USD currency code in balance)
       const currency = 'USD';
       
-      // Debit Ledger with Atomic Check
-      const debitResult = await tx.balance.updateMany({
-        where: { 
-            accountId: account.id,
-            currency: currency,
-            amount: { gte: amount }
-        },
-        data: {
-          amount: { decrement: amount }
-        }
-      });
-
-      if (debitResult.count === 0) {
-          // Check if balance exists for better error
-          const balanceExists = await tx.balance.findUnique({
-              where: { accountId_currency: { accountId: account.id, currency } }
-          });
-          if (!balanceExists || balanceExists.amount.toNumber() < amount) {
-               throw new Error('Insufficient USDT/USD balance');
-          }
-          throw new Error('Insufficient USDT/USD balance (Concurrency Check)');
+      try {
+        await applyFiatMovement(tx, (auth as any).userId, currency, -amount);
+      } catch (e: any) {
+        if (e?.message === 'BALANCE_NOT_FOUND') throw new Error('INSUFFICIENT_FUNDS');
+        if (e?.message === 'INSUFFICIENT_FUNDS') throw new Error('INSUFFICIENT_FUNDS');
+        throw e;
       }
 
       // Create Withdraw Record
@@ -114,6 +100,9 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Withdraw error:', error);
+    if (error?.message === 'INSUFFICIENT_FUNDS') {
+      return NextResponse.json({ error: 'Insufficient USDT/USD balance' }, { status: 409 });
+    }
     return NextResponse.json({ error: error.message || 'Internal Error' }, { status: 500 });
   }
 }

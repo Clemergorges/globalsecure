@@ -1,12 +1,9 @@
 /**
  * Test Database Setup
- * Uses the SAME Supabase database but with isolated test data
+ * Uses DATABASE_URL from the test environment
  */
 
-import { PrismaClient } from '@prisma/client';
-
-// Use the same DATABASE_URL from .env (Supabase)
-const prisma = new PrismaClient();
+import { prisma } from './prisma';
 
 /**
  * Setup test database
@@ -16,7 +13,7 @@ export async function setupTestDatabase() {
     try {
         // Test connection
         await prisma.$connect();
-        console.log('✅ Test database connected (Supabase)');
+        console.log('✅ Test database connected');
 
         // Verify tables exist
         const userCount = await prisma.user.count();
@@ -47,7 +44,6 @@ export async function cleanupTestDatabase() {
 
         console.log(`✅ Cleaned up ${deletedUsers.count} test users`);
 
-        await prisma.$disconnect();
     } catch (error) {
         console.error('❌ Cleanup failed:', error);
         throw error;

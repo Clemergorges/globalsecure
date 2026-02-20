@@ -13,13 +13,17 @@
     "test": "jest --watch",
     "test:ci": "jest --ci --coverage",
     "test:local": "dotenv -e .env.test -- jest --ci",
+    "test:localdb": "node -e \"require('dotenv').config({ path: '.env.test' }); process.env.NODE_ENV = process.env.NODE_ENV || 'test'; const { spawnSync } = require('child_process'); const r = spawnSync('npx', ['jest', '--runInBand', '--json', '--outputFile', 'jest-results.json'], { stdio: 'inherit', shell: true }); process.exit(r.status ?? 1);\"",
     "test:supabase": "dotenv -e .env.supabase.test -- jest --ci",
     "test:unit": "dotenv -e .env.test -- jest --testPathPattern=tests/unit --passWithNoTests",
     "test:integration": "dotenv -e .env.test -- jest --testPathPattern=tests/integration --passWithNoTests",
     "test:e2e": "dotenv -e .env.test -- jest --testPathPattern=tests/e2e",
     "setup:test-db": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-test-db.ps1",
+    "i18n:audit": "node scripts/i18n-audit.js",
     "test:failure": "dotenv -e .env.test -- jest --ci --runInBand --testPathPattern=tests/failure",
-    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:failure"
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:failure",
+    "dedupe:creditlines": "node scripts/dedupe-creditlines.js",
+    "seed:phase3": "dotenv -e .env.local -- node scripts/seed-phase3.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

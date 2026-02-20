@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, CheckCircle, Copy, AlertCircle, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface SecureTransferDialogProps {
   open: boolean;
@@ -19,6 +20,8 @@ interface SecureTransferDialogProps {
 
 export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTransferDialogProps) {
   const { toast } = useToast();
+  const t = useTranslations('SecureTransfer');
+  const tc = useTranslations('Common');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -59,7 +62,7 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
     setError(null);
 
     if (!formData.recipientEmail || !formData.amount) {
-      setError('Email e valor são obrigatórios.');
+      setError(t('errors.requiredFields'));
       setLoading(false);
       return;
     }
@@ -79,7 +82,7 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Falha ao processar envio.');
+        throw new Error(data.error || t('errors.submitFailed'));
       }
 
       const data = await res.json();
@@ -108,9 +111,9 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
             <div className="mx-auto w-12 h-12 bg-cyan-500/10 rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="w-6 h-6 text-cyan-500" />
             </div>
-            <DialogTitle className="text-center text-xl">Envio Realizado com Sucesso!</DialogTitle>
+            <DialogTitle className="text-center text-xl">{t('success.title')}</DialogTitle>
             <DialogDescription className="text-center text-slate-400">
-              O link de pagamento seguro foi gerado e enviado para <strong>{successData.recipientEmail}</strong>.
+              {t.rich('success.description', { email: successData.recipientEmail, strong: (chunks) => <strong>{chunks}</strong> })}
             </DialogDescription>
           </DialogHeader>
 
@@ -119,16 +122,16 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
               <div className="flex items-start gap-3">
                 <ShieldCheck className="w-5 h-5 text-cyan-500 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-cyan-500 text-sm uppercase tracking-wider mb-1">Código de Segurança</h4>
+                  <h4 className="font-bold text-cyan-500 text-sm uppercase tracking-wider mb-1">{t('success.securityTitle')}</h4>
                   <p className="text-cyan-200/80 text-sm">
-                    Para garantir a segurança da transação, este código <strong>NÃO</strong> foi enviado por email. Você deve fornecê-lo ao destinatário por um canal seguro.
+                    {t.rich('success.securityDescription', { strong: (chunks) => <strong>{chunks}</strong> })}
                   </p>
                 </div>
               </div>
               
               <div className="bg-black/40 rounded-lg p-3 flex items-center justify-between border border-cyan-500/10">
                 <div>
-                  <p className="text-[10px] text-cyan-500/70 uppercase tracking-widest mb-1">Código de Desbloqueio</p>
+                  <p className="text-[10px] text-cyan-500/70 uppercase tracking-widest mb-1">{t('success.unlockCodeLabel')}</p>
                   <p className="font-mono text-xl font-bold text-cyan-400 tracking-widest">{successData.unlockCode}</p>
                 </div>
                 <Button 
@@ -137,7 +140,7 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
                   className="text-cyan-500 hover:text-cyan-300 hover:bg-cyan-500/10"
                   onClick={() => {
                     navigator.clipboard.writeText(successData.unlockCode);
-                    toast({ title: "Copiado", description: "Código copiado para a área de transferência" });
+                    toast({ title: t('toast.copiedTitle'), description: t('toast.copiedCode') });
                   }}
                 >
                   <Copy className="w-4 h-4" />
@@ -146,7 +149,7 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs uppercase text-slate-500">Link de Acesso (Backup)</Label>
+              <Label className="text-xs uppercase text-slate-500">{t('success.backupLinkLabel')}</Label>
               <div className="flex gap-2">
                 <Input 
                   readOnly 
@@ -159,7 +162,7 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
                   className="shrink-0 border-white/10 hover:bg-white/5"
                   onClick={() => {
                     navigator.clipboard.writeText(successData.claimUrl);
-                    toast({ title: "Copiado", description: "Link copiado para a área de transferência" });
+                    toast({ title: t('toast.copiedTitle'), description: t('toast.copiedLink') });
                   }}
                 >
                   <Copy className="w-4 h-4" />
@@ -170,7 +173,7 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
 
           <DialogFooter>
             <Button onClick={handleClose} className="w-full bg-cyan-500 text-black hover:bg-cyan-600 font-bold">
-              Concluir Transação
+              {t('success.done')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -185,10 +188,10 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="w-5 h-5 text-cyan-500" />
-            Global Link (Transferência Segura)
+            {t('title')}
           </DialogTitle>
           <DialogDescription className="text-slate-400">
-            Envie valores instantaneamente para qualquer pessoa via link seguro descentralizado.
+            {t('subtitle')}
           </DialogDescription>
         </DialogHeader>
 
@@ -202,7 +205,7 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="amount">Valor</Label>
+              <Label htmlFor="amount">{t('amount')}</Label>
               <Input 
                 id="amount"
                 type="number" 
@@ -213,7 +216,7 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currency">Moeda</Label>
+              <Label htmlFor="currency">{t('currency')}</Label>
               <Select 
                 value={formData.currency} 
                 onValueChange={(val) => setFormData({...formData, currency: val})}
@@ -222,20 +225,20 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                  <SelectItem value="USD">Dólar (USD)</SelectItem>
-                  <SelectItem value="GBP">Libra (GBP)</SelectItem>
+                  <SelectItem value="EUR">{t('currencies.eur')}</SelectItem>
+                  <SelectItem value="USD">{t('currencies.usd')}</SelectItem>
+                  <SelectItem value="GBP">{t('currencies.gbp')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recipientEmail">Email do Destinatário</Label>
+            <Label htmlFor="recipientEmail">{t('recipientEmail')}</Label>
             <Input 
               id="recipientEmail"
               type="email" 
-              placeholder="exemplo@email.com" 
+              placeholder={t('recipientEmailPlaceholder')} 
               value={formData.recipientEmail}
               onChange={(e) => setFormData({...formData, recipientEmail: e.target.value})}
               className="bg-white/5 border-white/10 text-white"
@@ -243,10 +246,10 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recipientName">Nome do Destinatário (Opcional)</Label>
+            <Label htmlFor="recipientName">{t('recipientName')}</Label>
             <Input 
               id="recipientName"
-              placeholder="João Silva" 
+              placeholder={t('recipientNamePlaceholder')} 
               value={formData.recipientName}
               onChange={(e) => setFormData({...formData, recipientName: e.target.value})}
               className="bg-white/5 border-white/10 text-white"
@@ -254,10 +257,10 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="message">Nota de Transferência (Opcional)</Label>
+            <Label htmlFor="message">{t('message')}</Label>
             <Textarea 
               id="message"
-              placeholder="Descrição do pagamento ou mensagem..." 
+              placeholder={t('messagePlaceholder')} 
               value={formData.message}
               onChange={(e) => setFormData({...formData, message: e.target.value})}
               className="bg-white/5 border-white/10 text-white resize-none h-20"
@@ -266,9 +269,9 @@ export function SecureTransferDialog({ open, onOpenChange, onSuccess }: SecureTr
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={handleClose} className="text-slate-400 hover:text-white">Cancelar</Button>
+          <Button variant="ghost" onClick={handleClose} className="text-slate-400 hover:text-white">{tc('cancel')}</Button>
           <Button onClick={handleSubmit} disabled={loading} className="bg-cyan-500 text-black hover:bg-cyan-600 font-medium">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Gerar Global Link'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

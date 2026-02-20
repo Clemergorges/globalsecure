@@ -3,14 +3,8 @@
 
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Circle } from 'lucide-react';
-
-const steps = [
-  { id: 'personal', title: 'Dados Pessoais', path: '/onboarding/personal' },
-  { id: 'address', title: 'Endereço', path: '/onboarding/address' },
-  { id: 'document', title: 'Documento', path: '/onboarding/document' },
-  { id: 'status', title: 'Análise', path: '/onboarding/status' },
-];
+import { CheckCircle2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function OnboardingLayout({
   children,
@@ -18,6 +12,14 @@ export default function OnboardingLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const t = useTranslations('Onboarding');
+
+  const steps = [
+    { id: 'personal', title: t('steps.personal'), path: '/onboarding/personal' },
+    { id: 'address', title: t('steps.address'), path: '/onboarding/address' },
+    { id: 'document', title: t('steps.document'), path: '/onboarding/document' },
+    { id: 'status', title: t('steps.review'), path: '/onboarding/status' },
+  ];
   const currentStepIndex = steps.findIndex(step => pathname.includes(step.id));
 
   return (
@@ -27,12 +29,12 @@ export default function OnboardingLayout({
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center font-bold text-black">
-              GS
+              {t('brandShort')}
             </div>
-            <span className="font-bold text-lg">GlobalSecureSend</span>
+            <span className="font-bold text-lg">{t('brandName')}</span>
           </div>
           <div className="text-sm text-slate-400">
-            Abertura de Conta
+            {t('headerTitle')}
           </div>
         </div>
       </header>

@@ -23,7 +23,7 @@ export async function GET(req: Request) {
         if (type === 'TRANSFER') {
             whereClause.type = { in: ['TRANSFER', 'PIX_IN', 'SEPA_IN', 'CRYPTO_IN', 'CRYPTO_OUT'] };
         } else if (type === 'CARD') {
-            whereClause.type = { in: ['CARD_PURCHASE', 'CARD_FUNDING', 'CARD_OUT'] };
+            whereClause.type = { in: ['CARD_OUT'] };
         } else if (type === 'FEE') {
             whereClause.type = 'FEE';
         }
@@ -46,41 +46,65 @@ export async function GET(req: Request) {
       take: limit
     });
 
-    const mapped = transactions.map((tx: UserTransaction) => {
-        let description = tx.type.replace('_', ' ');
-        
-        if (tx.metadata && typeof tx.metadata === 'object') {
-            const meta = tx.metadata as any;
-            if (meta.description) description = meta.description;
-            else if (meta.merchantName) description = meta.merchantName;
-            else if (meta.recipientEmail) description = `Sent to ${meta.recipientEmail}`;
-            else if (meta.senderName) description = `Received from ${meta.senderName}`;
-        }
+    const transferIds: string[] = [];
+    for (const tx of transactions) {
+      if (tx.type !== 'TRANSFER') continue;
+      const meta = tx.metadata;
+      if (!meta || typeof meta !== 'object') continue;
+      const direction = (meta as any).direction;
+      const transferId = (meta as any).transferId;
+      if (direction === 'OUT' && typeof transferId === 'string' && transferId) {
+        transferIds.push(transferId);
+      }
+    }
 
-        // Format Description for known types
-        if (tx.type === 'PIX_IN') description = 'Depósito PIX Recebido';
-        if (tx.type === 'SEPA_IN') description = 'Depósito SEPA Recebido';
+    const yieldByTransferId = new Map<string, string>();
+    if (transferIds.length > 0) {
+      const yieldTransfers = await prisma.transfer.findMany({
+        where: { id: { in: transferIds }, yieldPositionId: { not: null } },
+        select: { id: true, yieldPositionId: true },
+      });
+      for (const tr of yieldTransfers) {
+        if (tr.yieldPositionId) yieldByTransferId.set(tr.id, tr.yieldPositionId);
+      }
+    }
 
-        return {
-          id: tx.id,
-          type: tx.type,
-          amount: Number(tx.amount),
-          currency: tx.currency,
-          description: description,
-          status: tx.status,
-          date: tx.createdAt
-        };
-    });
+    const mapped = transactions.map((tx: UserTransaction) => ({
+      id: tx.id,
+      type: tx.type,
+      amount: Number(tx.amount),
+      currency: tx.currency,
+      status: tx.status,
+      date: tx.createdAt.toISOString(),
+      metadata:
+        tx.type === 'TRANSFER' && tx.metadata && typeof tx.metadata === 'object'
+          ? (() => {
+              const meta = tx.metadata as any;
+              const transferId = typeof meta.transferId === 'string' ? meta.transferId : undefined;
+              const direction = meta.direction;
+              const yieldPositionId =
+                direction === 'OUT' && transferId ? yieldByTransferId.get(transferId) : undefined;
+              return yieldPositionId ? { ...meta, yieldPositionId } : meta;
+            })()
+          : tx.metadata ?? null,
+    }));
 
     // In-memory search filter for text (since we didn't do it in DB)
     // Only effective for the current page, which is a limitation, but acceptable for MVP
     let finalResult = mapped;
     if (search && isNaN(Number(search))) {
         const lowerSearch = search.toLowerCase();
-        finalResult = mapped.filter((t) => 
-            t.description.toLowerCase().includes(lowerSearch) || 
-            t.type.toLowerCase().includes(lowerSearch)
-        );
+        finalResult = mapped.filter((t) => {
+          const meta = (t as any).metadata;
+          const metaText =
+            meta && typeof meta === 'object'
+              ? Object.values(meta).map(String).join(' ')
+              : '';
+          return (
+            String(t.type).toLowerCase().includes(lowerSearch) ||
+            metaText.toLowerCase().includes(lowerSearch)
+          );
+        });
     }
 
     return NextResponse.json({

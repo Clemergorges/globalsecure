@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createHandler } from '@/lib/api-handler';
 import { z } from 'zod';
+import { backfillFiatBalancesFromAccount } from '@/lib/services/fiat-ledger';
 
 // Schema for query params (optional currency override)
 const balanceQuerySchema = z.object({
@@ -18,17 +19,30 @@ export const GET = createHandler(
     
     const account = await prisma.account.findUnique({
       where: { userId },
-      include: { balances: true }
+      select: { id: true, primaryCurrency: true }
     });
 
     if (!account) {
       return NextResponse.json({ error: 'Account not found' }, { status: 404 });
     }
 
-    // Transform balances into a clean map
-    const balances = account.balances.reduce((acc, curr) => {
-        acc[curr.currency] = Number(curr.amount);
-        return acc;
+    const fiatBalances = await prisma.fiatBalance.findMany({
+      where: { userId },
+      select: { currency: true, amount: true },
+    });
+    if (fiatBalances.length === 0) {
+      await prisma.$transaction(async (tx) => {
+        await backfillFiatBalancesFromAccount(tx, userId, account.id);
+      });
+    }
+
+    const fiatBalancesAfter = fiatBalances.length === 0
+      ? await prisma.fiatBalance.findMany({ where: { userId }, select: { currency: true, amount: true } })
+      : fiatBalances;
+
+    const balances = fiatBalancesAfter.reduce((acc, curr) => {
+      acc[curr.currency] = Number(curr.amount);
+      return acc;
     }, {} as Record<string, number>);
 
     return NextResponse.json({

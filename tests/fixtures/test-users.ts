@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 const SUITE_TAG = `suite-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 /**

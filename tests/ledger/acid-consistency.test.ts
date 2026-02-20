@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import { createTestUsers, cleanupTestUsers, getTestUser } from '../fixtures/test-users';
 import { executeConcurrently, measureExecutionTime } from '../helpers/concurrent-operations';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 
 describe('ACID Ledger Consistency Tests', () => {
     beforeAll(async () => {
@@ -11,7 +9,6 @@ describe('ACID Ledger Consistency Tests', () => {
 
     afterAll(async () => {
         await cleanupTestUsers();
-        await prisma.$disconnect();
     });
 
     describe('1.1. Concurrent Deposits', () => {

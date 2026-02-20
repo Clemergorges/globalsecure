@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 const E2E_PREFIX = 'e2e_transfer_';
 
 describe('E2E: Transfer Flows', () => {
@@ -66,7 +64,6 @@ describe('E2E: Transfer Flows', () => {
         await prisma.user.deleteMany({
             where: { email: { startsWith: E2E_PREFIX } }
         });
-        await prisma.$disconnect();
     });
 
     it('should execute an internal P2P transfer correctly', async () => {

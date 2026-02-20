@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { CardsList } from './components/cards-list';
 import { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 export const metadata: Metadata = {
   title: 'Meus Cartões | GlobalSecureSend',
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CardsPage() {
+  const t = await getTranslations('Cards');
   const session = await getSession();
 
   if (!session) {
@@ -38,8 +40,8 @@ export default async function CardsPage() {
       // Fallback
       return (
         <div className="p-8 text-center text-red-600">
-          <h2 className="text-2xl font-bold mb-2">Carteira não encontrada</h2>
-          <p>Por favor, entre em contato com o suporte para resolver este problema.</p>
+          <h2 className="text-2xl font-bold mb-2">{t('error')}</h2>
+          <p>{t('noCardsFound')}</p>
         </div>
       );
     }
@@ -69,8 +71,8 @@ export default async function CardsPage() {
     <div className="p-6 md:p-8 space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Meus Cartões</h1>
-          <p className="text-gray-500">Gerencie seus cartões virtuais e visualize detalhes.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">{t('title')}</h1>
+          <p className="text-slate-400">{t('description')}</p>
         </div>
       </div>
 

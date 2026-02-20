@@ -13,26 +13,36 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-const personalSchema = z.object({
-  firstName: z.string().min(2, "Nome obrigatório"),
-  lastName: z.string().min(2, "Sobrenome obrigatório"),
-  dateOfBirth: z.string().refine((val) => {
-    const date = new Date(val);
-    const age = (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
-    return age >= 18;
-  }, { message: "Você deve ter pelo menos 18 anos" }),
-  countryOfBirth: z.string().length(2, "Selecione o país"),
-  nationality: z.string().length(2, "Selecione a nacionalidade"),
-  phone: z.string().min(8, "Telefone inválido"),
-});
-
-type PersonalFormValues = z.infer<typeof personalSchema>;
+type PersonalFormValues = {
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  countryOfBirth: string;
+  nationality: string;
+  phone: string;
+};
 
 export default function PersonalPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations('Onboarding.Personal');
+  const tc = useTranslations('Common');
   const [loading, setLoading] = useState(false);
+
+  const personalSchema = z.object({
+    firstName: z.string().min(2, t('validation.firstNameRequired')),
+    lastName: z.string().min(2, t('validation.lastNameRequired')),
+    dateOfBirth: z.string().refine((val) => {
+      const date = new Date(val);
+      const age = (Date.now() - date.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+      return age >= 18;
+    }, { message: t('validation.minimumAge') }),
+    countryOfBirth: z.string().length(2, t('validation.selectCountry')),
+    nationality: z.string().length(2, t('validation.selectNationality')),
+    phone: z.string().min(8, t('validation.invalidPhone')),
+  });
 
   const form = useForm<PersonalFormValues>({
     resolver: zodResolver(personalSchema),
@@ -49,13 +59,13 @@ export default function PersonalPage() {
         body: JSON.stringify(data)
       });
 
-      if (!res.ok) throw new Error('Falha ao salvar dados');
+      if (!res.ok) throw new Error(t('errors.saveFailed'));
 
       router.push('/onboarding/address');
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Verifique os dados e tente novamente.",
+        title: tc('error'),
+        description: t('errors.checkData'),
         variant: "destructive"
       });
     } finally {
@@ -66,59 +76,59 @@ export default function PersonalPage() {
   return (
     <Card className="bg-[#111116] border-white/10">
       <CardHeader>
-        <CardTitle className="text-xl text-white">Dados Pessoais</CardTitle>
+        <CardTitle className="text-xl text-white">{t('title')}</CardTitle>
         <CardDescription className="text-slate-400">
-          Precisamos conhecer você para cumprir regulações financeiras.
+          {t('subtitle')}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-slate-300">Nome</Label>
+              <Label className="text-slate-300">{t('firstName')}</Label>
               <Input {...register('firstName')} className="bg-white/5 border-white/10 text-white" />
               {errors.firstName && <p className="text-xs text-red-400">{errors.firstName.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label className="text-slate-300">Sobrenome</Label>
+              <Label className="text-slate-300">{t('lastName')}</Label>
               <Input {...register('lastName')} className="bg-white/5 border-white/10 text-white" />
               {errors.lastName && <p className="text-xs text-red-400">{errors.lastName.message}</p>}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-slate-300">Data de Nascimento</Label>
+            <Label className="text-slate-300">{t('dateOfBirth')}</Label>
             <Input type="date" {...register('dateOfBirth')} className="bg-white/5 border-white/10 text-white" />
             {errors.dateOfBirth && <p className="text-xs text-red-400">{errors.dateOfBirth.message}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-slate-300">País de Nascimento</Label>
+              <Label className="text-slate-300">{t('countryOfBirth')}</Label>
               <Select onValueChange={(val) => setValue('countryOfBirth', val)}>
                 <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder={t('selectPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent className="bg-[#111116] border-white/10 text-white">
-                  <SelectItem value="BR">Brasil</SelectItem>
-                  <SelectItem value="US">Estados Unidos</SelectItem>
-                  <SelectItem value="LU">Luxemburgo</SelectItem>
-                  <SelectItem value="PT">Portugal</SelectItem>
+                  <SelectItem value="BR">{t('countries.br')}</SelectItem>
+                  <SelectItem value="US">{t('countries.us')}</SelectItem>
+                  <SelectItem value="LU">{t('countries.lu')}</SelectItem>
+                  <SelectItem value="PT">{t('countries.pt')}</SelectItem>
                 </SelectContent>
               </Select>
               {errors.countryOfBirth && <p className="text-xs text-red-400">{errors.countryOfBirth.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label className="text-slate-300">Nacionalidade</Label>
+              <Label className="text-slate-300">{t('nationality')}</Label>
               <Select onValueChange={(val) => setValue('nationality', val)}>
                 <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder={t('selectPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent className="bg-[#111116] border-white/10 text-white">
-                  <SelectItem value="BR">Brasileira</SelectItem>
-                  <SelectItem value="US">Americana</SelectItem>
-                  <SelectItem value="LU">Luxemburguesa</SelectItem>
-                  <SelectItem value="PT">Portuguesa</SelectItem>
+                  <SelectItem value="BR">{t('nationalities.br')}</SelectItem>
+                  <SelectItem value="US">{t('nationalities.us')}</SelectItem>
+                  <SelectItem value="LU">{t('nationalities.lu')}</SelectItem>
+                  <SelectItem value="PT">{t('nationalities.pt')}</SelectItem>
                 </SelectContent>
               </Select>
               {errors.nationality && <p className="text-xs text-red-400">{errors.nationality.message}</p>}
@@ -126,13 +136,13 @@ export default function PersonalPage() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-slate-300">Celular</Label>
-            <Input {...register('phone')} placeholder="+55..." className="bg-white/5 border-white/10 text-white" />
+            <Label className="text-slate-300">{t('phone')}</Label>
+            <Input {...register('phone')} placeholder={t('phonePlaceholder')} className="bg-white/5 border-white/10 text-white" />
             {errors.phone && <p className="text-xs text-red-400">{errors.phone.message}</p>}
           </div>
 
           <Button type="submit" disabled={loading} className="w-full bg-cyan-500 hover:bg-cyan-600 text-black mt-6">
-            {loading ? <Loader2 className="animate-spin w-4 h-4" /> : <span className="flex items-center">Próximo <ArrowRight className="w-4 h-4 ml-2" /></span>}
+            {loading ? <Loader2 className="animate-spin w-4 h-4" /> : <span className="flex items-center">{tc('next')} <ArrowRight className="w-4 h-4 ml-2" /></span>}
           </Button>
         </form>
       </CardContent>

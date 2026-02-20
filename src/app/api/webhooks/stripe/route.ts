@@ -3,6 +3,35 @@ import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/services/stripe';
 import { prisma } from '@/lib/db';
 import Stripe from 'stripe';
+import { applyFiatMovement, isYieldSpendingEnabled, recordUserConsent } from '@/lib/services/fiat-ledger';
+import { getFxRate } from '@/lib/services/fx-engine';
+import { checkAmlForYieldSpend } from '@/lib/services/aml-rules';
+import { coverFiatSpend } from '@/lib/services/fiat-pool';
+
+function getMinorUnitDivisor(currency: string) {
+  const c = currency.toUpperCase();
+  if (c === 'JPY' || c === 'KRW') return 1;
+  return 100;
+}
+
+function getYieldLtvMax() {
+  const raw = process.env.YIELD_LTV_MAX_BPS;
+  const n = raw ? Number(raw) : 3500;
+  const bps = Number.isFinite(n) && n >= 0 ? Math.round(n) : 3500;
+  return Math.min(Math.max(bps / 10000, 0), 1);
+}
+
+function getYieldCollateralStubUsd() {
+  const raw = process.env.YIELD_COLLATERAL_VALUE_USD_STUB;
+  const n = raw ? Number(raw) : 0;
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function getYieldPerUserLimitUsd() {
+  const raw = process.env.YIELD_PER_USER_LIMIT_USD;
+  const n = raw ? Number(raw) : 0;
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -49,28 +78,13 @@ export async function POST(req: Request) {
               }
             });
 
-            // Credit Balance
-            // Try to update existing balance or create if missing (though user should have it)
-             // We use upsert-like logic or just update since wallets are created on registration
-            await tx.balance.upsert({
-                where: {
-                    accountId_currency: {
-                        accountId: (await tx.account.findUniqueOrThrow({ where: { userId } })).id,
-                        currency
-                    }
-                },
-                update: { amount: { increment: amount } },
-                create: {
-                    accountId: (await tx.account.findUniqueOrThrow({ where: { userId } })).id,
-                    currency,
-                    amount
-                }
-            });
+            const account = await tx.account.findUniqueOrThrow({ where: { userId } });
+            await applyFiatMovement(tx, userId, currency, amount);
 
             // Log Transaction
             await tx.accountTransaction.create({
               data: {
-                accountId: (await tx.account.findUniqueOrThrow({ where: { userId } })).id,
+                accountId: account.id,
                 type: 'DEPOSIT',
                 amount,
                 currency,
@@ -86,6 +100,9 @@ export async function POST(req: Request) {
     if (event.type === 'issuing_authorization.request') {
       const auth = event.data.object as Stripe.Issuing.Authorization;
       const cardId = auth.card.id;
+      const spendCurrency = (auth.currency || '').toUpperCase();
+      const amountMinor = typeof auth.amount === 'number' ? auth.amount : Number(auth.amount || 0);
+      const spendAmount = amountMinor / getMinorUnitDivisor(spendCurrency);
       
       const virtualCard = await prisma.virtualCard.findUnique({
           where: { stripeCardId: cardId },
@@ -129,7 +146,294 @@ export async function POST(req: Request) {
       // But Stripe Issuing cards usually have limits set on Stripe side.
       // We'll just approve for now to satisfy the "Unlock" flow requirement.
       
-      return NextResponse.json({ approved: true });
+      const existing = await prisma.spendTransaction.findUnique({
+        where: { stripeAuthId: auth.id },
+        select: { id: true, status: true },
+      });
+
+      if (existing) {
+        return NextResponse.json({ approved: existing.status === 'approved' });
+      }
+
+      const cardCurrency = virtualCard.currency.toUpperCase();
+      let amountInCardCurrency = spendAmount;
+      let fxMeta: any = null;
+
+      if (spendCurrency && spendCurrency !== cardCurrency) {
+        const fx = await getFxRate(spendCurrency, cardCurrency);
+        const rateConservative = fx.rateMid * (1 + fx.spreadBps / 10000);
+        amountInCardCurrency = spendAmount * rateConservative;
+        fxMeta = {
+          from: spendCurrency,
+          to: cardCurrency,
+          rateMid: fx.rateMid,
+          rateApplied: rateConservative,
+          spreadBps: fx.spreadBps,
+        };
+      }
+
+      const approved = await prisma.$transaction(async (tx) => {
+        const refreshed = await tx.virtualCard.findUnique({
+          where: { id: virtualCard.id },
+          select: { id: true, amount: true, amountUsed: true, currency: true, userId: true },
+        });
+
+        if (!refreshed) return false;
+
+        const available = refreshed.amount.toNumber() - refreshed.amountUsed.toNumber();
+        if (available < amountInCardCurrency) {
+          await tx.spendTransaction.create({
+            data: {
+              cardId: refreshed.id,
+              stripeAuthId: auth.id,
+              amount: amountInCardCurrency,
+              currency: cardCurrency,
+              merchantName: auth.merchant_data?.name || null,
+              merchantCategory: auth.merchant_data?.category || null,
+              merchantCity: auth.merchant_data?.city || null,
+              merchantCountry: auth.merchant_data?.country || null,
+              status: 'declined',
+              metadata: fxMeta ? { fx: fxMeta, spend: { currency: spendCurrency, amount: spendAmount } } : { spend: { currency: spendCurrency, amount: spendAmount } },
+            },
+          });
+          return false;
+        }
+
+        await tx.virtualCard.update({
+          where: { id: refreshed.id },
+          data: { amountUsed: { increment: amountInCardCurrency } },
+        });
+
+        if (refreshed.userId) {
+          const baseCurrency = (process.env.BASE_CURRENCY || 'USD').toUpperCase();
+          const covered = await coverFiatSpend(tx, refreshed.userId, spendCurrency, spendAmount, baseCurrency);
+          const remaining = covered.remaining;
+          const usedFxSteps = covered.fxSteps;
+
+          if (usedFxSteps.length > 0) {
+            fxMeta = { ...(fxMeta || {}), pool: usedFxSteps.length === 1 ? usedFxSteps[0] : usedFxSteps };
+          }
+
+          if (remaining > 0) {
+              const user = await tx.user.findUnique({
+                where: { id: refreshed.userId },
+                select: { yieldEnabled: true },
+              });
+
+              if (!user?.yieldEnabled || !isYieldSpendingEnabled()) {
+                await tx.spendTransaction.create({
+                  data: {
+                    cardId: refreshed.id,
+                    stripeAuthId: auth.id,
+                    amount: amountInCardCurrency,
+                    currency: cardCurrency,
+                    merchantName: auth.merchant_data?.name || null,
+                    merchantCategory: auth.merchant_data?.category || null,
+                    merchantCity: auth.merchant_data?.city || null,
+                    merchantCountry: auth.merchant_data?.country || null,
+                    status: 'declined',
+                    metadata: {
+                      spend: { currency: spendCurrency, amount: spendAmount },
+                      fx: fxMeta,
+                      declineReason: 'INSUFFICIENT_FIAT',
+                    },
+                  },
+                });
+                return false;
+              }
+
+              let missingUsd = remaining;
+              let missingFxMeta: any = null;
+              if (spendCurrency !== 'USD') {
+                const fxUsd = await getFxRate('USD', spendCurrency);
+                const usdNeeded = remaining / fxUsd.rateApplied;
+                missingUsd = usdNeeded;
+                missingFxMeta = {
+                  from: 'USD',
+                  to: spendCurrency,
+                  rateMid: fxUsd.rateMid,
+                  rateApplied: fxUsd.rateApplied,
+                  spreadBps: fxUsd.spreadBps,
+                };
+              }
+
+              const perUserLimit = getYieldPerUserLimitUsd();
+              if (perUserLimit > 0 && missingUsd > perUserLimit) {
+                await tx.spendTransaction.create({
+                  data: {
+                    cardId: refreshed.id,
+                    stripeAuthId: auth.id,
+                    amount: amountInCardCurrency,
+                    currency: cardCurrency,
+                    merchantName: auth.merchant_data?.name || null,
+                    merchantCategory: auth.merchant_data?.category || null,
+                    merchantCity: auth.merchant_data?.city || null,
+                    merchantCountry: auth.merchant_data?.country || null,
+                    status: 'declined',
+                    metadata: {
+                      spend: { currency: spendCurrency, amount: spendAmount },
+                      fx: fxMeta,
+                      declineReason: 'YIELD_PER_USER_LIMIT',
+                      yield: { missingUsd },
+                    },
+                  },
+                });
+                return false;
+              }
+
+              const aml = await checkAmlForYieldSpend(refreshed.userId, {
+                amountUsd: missingUsd,
+                merchantCountry: auth.merchant_data?.country || null,
+                merchantCategory: auth.merchant_data?.category || null,
+                currency: spendCurrency,
+              });
+
+              if (!aml.allowed) {
+                await tx.amlReviewCase.create({
+                  data: {
+                    userId: refreshed.userId,
+                    reason: aml.reason,
+                    contextJson: {
+                      amountUsd: missingUsd,
+                      spend: { currency: spendCurrency, amount: spendAmount },
+                      merchant: auth.merchant_data
+                        ? {
+                            name: auth.merchant_data.name || null,
+                            category: auth.merchant_data.category || null,
+                            city: auth.merchant_data.city || null,
+                            country: auth.merchant_data.country || null,
+                          }
+                        : null,
+                      authId: auth.id,
+                    },
+                  },
+                });
+
+                await recordUserConsent(tx, refreshed.userId, 'YIELD_AML_BLOCK', {
+                  reason: aml.reason,
+                  amountUsd: missingUsd,
+                  authId: auth.id,
+                  spendCurrency,
+                  spendAmount,
+                });
+
+                await tx.spendTransaction.create({
+                  data: {
+                    cardId: refreshed.id,
+                    stripeAuthId: auth.id,
+                    amount: amountInCardCurrency,
+                    currency: cardCurrency,
+                    merchantName: auth.merchant_data?.name || null,
+                    merchantCategory: auth.merchant_data?.category || null,
+                    merchantCity: auth.merchant_data?.city || null,
+                    merchantCountry: auth.merchant_data?.country || null,
+                    status: 'declined',
+                    metadata: {
+                      spend: { currency: spendCurrency, amount: spendAmount },
+                      fx: fxMeta,
+                      declineReason: 'AML_PENDING',
+                      yield: { missingUsd, missingFx: missingFxMeta, amlReason: aml.reason },
+                    },
+                  },
+                });
+                return false;
+              }
+
+              const ltvMax = getYieldLtvMax();
+              const creditLine = await tx.userCreditLine.upsert({
+                where: { userId: refreshed.userId },
+                update: { ltvMax },
+                create: {
+                  userId: refreshed.userId,
+                  collateralAsset: 'EETH',
+                  collateralAmount: 0,
+                  collateralValueUsd: 0,
+                  ltvMax,
+                  ltvCurrent: 0,
+                  status: 'INACTIVE',
+                },
+              });
+
+              const collateralValueUsd = creditLine.collateralValueUsd.toNumber() || getYieldCollateralStubUsd();
+              const debtAgg = await tx.yieldLiability.aggregate({
+                where: { userId: refreshed.userId, status: { in: ['PENDING_SETTLEMENT', 'SETTLED_READY'] } },
+                _sum: { amountUsd: true },
+              });
+              const debtUsd = debtAgg._sum.amountUsd?.toNumber() || 0;
+              const powerUsd = collateralValueUsd * ltvMax;
+              const availableUsd = Math.max(powerUsd - debtUsd, 0);
+
+              if (availableUsd < missingUsd) {
+                await tx.spendTransaction.create({
+                  data: {
+                    cardId: refreshed.id,
+                    stripeAuthId: auth.id,
+                    amount: amountInCardCurrency,
+                    currency: cardCurrency,
+                    merchantName: auth.merchant_data?.name || null,
+                    merchantCategory: auth.merchant_data?.category || null,
+                    merchantCity: auth.merchant_data?.city || null,
+                    merchantCountry: auth.merchant_data?.country || null,
+                    status: 'declined',
+                    metadata: {
+                      spend: { currency: spendCurrency, amount: spendAmount },
+                      fx: fxMeta,
+                      declineReason: 'YIELD_LIMIT',
+                      yield: { missingUsd, collateralValueUsd, powerUsd, availableUsd, debtUsd, ltvMax },
+                    },
+                  },
+                });
+                return false;
+              }
+
+              const liability = await tx.yieldLiability.create({
+                data: {
+                  userId: refreshed.userId,
+                  amountUsd: missingUsd,
+                  status: 'PENDING_SETTLEMENT',
+                  authId: auth.id,
+                },
+                select: { id: true },
+              });
+
+              const ltvCurrent = collateralValueUsd > 0 ? (debtUsd + missingUsd) / collateralValueUsd : 0;
+              await tx.userCreditLine.update({
+                where: { id: creditLine.id },
+                data: { ltvCurrent },
+              });
+
+              fxMeta = {
+                ...(fxMeta || {}),
+                yield: {
+                  amountUsd: missingUsd,
+                  liabilityId: liability.id,
+                  missingFx: missingFxMeta,
+                },
+              };
+
+              return true;
+          }
+        }
+
+        await tx.spendTransaction.create({
+          data: {
+            cardId: refreshed.id,
+            stripeAuthId: auth.id,
+            amount: amountInCardCurrency,
+            currency: cardCurrency,
+            merchantName: auth.merchant_data?.name || null,
+            merchantCategory: auth.merchant_data?.category || null,
+            merchantCity: auth.merchant_data?.city || null,
+            merchantCountry: auth.merchant_data?.country || null,
+            status: 'approved',
+            metadata: fxMeta ? { fx: fxMeta, spend: { currency: spendCurrency, amount: spendAmount } } : { spend: { currency: spendCurrency, amount: spendAmount } },
+          },
+        });
+
+        return true;
+      });
+
+      return NextResponse.json({ approved });
     }
     
     // Handle other events...

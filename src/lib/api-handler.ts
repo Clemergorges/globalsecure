@@ -5,6 +5,19 @@ import { logger, logAudit } from "./logger"
 import * as Sentry from "@sentry/nextjs" 
 import { extractUserId } from "./auth"
 
+export class ApiError extends Error {
+  status: number
+  code: string
+  details?: unknown
+
+  constructor(status: number, code: string, message: string, details?: unknown) {
+    super(message)
+    this.status = status
+    this.code = code
+    this.details = details
+  }
+}
+
 type RateLimitConfig = { 
   key: string 
   limit: number 
@@ -189,6 +202,30 @@ export function createHandler<TBody>(
         ) 
       } 
 
+      if (err instanceof ApiError) {
+        logger.warn(
+          { requestId, duration, status: err.status, code: err.code, message: err.message },
+          "Handled API error",
+        )
+
+        await logAudit({
+          userId,
+          action: "BUSINESS_ERROR",
+          status: err.status.toString(),
+          ipAddress,
+          userAgent,
+          method,
+          path,
+          metadata: { code: err.code, message: err.message, details: err.details, stack: err.stack },
+          duration
+        })
+
+        return NextResponse.json(
+          { code: err.code, message: err.message, details: err.details },
+          { status: err.status },
+        )
+      }
+
       logger.error( 
         { requestId, duration, err }, 
         "Unhandled error in handler", 
@@ -203,7 +240,7 @@ export function createHandler<TBody>(
           userAgent,
           method,
           path,
-          metadata: { error: err.message },
+          metadata: { error: err.message, stack: err.stack },
           duration
       });
 

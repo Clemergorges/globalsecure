@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { createTestUsers, cleanupTestUsers, getTestUser } from '../fixtures/test-users';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 
 // KYC Limits
 const KYC_LIMITS = {
@@ -17,7 +15,6 @@ describe('KYC Guards and Limits Enforcement', () => {
 
     afterAll(async () => {
         await cleanupTestUsers();
-        await prisma.$disconnect();
     });
 
     describe('3.1. Transfer Limits by KYC Level', () => {

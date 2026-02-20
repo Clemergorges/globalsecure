@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { applyFiatMovement } from '@/lib/services/fiat-ledger';
 
 export async function GET() {
   const session = await getSession();
@@ -41,19 +42,7 @@ export async function POST(req: Request) {
     const creditAmount = Number(amount);
 
     await prisma.$transaction(async (tx) => {
-      const balance = await tx.balance.findUnique({
-        where: { accountId_currency: { accountId: account.id, currency } }
-      });
-      if (balance) {
-        await tx.balance.update({
-          where: { id: balance.id },
-          data: { amount: { increment: creditAmount } }
-        });
-      } else {
-        await tx.balance.create({
-          data: { accountId: account.id, currency, amount: creditAmount }
-        });
-      }
+      await applyFiatMovement(tx, userId, currency, creditAmount);
 
       await tx.userTransaction.create({
         data: {

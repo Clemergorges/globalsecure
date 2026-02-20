@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { SecureTransferDialog } from './secure-transfer-dialog';
@@ -47,6 +47,8 @@ const VisaLogo = ({ className }: { className?: string }) => (
 
 export function CardsList({ initialCards }: CardsListProps) {
   const t = useTranslations('Cards');
+  const tc = useTranslations('Common');
+  const locale = useLocale();
   const router = useRouter();
   const { toast } = useToast();
   const [cards, setCards] = useState(initialCards);
@@ -102,7 +104,7 @@ export function CardsList({ initialCards }: CardsListProps) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to create card');
+        throw new Error(data.error || t('errors.createFailed'));
       }
 
       const { card } = await res.json();
@@ -112,8 +114,8 @@ export function CardsList({ initialCards }: CardsListProps) {
       setIsCreateOpen(false);
       router.refresh(); // Refresh server components
       toast({
-        title: "Sucesso",
-        description: "Cartão virtual criado com sucesso.",
+        title: t('toast.createdTitle'),
+        description: t('toast.createdDescription'),
       });
       
     } catch (err: any) {
@@ -130,7 +132,7 @@ export function CardsList({ initialCards }: CardsListProps) {
       const res = await fetch(`/api/cards/${cardId}/reveal`);
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Falha ao revelar dados');
+        throw new Error(data.error || t('errors.revealFailed'));
       }
       const data = await res.json();
       setCardDetails(data);
@@ -167,7 +169,7 @@ export function CardsList({ initialCards }: CardsListProps) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Falha ao excluir cartão');
+        throw new Error(data.error || t('errors.deleteFailed'));
       }
 
       // Optimistic Update
@@ -175,16 +177,16 @@ export function CardsList({ initialCards }: CardsListProps) {
       setDeleteConfirmOpen(false);
       setCardToDelete(null);
       toast({
-        title: "Sucesso",
-        description: "Cartão removido com sucesso.",
+        title: t('toast.deletedTitle'),
+        description: t('toast.deletedDescription'),
         variant: "default",
       });
       router.refresh();
 
     } catch (err: any) {
       toast({
-        title: "Erro",
-        description: err.message || "Não foi possível remover o cartão.",
+        title: tc('error'),
+        description: err.message || t('errors.deleteFailed'),
         variant: "destructive",
       });
     } finally {
@@ -207,11 +209,11 @@ export function CardsList({ initialCards }: CardsListProps) {
         <div className="flex gap-4">
             <Button onClick={() => setIsTransferOpen(true)} variant="outline" className="border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 font-bold h-12 px-8 rounded-full transition-transform hover:scale-105">
               <Send className="w-5 h-5 mr-2" />
-              Global Link
+              {t('globalLink')}
             </Button>
             <Button onClick={() => setIsCreateOpen(true)} className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold h-12 px-8 rounded-full shadow-[0_0_20px_-5px_rgba(6,182,212,0.5)] transition-transform hover:scale-105">
               <Plus className="w-5 h-5 mr-2" />
-              Criar Meu Primeiro Cartão
+              {t('createFirstCard')}
             </Button>
         </div>
 
@@ -220,37 +222,37 @@ export function CardsList({ initialCards }: CardsListProps) {
           onOpenChange={setIsTransferOpen} 
           onSuccess={() => {
             router.refresh();
-            toast({ title: "Sucesso", description: "Transferência via Link Seguro iniciada!" });
+            toast({ title: t('toast.globalLinkStartedTitle'), description: t('toast.globalLinkStartedDescription') });
           }}
         />
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="bg-[#0A0A0F] border-white/10 text-white sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Criar Novo Cartão Virtual</DialogTitle>
+            <DialogTitle>{t('createDialog.title')}</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Crie um cartão virtual instantaneamente para compras online seguras.
+              {t('createDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Moeda</Label>
+              <Label>{t('currencyLabel')}</Label>
               <Select value={newCardCurrency} onValueChange={setNewCardCurrency}>
                 <SelectTrigger className="bg-white/5 border-white/10 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                  <SelectItem value="USD">Dólar (USD)</SelectItem>
-                  <SelectItem value="GBP">Libra (GBP)</SelectItem>
+                  <SelectItem value="EUR">{t('currencies.eur')}</SelectItem>
+                  <SelectItem value="USD">{t('currencies.usd')}</SelectItem>
+                  <SelectItem value="GBP">{t('currencies.gbp')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsCreateOpen(false)} className="text-slate-400 hover:text-white">Cancelar</Button>
+            <Button variant="ghost" onClick={() => setIsCreateOpen(false)} className="text-slate-400 hover:text-white">{tc('cancel')}</Button>
             <Button onClick={handleCreateCard} disabled={createLoading} className="bg-cyan-500 text-black hover:bg-cyan-600">
-              {createLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Criar Cartão'}
+              {createLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('createCard')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -271,11 +273,11 @@ export function CardsList({ initialCards }: CardsListProps) {
       <div className="flex justify-end gap-3">
         <Button onClick={() => setIsTransferOpen(true)} variant="outline" className="border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 font-medium">
           <Send className="w-4 h-4 mr-2" />
-          Global Link
+          {t('globalLink')}
         </Button>
         <Button onClick={() => setIsCreateOpen(true)} className="bg-cyan-500 hover:bg-cyan-600 text-black font-medium shadow-[0_0_15px_-5px_rgba(6,182,212,0.5)]">
           <Plus className="w-4 h-4 mr-2" />
-          Novo Cartão
+          {t('newCard')}
         </Button>
       </div>
 
@@ -284,7 +286,7 @@ export function CardsList({ initialCards }: CardsListProps) {
         onOpenChange={setIsTransferOpen} 
         onSuccess={() => {
           router.refresh();
-          toast({ title: "Sucesso", description: "Transferência via Link Seguro iniciada!" });
+          toast({ title: t('toast.globalLinkStartedTitle'), description: t('toast.globalLinkStartedDescription') });
         }}
       />
 
@@ -298,8 +300,8 @@ export function CardsList({ initialCards }: CardsListProps) {
                 <Plus className="w-8 h-8 text-slate-400 group-hover:text-cyan-400" />
             </div>
             <div>
-                <h3 className="text-lg font-bold text-white group-hover:text-cyan-400">Criar Novo Cartão</h3>
-                <p className="text-sm text-slate-400 mt-1">Gere um cartão virtual instantâneo</p>
+                <h3 className="text-lg font-bold text-white group-hover:text-cyan-400">{t('createTile.title')}</h3>
+                <p className="text-sm text-slate-400 mt-1">{t('createTile.description')}</p>
             </div>
         </button>
 
@@ -311,7 +313,7 @@ export function CardsList({ initialCards }: CardsListProps) {
           const claimExpiredByTime = isClaim && Boolean(expiresAt) && Boolean(nowMs) && (expiresAt!.getTime() <= nowMs);
           const claimExpired = isClaim && (claim?.status === 'EXPIRED' || claim?.status === 'CANCELLED' || claimExpiredByTime);
           const claimUnlocked = isClaim && Boolean((card as any).unlockedAt);
-          const claimStatusLabel = claimExpired ? 'Expirado' : claimUnlocked ? 'Ativo' : 'Pendente';
+          const claimStatusLabel = claimExpired ? t('claimStatus.expired') : claimUnlocked ? t('claimStatus.active') : t('claimStatus.pending');
 
           return (
             <Card key={card.id} className="relative overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(6,182,212,0.15)] bg-[#111116] border-white/5 backdrop-blur-md group hover:border-cyan-500/20">
@@ -331,14 +333,14 @@ export function CardsList({ initialCards }: CardsListProps) {
                 <div className="flex gap-2">
                   {isClaim && (
                     <Badge className="uppercase text-[10px] tracking-wider font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                      Claim
+                      {t('claimBadge')}
                     </Badge>
                   )}
                   <Badge variant={card.status === 'ACTIVE' ? 'default' : 'secondary'} className={cn(
                       "uppercase text-[10px] tracking-wider font-bold",
                       card.status === 'ACTIVE' ? "bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border-cyan-500/20" : "bg-slate-800 text-slate-400"
                   )}>
-                    {card.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+                    {card.status === 'ACTIVE' ? t('active') : t('inactive')}
                   </Badge>
                 </div>
               </div>
@@ -347,7 +349,7 @@ export function CardsList({ initialCards }: CardsListProps) {
             <CardContent className="space-y-6 relative z-10">
               {isClaim && (
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Enviado por link</span>
+                  <span className="text-slate-400">{t('sentByLink')}</span>
                   <span className={cn(
                     "font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded-full border",
                     claimExpired ? "bg-red-500/10 text-red-300 border-red-500/20" : claimUnlocked ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-amber-500/10 text-amber-300 border-amber-500/20"
@@ -357,44 +359,44 @@ export function CardsList({ initialCards }: CardsListProps) {
                 </div>
               )}
               <div className="space-y-1">
-                <p className="text-xs text-slate-500 uppercase tracking-wider">Número do Cartão</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wider">{t('cardNumberLabel')}</p>
                 <div className="flex items-center gap-2 font-mono text-xl font-medium tracking-widest text-slate-200">
                   <span>•••• •••• •••• {card.last4}</span>
                 </div>
                 {isClaim && transfer?.recipientEmail ? (
                   <p className="text-xs text-slate-500">
-                    Destinatário: <span className="text-slate-300">{transfer.recipientEmail}</span>
+                    {t('recipientLabel')}: <span className="text-slate-300">{transfer.recipientEmail}</span>
                   </p>
                 ) : null}
                 {isClaim && expiresAt ? (
                   <p className="text-xs text-slate-500">
-                    Expira em: <span className="text-slate-300">{expiresAt.toLocaleString('pt-PT')}</span>
+                    {t('expiresAtLabel')}: <span className="text-slate-300">{expiresAt.toLocaleString(locale)}</span>
                   </p>
                 ) : null}
               </div>
               
               <div className="flex justify-between">
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Validade</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{t('expires')}</p>
                   <p className="font-mono text-white">{String(card.expMonth).padStart(2, '0')}/{String(card.expYear).slice(-2)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">CVC</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{t('cvcLabel')}</p>
                   <p className="font-mono text-white">•••</p>
                 </div>
               </div>
 
               <div className="pt-4 border-t border-white/5 space-y-2">
                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Saldo Usado</span>
+                    <span className="text-slate-500">{t('used')}</span>
                     <span className="font-medium text-slate-300">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: card.currency }).format(Number(card.amountUsed))}
+                        {new Intl.NumberFormat(locale, { style: 'currency', currency: card.currency }).format(Number(card.amountUsed))}
                     </span>
                  </div>
                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Limite</span>
+                    <span className="text-slate-500">{t('available')}</span>
                     <span className="font-medium text-white">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: card.currency }).format(Number(card.amount))}
+                        {new Intl.NumberFormat(locale, { style: 'currency', currency: card.currency }).format(Number(card.amount))}
                     </span>
                  </div>
                  {/* Progress Bar */}
@@ -413,7 +415,7 @@ export function CardsList({ initialCards }: CardsListProps) {
                 size="icon"
                 onClick={() => confirmDelete(card.id)}
                 className="text-slate-400 hover:text-red-400 hover:bg-red-950/20 mr-auto"
-                aria-label="Remover cartão"
+                aria-label={t('removeCardAria')}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -426,7 +428,7 @@ export function CardsList({ initialCards }: CardsListProps) {
                 className="text-slate-400 hover:text-white hover:bg-white/5"
               >
                 {card.status === 'ACTIVE' ? <Lock className="w-4 h-4 mr-2" /> : <Unlock className="w-4 h-4 mr-2" />}
-                {card.status === 'ACTIVE' ? 'Bloquear' : 'Desbloquear'}
+                {card.status === 'ACTIVE' ? t('blockCard') : t('unblockCard')}
               </Button>
               
               <Button 
@@ -436,7 +438,7 @@ export function CardsList({ initialCards }: CardsListProps) {
                 className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 hover:border-cyan-500/50 shadow-[0_0_15px_-5px_rgba(6,182,212,0.3)]"
               >
                 {loadingId === card.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
-                Ver Dados
+                {t('viewData')}
               </Button>
             </CardFooter>
             </Card>
@@ -447,9 +449,9 @@ export function CardsList({ initialCards }: CardsListProps) {
       <Dialog open={isDetailsOpen} onOpenChange={handleDetailsOpenChange}>
         <DialogContent className="bg-[#0A0A0F] border-white/10 text-white sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Dados do Cartão</DialogTitle>
+            <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">{t('detailsDialog.title')}</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Use estes dados para realizar compras online. Nunca compartilhe com terceiros.
+              {t('detailsDialog.description')}
             </DialogDescription>
           </DialogHeader>
           
@@ -464,12 +466,12 @@ export function CardsList({ initialCards }: CardsListProps) {
                 <div className="relative z-10 p-6 flex flex-col justify-between h-full">
                     <div className="flex justify-between items-start">
                         <VisaLogo className="w-16 h-6 text-white" />
-                        <span className="font-bold text-white/50 tracking-widest text-sm">VIRTUAL</span>
+                        <span className="font-bold text-white/50 tracking-widest text-sm">{t('virtualLabel')}</span>
                     </div>
 
                     <div className="space-y-4">
                         <div className="space-y-1">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-widest">Número do Cartão</p>
+                            <p className="text-[10px] text-slate-400 uppercase tracking-widest">{t('cardNumberLabel')}</p>
                             <div className="flex items-center gap-3">
                                 <p className="text-2xl font-mono font-bold tracking-widest text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] select-all">
                                     {cardDetails.pan}
@@ -482,14 +484,14 @@ export function CardsList({ initialCards }: CardsListProps) {
 
                         <div className="flex gap-8">
                             <div>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Validade</p>
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">{t('expires')}</p>
                                 <p className="text-lg font-mono font-medium text-white">
                                     {initialCards.find(c => c.id === revealedCardId)?.expMonth.toString().padStart(2, '0')}/
                                     {initialCards.find(c => c.id === revealedCardId)?.expYear.toString().slice(-2)}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">CVC</p>
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">{t('cvcLabel')}</p>
                                 <div className="flex items-center gap-2">
                                     <p className="text-lg font-mono font-bold text-cyan-400 select-all">{cardDetails.cvv}</p>
                                     <Button size="icon" variant="ghost" className="h-6 w-6 text-slate-400 hover:text-white" onClick={() => navigator.clipboard.writeText(cardDetails.cvv)}>
@@ -504,7 +506,7 @@ export function CardsList({ initialCards }: CardsListProps) {
 
               <div className="bg-amber-950/20 text-amber-400 p-3 rounded-lg text-xs flex gap-2 items-start border border-amber-500/20">
                 <Lock className="w-4 h-4 mt-0.5 shrink-0" />
-                <p>Esta janela fechará automaticamente em 30s por segurança. Certifique-se de que ninguém está olhando sua tela.</p>
+                <p>{t('detailsDialog.autoCloseNote')}</p>
               </div>
             </div>
           )}
@@ -514,30 +516,30 @@ export function CardsList({ initialCards }: CardsListProps) {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="bg-[#0A0A0F] border-white/10 text-white sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Criar Novo Cartão Virtual</DialogTitle>
+            <DialogTitle>{t('createDialog.title')}</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Crie um cartão virtual instantaneamente para compras online seguras.
+              {t('createDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Moeda</Label>
+              <Label>{t('currencyLabel')}</Label>
               <Select value={newCardCurrency} onValueChange={setNewCardCurrency}>
                 <SelectTrigger className="bg-white/5 border-white/10 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                  <SelectItem value="USD">Dólar (USD)</SelectItem>
-                  <SelectItem value="GBP">Libra (GBP)</SelectItem>
+                  <SelectItem value="EUR">{t('currencies.eur')}</SelectItem>
+                  <SelectItem value="USD">{t('currencies.usd')}</SelectItem>
+                  <SelectItem value="GBP">{t('currencies.gbp')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsCreateOpen(false)} className="text-slate-400 hover:text-white">Cancelar</Button>
+            <Button variant="ghost" onClick={() => setIsCreateOpen(false)} className="text-slate-400 hover:text-white">{tc('cancel')}</Button>
             <Button onClick={handleCreateCard} disabled={createLoading} className="bg-cyan-500 text-black hover:bg-cyan-600">
-              {createLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Criar Cartão'}
+              {createLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('createCard')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -546,21 +548,21 @@ export function CardsList({ initialCards }: CardsListProps) {
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="bg-[#0A0A0F] border-white/10 text-white sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>Remover Cartão</DialogTitle>
+                <DialogTitle>{t('deleteDialog.title')}</DialogTitle>
                 <DialogDescription className="text-slate-400">
-                    Tem certeza que deseja remover este cartão? Esta ação não pode ser desfeita.
+                    {t('deleteDialog.description')}
                 </DialogDescription>
             </DialogHeader>
             <DialogFooter>
                 <Button variant="ghost" onClick={() => setDeleteConfirmOpen(false)} className="text-slate-400 hover:text-white">
-                    Cancelar
+                    {tc('cancel')}
                 </Button>
                 <Button 
                     onClick={handleDeleteCard} 
                     disabled={deleteLoading}
                     className="bg-red-600 text-white hover:bg-red-700"
                 >
-                    {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Remover Cartão'}
+                    {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('deleteDialog.confirm')}
                 </Button>
             </DialogFooter>
         </DialogContent>

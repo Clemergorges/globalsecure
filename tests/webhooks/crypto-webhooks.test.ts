@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { createTestUsers, cleanupTestUsers, getTestUser } from '../fixtures/test-users';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 
 describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
     beforeAll(async () => {
@@ -10,7 +8,6 @@ describe('Crypto Webhooks Tests (Alchemy/Polygon)', () => {
 
     afterAll(async () => {
         await cleanupTestUsers();
-        await prisma.$disconnect();
     });
 
     describe('4.5. USDT Deposit Webhook', () => {

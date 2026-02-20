@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { applyFiatMovement } from '@/lib/services/fiat-ledger';
 
 const EU_COUNTRIES = new Set([
   'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
@@ -63,25 +64,7 @@ export async function POST(req: Request) {
     const currency = 'EUR';
 
     await prisma.$transaction(async (tx) => {
-      // Upsert balance
-      const existingBalance = await tx.balance.findUnique({
-          where: { accountId_currency: { accountId: account.id, currency: 'EUR' } }
-      });
-
-      if (existingBalance) {
-          await tx.balance.update({
-              where: { id: existingBalance.id },
-              data: { amount: { increment: creditAmount } }
-          });
-      } else {
-          await tx.balance.create({
-              data: {
-                  accountId: account.id,
-                  currency: 'EUR',
-                  amount: creditAmount
-              }
-          });
-      }
+      await applyFiatMovement(tx, userId, currency, creditAmount);
 
       await tx.accountTransaction.create({
         data: {
@@ -94,6 +77,7 @@ export async function POST(req: Request) {
       });
 
       if (feeInstant && feeInstant > 0) {
+        await applyFiatMovement(tx, userId, currency, -feeInstant);
         await tx.accountTransaction.create({
           data: {
             accountId: account.id,

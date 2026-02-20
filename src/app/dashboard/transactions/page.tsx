@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import TransactionsClient from './TransactionsClient';
+import { getTranslations } from 'next-intl/server';
 
 function toNumber(value: any) {
   if (typeof value === 'number') return value;
@@ -11,6 +12,7 @@ function toNumber(value: any) {
 }
 
 export default async function TransactionsPage() {
+  const t = await getTranslations('Transactions');
   const session = await getSession();
   if (!session) redirect('/auth/login');
 
@@ -37,9 +39,11 @@ export default async function TransactionsPage() {
         type: 'CLAIM_SEND',
         amount: toNumber(c.amount),
         currency: c.currency,
-        description: `Envio via cartão (Claim)${recipient ? ` – ${recipient}` : ''}`,
+        description: recipient
+          ? t('claimSection.itemDescriptionWithRecipient', { recipient })
+          : t('claimSection.itemDescription'),
         status,
-        date: c.createdAt,
+        date: c.createdAt.toISOString(),
         expiresAt: c.expiresAt.toISOString(),
       };
     });

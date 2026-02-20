@@ -36,8 +36,12 @@ export default function SecuritySettingsPage() {
   const [otpCode, setOtpCode] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
 
+  const [yieldEnabled, setYieldEnabled] = useState(false);
+  const [yieldLoading, setYieldLoading] = useState(true);
+
   useEffect(() => {
     fetchSessions();
+    fetchYieldSetting();
     // Ideally fetch current 2FA status here too
   }, []);
 
@@ -50,6 +54,37 @@ export default function SecuritySettingsPage() {
       console.error(e);
     } finally {
       setLoadingSessions(false);
+    }
+  }
+
+  async function fetchYieldSetting() {
+    try {
+      const res = await fetch('/api/user/yield-toggle');
+      const data = await res.json();
+      if (res.ok) {
+        setYieldEnabled(Boolean(data.yieldEnabled));
+      }
+    } finally {
+      setYieldLoading(false);
+    }
+  }
+
+  async function toggleYield(next: boolean) {
+    setYieldLoading(true);
+    try {
+      const res = await fetch('/api/user/yield-toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: next }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setYieldEnabled(Boolean(data.yieldEnabled));
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      alert(errorMessage);
+    } finally {
+      setYieldLoading(false);
     }
   }
 
@@ -104,7 +139,7 @@ export default function SecuritySettingsPage() {
         method: 'POST',
         body: JSON.stringify({ code: otpCode })
       });
-      if (!res.ok) throw new Error('Código inválido');
+      if (!res.ok) throw new Error(t('errorVerifyingCode'));
       
       setTwoFaEnabled(true);
       setShowOtpDialog(false);
@@ -211,22 +246,41 @@ export default function SecuritySettingsPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Smartphone className="w-5 h-5 text-[var(--color-primary)]" />
-              <CardTitle className="text-white">Autenticação de Dois Fatores</CardTitle>
+              <CardTitle className="text-white">{t('twoFactorAuth')}</CardTitle>
             </div>
-            <CardDescription className="text-slate-400">Adicione uma camada extra de segurança via SMS.</CardDescription>
+            <CardDescription className="text-slate-400">{t('twoFactorAuthDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between p-4 border rounded-lg bg-[#1a1a1f] border-white/10">
               <div className="space-y-0.5">
-                <Label className="text-base text-slate-300">SMS 2FA</Label>
+                <Label className="text-base text-slate-300">{t('sms2faLabel')}</Label>
                 <p className="text-sm text-slate-400">
-                  {twoFaEnabled ? 'Ativado' : 'Desativado'}
+                  {twoFaEnabled ? t('statusEnabled') : t('statusDisabled')}
                 </p>
               </div>
               <Switch 
                 checked={twoFaEnabled}
                 onCheckedChange={toggle2FA}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#111116] border-white/5 backdrop-blur-sm md:col-span-2">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-[var(--color-primary)]" />
+              <CardTitle className="text-white">{t('yieldToggleTitle')}</CardTitle>
+            </div>
+            <CardDescription className="text-slate-400">{t('yieldToggleSubtitle')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-[#1a1a1f] border-white/10">
+              <div className="space-y-1">
+                <Label className="text-base text-slate-300">{t('yieldToggleLabel')}</Label>
+                <p className="text-sm text-slate-400">{t('yieldToggleDescription')}</p>
+              </div>
+              <Switch checked={yieldEnabled} onCheckedChange={toggleYield} disabled={yieldLoading} />
             </div>
           </CardContent>
         </Card>
@@ -237,9 +291,9 @@ export default function SecuritySettingsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Globe className="w-5 h-5 text-[var(--color-primary)]" />
-            <CardTitle className="text-white">Sessões Ativas</CardTitle>
+            <CardTitle className="text-white">{t('activeSessions')}</CardTitle>
           </div>
-          <CardDescription className="text-slate-400">Gerencie os dispositivos conectados à sua conta.</CardDescription>
+          <CardDescription className="text-slate-400">{t('activeSessionsDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -252,17 +306,17 @@ export default function SecuritySettingsPage() {
                      <Shield className="w-5 h-5 text-slate-400" />
                    </div>
                    <div>
-                     <p className="font-medium text-sm text-slate-200">{session.userAgent || 'Dispositivo Desconhecido'}</p>
+                     <p className="font-medium text-sm text-slate-200">{session.userAgent || t('unknownDevice')}</p>
                      <p className="text-xs text-slate-500">
                        {session.ipAddress} • {new Date(session.createdAt).toLocaleDateString()}
-                       {session.isCurrent && <span className="ml-2 text-green-400 font-bold">(Atual)</span>}
+                       {session.isCurrent && <span className="ml-2 text-green-400 font-bold">({t('currentSessionLabel')})</span>}
                      </p>
                    </div>
                 </div>
                 {!session.isCurrent && (
                   <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20" onClick={() => revokeSession(session.id)}>
                     <LogOut className="w-4 h-4 mr-2" />
-                    Sair
+                    {t('signOut')}
                   </Button>
                 )}
               </div>
@@ -275,9 +329,9 @@ export default function SecuritySettingsPage() {
       <Dialog open={showOtpDialog} onOpenChange={setShowOtpDialog}>
         <DialogContent className="bg-[#111116] border-white/10">
           <DialogHeader>
-            <DialogTitle className="text-white">Verificar Código SMS</DialogTitle>
+            <DialogTitle className="text-white">{t('verifySmsCodeTitle')}</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Enviamos um código de 6 dígitos para o seu telefone cadastrado.
+              {t('verifySmsCodeDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -292,7 +346,7 @@ export default function SecuritySettingsPage() {
           <DialogFooter>
             <Button onClick={verifyOtp} disabled={otpLoading || otpCode.length !== 6} className="bg-cyan-500 hover:bg-cyan-400 text-black font-semibold">
               {otpLoading && <Loader2 className="animate-spin mr-2" />}
-              Confirmar
+              {t('confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

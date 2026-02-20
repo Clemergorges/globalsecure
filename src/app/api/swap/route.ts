@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { checkAuth } from '@/lib/auth';
 import { Decimal } from '@prisma/client/runtime/library';
+import { applyFiatMovement } from '@/lib/services/fiat-ledger';
 
 // Configuration (Could be DB driven)
 const RATES = {
@@ -54,45 +55,15 @@ export async function POST(req: Request) {
 
       if (!account) throw new Error('Account not found');
 
-      // 3.1 Debit Source (Atomic Check via Balance table)
-      // Use updateMany with 'gte' guard to prevent negative balance
-      const debitResult = await tx.balance.updateMany({
-        where: { 
-            accountId: account.id,
-            currency: fromAsset,
-            amount: { gte: amount }
-        },
-        data: {
-          amount: { decrement: amount }
-        }
-      });
-
-      if (debitResult.count === 0) {
-          // Check if balance exists to give better error
-          const balanceExists = await tx.balance.findUnique({
-              where: { accountId_currency: { accountId: account.id, currency: fromAsset } }
-          });
-          if (!balanceExists) {
-              throw new Error(`Insufficient ${fromAsset} balance (No record found)`);
-          }
-          throw new Error(`Insufficient ${fromAsset} balance (Concurrency Check)`);
+      try {
+        await applyFiatMovement(tx, (auth as any).userId, fromAsset, -amount);
+      } catch (e: any) {
+        if (e?.message === 'BALANCE_NOT_FOUND') throw new Error(`Insufficient ${fromAsset} balance`);
+        if (e?.message === 'INSUFFICIENT_FUNDS') throw new Error(`Insufficient ${fromAsset} balance`);
+        throw e;
       }
 
-      // 3.2 Credit Destination
-      // Upsert to ensure balance record exists
-      await tx.balance.upsert({
-        where: { 
-            accountId_currency: { accountId: account.id, currency: toAsset } 
-        },
-        update: {
-          amount: { increment: toAmount }
-        },
-        create: {
-          accountId: account.id,
-          currency: toAsset,
-          amount: toAmount
-        }
-      });
+      await applyFiatMovement(tx, (auth as any).userId, toAsset, toAmount);
 
       // Create Swap Record
       const swap = await tx.swap.create({

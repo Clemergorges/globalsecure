@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { Loader2, TrendingDown } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatCurrencyLocale } from '@/lib/utils';
 
 export default function AnalyticsPage() {
+  const t = useTranslations('Analytics');
+  const locale = useLocale();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('30d');
@@ -36,22 +40,32 @@ export default function AnalyticsPage() {
   }
 
   const total = data.byCategory.reduce((acc: number, curr: any) => acc + curr.value, 0);
+  const knownCategories = new Set([
+    'GROCERIES',
+    'RESTAURANTS',
+    'TRANSPORT',
+    'ENTERTAINMENT',
+    'SHOPPING',
+    'BILLS',
+    'TRANSFERS',
+    'OTHER',
+  ]);
 
   return (
     <div className="p-6 md:p-8 space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Analytics</h1>
-          <p className="text-slate-400">Análise detalhada dos seus gastos.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">{t('title')}</h1>
+          <p className="text-slate-400">{t('subtitle')}</p>
         </div>
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-[180px] bg-white/5 border-white/10 text-white">
-            <SelectValue placeholder="Período" />
+            <SelectValue placeholder={t('periodPlaceholder')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="30d">Últimos 30 dias</SelectItem>
-            <SelectItem value="90d">Últimos 3 meses</SelectItem>
-            <SelectItem value="1y">Este ano</SelectItem>
+            <SelectItem value="30d">{t('periods.last30Days')}</SelectItem>
+            <SelectItem value="90d">{t('periods.last3Months')}</SelectItem>
+            <SelectItem value="1y">{t('periods.thisYear')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -60,15 +74,15 @@ export default function AnalyticsPage() {
         {/* Total Spend Card */}
         <Card className="bg-[#111116] border-white/10">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Total Gasto</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">{t('totalSpend')}</CardTitle>
             <TrendingDown className="w-4 h-4 text-red-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">
-              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(total)}
+              {formatCurrencyLocale(total, 'EUR', locale)}
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              No período selecionado
+              {t('selectedPeriod')}
             </p>
           </CardContent>
         </Card>
@@ -76,38 +90,44 @@ export default function AnalyticsPage() {
         {/* Categories Card */}
         <Card className="bg-[#111116] border-white/10 md:col-span-2">
           <CardHeader>
-            <CardTitle className="text-white">Gastos por Categoria</CardTitle>
+            <CardTitle className="text-white">{t('spendByCategory')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {data.byCategory.length === 0 ? (
-              <p className="text-slate-500 text-center py-8">Nenhuma transação encontrada neste período.</p>
+              <p className="text-slate-500 text-center py-8">{t('empty')}</p>
             ) : (
-              data.byCategory.map((cat: any) => (
-                <div key={cat.name} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${getColorForCategory(cat.name)}`} />
-                      <span className="text-sm font-medium text-slate-200 capitalize">
-                        {cat.name.toLowerCase().replace('_', ' ')}
-                      </span>
+              data.byCategory.map((cat: any) => {
+                const categoryLabel = knownCategories.has(cat.name)
+                  ? t(`categories.${cat.name.toLowerCase()}`)
+                  : cat.name?.toLowerCase?.().replaceAll?.('_', ' ') ?? String(cat.name);
+
+                return (
+                  <div key={cat.name} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${getColorForCategory(cat.name)}`} />
+                        <span className="text-sm font-medium text-slate-200 capitalize">
+                          {categoryLabel}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-white block">
+                          {formatCurrencyLocale(cat.value, 'EUR', locale)}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {((cat.value / total) * 100).toFixed(1)}%
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-white block">
-                        {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(cat.value)}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {((cat.value / total) * 100).toFixed(1)}%
-                      </span>
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${getColorForCategory(cat.name)} transition-all duration-500 ease-out`}
+                        style={{ width: `${(cat.value / total) * 100}%` }} 
+                      />
                     </div>
                   </div>
-                  <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${getColorForCategory(cat.name)} transition-all duration-500 ease-out`}
-                      style={{ width: `${(cat.value / total) * 100}%` }} 
-                    />
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </CardContent>
         </Card>

@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { processInternalTransfer } from '@/lib/services/ledger';
+import { prisma } from '../setup/prisma';
 
 // Mock Pusher
 jest.mock('@/lib/services/pusher', () => ({
@@ -8,7 +8,6 @@ jest.mock('@/lib/services/pusher', () => ({
   }
 }));
 
-const prisma = new PrismaClient();
 const PREFIX = 'acid_test_';
 
 describe('Ledger ACID Compliance', () => {
@@ -43,7 +42,6 @@ describe('Ledger ACID Compliance', () => {
   });
 
   afterAll(async () => {
-    await prisma.$disconnect();
   });
 
   beforeEach(async () => {

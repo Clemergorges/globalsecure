@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { createTestUsers, cleanupTestUsers, getTestUser } from '../fixtures/test-users';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 
 describe('Stripe Webhooks Tests', () => {
     beforeAll(async () => {
@@ -10,7 +8,6 @@ describe('Stripe Webhooks Tests', () => {
 
     afterAll(async () => {
         await cleanupTestUsers();
-        await prisma.$disconnect();
     });
 
     describe('4.1. Topup Webhook (checkout.session.completed)', () => {

@@ -12,6 +12,7 @@ import { useTranslations } from 'next-intl';
 
 function KYCContent() {
   const t = useTranslations('KYC');
+  const tc = useTranslations('Common');
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
@@ -112,7 +113,7 @@ function KYCContent() {
             {/* Opção Rápida (Stripe Identity) */}
             <Card className="mb-6 border-blue-200 bg-blue-50/50 overflow-hidden relative">
                 <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                    RECOMENDADO
+                    {t('recommended')}
                 </div>
                 <CardContent className="flex items-center justify-between p-6">
                     <div className="flex items-center gap-4">
@@ -120,19 +121,19 @@ function KYCContent() {
                             <ScanFace className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-lg text-blue-900">Verificação Automática</h3>
-                            <p className="text-blue-700 text-sm">Use sua câmera para verificar em segundos. Mais seguro e rápido.</p>
+                            <h3 className="font-bold text-lg text-blue-900">{t('automaticVerification')}</h3>
+                            <p className="text-blue-700 text-sm">{t('useStripeIdentity')}</p>
                         </div>
                     </div>
                     <Button onClick={handleStripeIdentity} disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white">
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Iniciar Agora'}
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('startNow')}
                     </Button>
                 </CardContent>
             </Card>
 
             <div className="relative flex py-5 items-center">
                 <div className="flex-grow border-t border-gray-200"></div>
-                <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">ou envio manual</span>
+                <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">{t('manualSeparator')}</span>
                 <div className="flex-grow border-t border-gray-200"></div>
             </div>
 
@@ -149,16 +150,16 @@ function KYCContent() {
                 ))}
                 </div>
                 <CardTitle>
-                {step === 0 && 'Dados do Documento'}
-                {step === 1 && 'Documento de Identidade (Frente)'}
-                {step === 2 && 'Documento de Identidade (Verso)'}
-                {step === 3 && 'Selfie de Verificação'}
+                {step === 0 && t('stepDocumentDataTitle')}
+                {step === 1 && t('stepFrontTitle')}
+                {step === 2 && t('stepBackTitle')}
+                {step === 3 && t('stepSelfieTitle')}
                 </CardTitle>
                 <CardDescription>
-                {step === 0 && 'Informe os dados do documento que você enviará.'}
-                {step === 1 && 'Envie uma foto clara da frente do seu Passaporte, RG ou CNH.'}
-                {step === 2 && 'Agora envie uma foto do verso do documento.'}
-                {step === 3 && 'Por fim, tire uma selfie segurando o documento para provar que é você.'}
+                {step === 0 && t('stepDocumentDataDesc')}
+                {step === 1 && t('stepFrontDesc')}
+                {step === 2 && t('stepBackDesc')}
+                {step === 3 && t('stepSelfieDesc')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -166,19 +167,19 @@ function KYCContent() {
                 {step === 0 && (
                 <div className="space-y-4">
                     <div>
-                    <Label>Tipo de Documento</Label>
+                    <Label>{t('documentType')}</Label>
                     <select 
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         value={formData.documentType}
                         onChange={(e) => setFormData({...formData, documentType: e.target.value})}
                     >
-                        <option value="id_card">Carteira de Identidade (ID Card)</option>
-                        <option value="passport">Passaporte</option>
-                        <option value="driver_license">Carteira de Motorista</option>
+                        <option value="id_card">{t('docTypeIdCard')}</option>
+                        <option value="passport">{t('docTypePassport')}</option>
+                        <option value="driver_license">{t('docTypeDriverLicense')}</option>
                     </select>
                     </div>
                     <div>
-                    <Label>Número do Documento</Label>
+                    <Label>{t('documentNumber')}</Label>
                     <Input 
                         value={formData.documentNumber}
                         onChange={(e) => setFormData({...formData, documentNumber: e.target.value})}
@@ -186,7 +187,7 @@ function KYCContent() {
                     />
                     </div>
                     <div>
-                    <Label>País de Emissão</Label>
+                    <Label>{t('issuingCountry')}</Label>
                     <select 
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         value={formData.issuingCountry}
@@ -216,13 +217,13 @@ function KYCContent() {
                         <Upload className="w-6 h-6" />
                     </div>
                     <div>
-                        <p className="font-medium text-gray-900">Clique para selecionar ou arraste aqui</p>
-                        <p className="text-sm text-gray-500 mt-1">JPG, PNG ou PDF (Max 5MB)</p>
+                        <p className="font-medium text-gray-900">{t('uploadSelectOrDrop')}</p>
+                        <p className="text-sm text-gray-500 mt-1">{t('uploadFormats')}</p>
                     </div>
                     {((step === 1 && files.front) || (step === 2 && files.back) || (step === 3 && files.selfie)) && (
                         <div className="mt-4 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4" />
-                        Arquivo selecionado
+                        {t('fileSelected')}
                         </div>
                     )}
                     </div>
@@ -231,7 +232,7 @@ function KYCContent() {
 
                 <div className="flex justify-between pt-4">
                 <Button variant="outline" onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0 || loading}>
-                    Voltar
+                    {tc('back')}
                 </Button>
                 
                 {step < 3 ? (
@@ -243,7 +244,7 @@ function KYCContent() {
                         (step === 2 && !files.back)
                     }
                     >
-                    Próximo
+                    {tc('next')}
                     </Button>
                 ) : (
                     <Button 
@@ -252,7 +253,7 @@ function KYCContent() {
                     className="bg-[var(--color-primary)] text-white"
                     >
                     {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Shield className="w-4 h-4 mr-2" />}
-                    Enviar para Análise
+                    {t('submitForReview')}
                     </Button>
                 )}
                 </div>
@@ -266,8 +267,9 @@ function KYCContent() {
 }
 
 export default function KYCPage() {
+  const tc = useTranslations('Common');
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>{tc('loading')}</div>}>
       <KYCContent />
     </Suspense>
   );

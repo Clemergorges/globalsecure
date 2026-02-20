@@ -8,11 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, AlertCircle, CheckCircle, Mail } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
+import { useTranslations } from 'next-intl';
 
 function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
+  const t = useTranslations('VerifyEmail');
+  const tc = useTranslations('Common');
 
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,10 +43,10 @@ function VerifyContent() {
 
       if (!res.ok) {
         const errorCode = data?.code;
-        if (errorCode === 'OTP_INVALID') throw new Error('Código incorreto.');
-        if (errorCode === 'OTP_EXPIRED') throw new Error('Código expirado. Reenvie um novo código.');
-        if (errorCode === 'OTP_USED') throw new Error('Código já usado. Reenvie um novo código.');
-        throw new Error(data?.error || 'Falha na verificação');
+        if (errorCode === 'OTP_INVALID') throw new Error(t('errors.invalidCode'));
+        if (errorCode === 'OTP_EXPIRED') throw new Error(t('errors.expiredCode'));
+        if (errorCode === 'OTP_USED') throw new Error(t('errors.usedCode'));
+        throw new Error(data?.error || t('errors.verifyFailed'));
       }
 
       setSuccess(true);
@@ -74,10 +77,10 @@ function VerifyContent() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(data?.error || 'Falha ao reenviar o código');
+        throw new Error(data?.error || t('errors.resendFailed'));
       }
 
-      setInfo('Enviamos um novo código para seu email.');
+      setInfo(t('info.resent'));
       setCode('');
     } catch (err: any) {
       setError(err.message);
@@ -93,14 +96,14 @@ function VerifyContent() {
           <div className="flex items-center justify-center mb-6">
             <Logo showText={false} className="w-16 h-16" />
           </div>
-          <CardTitle className="text-2xl text-center font-bold text-gray-900">Verificar Email</CardTitle>
+          <CardTitle className="text-2xl text-center font-bold text-gray-900">{t('title')}</CardTitle>
           <CardDescription className="text-center text-gray-500">
-            Informe seu email para continuar.
+            {t('missingEmail')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button className="w-full" onClick={() => router.push('/auth/register')}>
-            Voltar ao cadastro
+            {t('backToRegister')}
           </Button>
         </CardContent>
       </Card>
@@ -113,9 +116,9 @@ function VerifyContent() {
         <div className="flex items-center justify-center mb-6">
           <Logo showText={false} className="w-16 h-16" />
         </div>
-        <CardTitle className="text-2xl text-center font-bold text-gray-900">Verificar Email</CardTitle>
+        <CardTitle className="text-2xl text-center font-bold text-gray-900">{t('title')}</CardTitle>
         <CardDescription className="text-center text-gray-500">
-          Enviamos um código de 6 dígitos para <br />
+          {t('sentTo')} <br />
           <span className="font-medium text-gray-900">{email}</span>
         </CardDescription>
       </CardHeader>
@@ -124,14 +127,14 @@ function VerifyContent() {
           <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
             <CheckCircle className="w-16 h-16 text-emerald-500" />
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900">Email Verificado!</h3>
-              <p className="text-gray-500">Redirecionando para o login...</p>
+              <h3 className="text-xl font-semibold text-gray-900">{t('success.title')}</h3>
+              <p className="text-gray-500">{t('success.subtitle')}</p>
             </div>
           </div>
         ) : (
           <form onSubmit={onSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="code" className="text-gray-700">Código de Verificação</Label>
+              <Label htmlFor="code" className="text-gray-700">{t('codeLabel')}</Label>
               <Input
                 id="code"
                 name="code"
@@ -145,7 +148,7 @@ function VerifyContent() {
               />
               <div className="text-xs text-gray-500 text-center flex items-center justify-center gap-2">
                 <Mail className="w-3 h-3" />
-                Verifique sua caixa de entrada e spam.
+                {t('checkInbox')}
               </div>
             </div>
 
@@ -169,7 +172,7 @@ function VerifyContent() {
               disabled={loading || resending || code.length < 6}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Validar código
+              {t('submit')}
             </Button>
 
             <Button
@@ -180,7 +183,7 @@ function VerifyContent() {
               disabled={loading || resending}
             >
               {resending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Reenviar código
+              {t('resend')}
             </Button>
           </form>
         )}
@@ -190,12 +193,12 @@ function VerifyContent() {
 }
 
 export default function VerifyPage() {
+  const tc = useTranslations('Common');
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <Suspense fallback={<div className="text-center">Carregando...</div>}>
+      <Suspense fallback={<div className="text-center">{tc('loading')}</div>}>
         <VerifyContent />
       </Suspense>
     </div>
   );
 }
-

@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { createTestUsers, cleanupTestUsers, getTestUser } from '../fixtures/test-users';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 
 // Use distinct prefix for E2E tests to allow parallel execution with other suites if needed
 const E2E_PREFIX = 'e2e_deposit_';
@@ -38,7 +36,6 @@ describe('E2E: Deposit Flows', () => {
         await prisma.user.deleteMany({
             where: { email: { startsWith: E2E_PREFIX } }
         });
-        await prisma.$disconnect();
     });
 
     it('should process a simulated Stripe Card Topup correctly', async () => {

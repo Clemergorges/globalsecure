@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { checkAdmin } from '@/lib/auth';
 import { createNotification } from '@/lib/notifications';
+import { applyFiatMovement } from '@/lib/services/fiat-ledger';
 
 export async function POST(req: Request) {
     const isAdmin = await checkAdmin();
@@ -27,47 +28,7 @@ export async function POST(req: Request) {
 
         // Atomic TopUp
         await prisma.$transaction(async (tx) => {
-            // 1. Update Wallet Balance directly (matching the current app structure)
-            const account = await tx.account.findUnique({
-                where: { id: user.account!.id }
-            });
-
-            if (!account) throw new Error("Account not found");
-
-            const balanceField =
-                currency === 'EUR' ? 'balanceEUR' :
-                    currency === 'USD' ? 'balanceUSD' :
-                        currency === 'GBP' ? 'balanceGBP' : null;
-
-            if (balanceField) {
-                // @ts-ignore
-                await tx.account.update({
-                    where: { id: account.id },
-                    data: {
-                        [balanceField]: { increment: amount }
-                    }
-                });
-            } else {
-                // Fallback to Balance table if it's a new currency
-                const balance = await tx.balance.findUnique({
-                    where: { accountId_currency: { accountId: user.account!.id, currency } }
-                });
-
-                if (balance) {
-                    await tx.balance.update({
-                        where: { id: balance.id },
-                        data: { amount: { increment: amount } }
-                    });
-                } else {
-                    await tx.balance.create({
-                        data: {
-                            accountId: user.account!.id,
-                            currency,
-                            amount
-                        }
-                    });
-                }
-            }
+            await applyFiatMovement(tx, userId, currency, amount);
 
             // 2. Create Transaction Record
             await tx.accountTransaction.create({

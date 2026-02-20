@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/db';
 import { pusherService } from '@/lib/services/pusher';
+import { ApiError } from '@/lib/api-handler';
+import { applyFiatMovement } from '@/lib/services/fiat-ledger';
 
 export interface TransferResult {
   success: boolean;
@@ -17,7 +19,7 @@ export async function processInternalTransfer(
 ): Promise<TransferResult> {
   // 1. Validations
   if (amount <= 0) {
-    throw new Error('Amount must be positive');
+    throw new ApiError(400, 'INVALID_AMOUNT', 'Amount must be positive');
   }
 
   const recipient = await prisma.user.findUnique({
@@ -26,15 +28,15 @@ export async function processInternalTransfer(
   });
 
   if (!recipient) {
-    throw new Error('Recipient not found');
+    throw new ApiError(404, 'RECIPIENT_NOT_FOUND', 'Recipient not found');
   }
 
   if (recipient.id === senderId) {
-    throw new Error('Cannot transfer to yourself');
+    throw new ApiError(400, 'CANNOT_TRANSFER_TO_SELF', 'Cannot transfer to yourself');
   }
 
   if (!recipient.account) {
-    throw new Error('Recipient wallet not active');
+    throw new ApiError(400, 'RECIPIENT_WALLET_INACTIVE', 'Recipient wallet not active');
   }
 
   const senderWallet = await prisma.account.findUnique({
@@ -42,7 +44,7 @@ export async function processInternalTransfer(
   });
 
   if (!senderWallet) {
-    throw new Error('Sender wallet not found');
+    throw new ApiError(400, 'SENDER_WALLET_NOT_FOUND', 'Sender wallet not found');
   }
 
   // Calculate Fees
@@ -51,54 +53,21 @@ export async function processInternalTransfer(
   const totalDeduction = amount + feeAmount;
 
   // 2. ATOMIC TRANSACTION (MULTI-CURRENCY SUPPORT)
-  // We now update the 'Balance' table instead of 'Wallet' columns
   const transfer = await prisma.$transaction(async (tx) => {
 
-    // 2.1 Atomic Debit (Check Balance + Deduct in one go)
-    // We look for a Balance record for this wallet AND currency
-    // And ensure amount >= totalDeduction
-    const debitResult = await tx.balance.updateMany({
-      where: {
-        accountId: senderWallet.id,
-        currency: currency,
-        amount: { gte: totalDeduction } // Crucial: WHERE balance >= total
-      },
-      data: {
-        amount: { decrement: totalDeduction }
+    try {
+      await applyFiatMovement(tx, senderId, currency, -totalDeduction);
+    } catch (e: any) {
+      if (e?.message === 'BALANCE_NOT_FOUND') {
+        throw new ApiError(400, 'BALANCE_NOT_FOUND', 'Balance for this currency was not found');
       }
-    });
-
-    if (debitResult.count === 0) {
-      // Fallback: Check if balance record exists at all to give better error
-      const balanceExists = await tx.balance.findUnique({
-        where: { accountId_currency: { accountId: senderWallet.id, currency } }
-      });
-      if (!balanceExists) {
-        throw new Error(`Saldo em ${currency} não encontrado.`);
+      if (e?.message === 'INSUFFICIENT_FUNDS') {
+        throw new ApiError(409, 'INSUFFICIENT_FUNDS', 'Insufficient funds');
       }
-      throw new Error('Insufficient funds or concurrent transaction conflict');
+      throw e;
     }
 
-    // 2.2 Credit Recipient
-    // We use upsert to ensure the balance row exists
-    const recipientBalance = await tx.balance.findUnique({
-      where: { accountId_currency: { accountId: recipient.account!.id, currency } }
-    });
-
-    if (recipientBalance) {
-      await tx.balance.update({
-        where: { id: recipientBalance.id },
-        data: { amount: { increment: amount } }
-      });
-    } else {
-      await tx.balance.create({
-        data: {
-          accountId: recipient.account!.id,
-          currency: currency,
-          amount: amount
-        }
-      });
-    }
+    await applyFiatMovement(tx, recipient.id, currency, amount);
 
     // 2.3 Create Transfer Record
     const newTransfer = await tx.transfer.create({
@@ -125,6 +94,58 @@ export async function processInternalTransfer(
               totalDeduction
             }
           }
+        }
+      }
+    });
+
+    // 2.3.1 Create User Transactions for statement (sender + recipient)
+    await tx.userTransaction.create({
+      data: {
+        userId: senderId,
+        accountId: senderWallet.id,
+        type: 'TRANSFER',
+        amount: amount,
+        currency: currency,
+        status: 'COMPLETED',
+        metadata: {
+          direction: 'OUT',
+          recipientEmail: recipient.email,
+          transferId: newTransfer.id,
+          fee: feeAmount,
+          totalDeduction,
+        }
+      }
+    });
+
+    await tx.userTransaction.create({
+      data: {
+        userId: recipient.id,
+        accountId: recipient.account!.id,
+        type: 'TRANSFER',
+        amount: amount,
+        currency: currency,
+        status: 'COMPLETED',
+        metadata: {
+          direction: 'IN',
+          senderEmail: senderEmail,
+          transferId: newTransfer.id,
+        }
+      }
+    });
+
+    await tx.userTransaction.create({
+      data: {
+        userId: senderId,
+        accountId: senderWallet.id,
+        type: 'FEE',
+        amount: feeAmount,
+        currency: currency,
+        status: 'COMPLETED',
+        metadata: {
+          direction: 'OUT',
+          recipientEmail: recipient.email,
+          transferId: newTransfer.id,
+          feePercentage,
         }
       }
     });

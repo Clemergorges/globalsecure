@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { ArrowUpRight, ArrowDownLeft, History, Wallet, TrendingUp, Send } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { getExchangeRate } from '@/lib/services/exchange';
+import { backfillFiatBalancesFromAccount } from '@/lib/services/fiat-ledger';
 
 export default async function DashboardPage() {
   const t = await getTranslations('Dashboard');
@@ -20,7 +21,6 @@ export default async function DashboardPage() {
   let account = await prisma.account.findUnique({
     where: { userId: session.userId },
     include: {
-      balances: true,
       userTransactions: {
         take: 5,
         orderBy: { createdAt: 'desc' }
@@ -35,17 +35,19 @@ export default async function DashboardPage() {
         data: {
           userId: session.userId,
           primaryCurrency: 'EUR',
-          balances: {
-            create: { currency: 'EUR', amount: 0 }
-          }
         },
         include: {
-          balances: true,
           userTransactions: {
             take: 5,
             orderBy: { createdAt: 'desc' }
           }
         }
+      });
+
+      await prisma.fiatBalance.upsert({
+        where: { userId_currency: { userId: session.userId, currency: 'EUR' } },
+        update: {},
+        create: { userId: session.userId, currency: 'EUR', amount: 0 },
       });
     } catch (error) {
       console.error('Failed to auto-create wallet:', error);
@@ -53,8 +55,8 @@ export default async function DashboardPage() {
         <div className="p-8">
           <Card className="bg-red-950/20 border-red-500/50">
             <CardContent className="p-6">
-              <h2 className="text-red-400 font-bold text-lg">Carteira não encontrada</h2>
-              <p className="text-red-300/80">Ocorreu um erro ao carregar sua carteira. Por favor, contate o suporte.</p>
+              <h2 className="text-red-400 font-bold text-lg">{t('walletNotFoundTitle')}</h2>
+              <p className="text-red-300/80">{t('walletNotFoundDescription')}</p>
             </CardContent>
           </Card>
         </div>
@@ -62,14 +64,85 @@ export default async function DashboardPage() {
     }
   }
 
+  let fiatBalances = await prisma.fiatBalance.findMany({
+    where: { userId: session.userId },
+    select: { currency: true, amount: true },
+  });
+  if (fiatBalances.length === 0) {
+    await prisma.$transaction(async (tx) => {
+      await backfillFiatBalancesFromAccount(tx, session.userId, account.id);
+    });
+    fiatBalances = await prisma.fiatBalance.findMany({
+      where: { userId: session.userId },
+      select: { currency: true, amount: true },
+    });
+  }
+
   // Calculate Total Balance in EUR (Multi-currency support)
   let totalEurBalance = 0;
-  for (const balance of account.balances) {
+  for (const balance of fiatBalances) {
     const rate = await getExchangeRate(balance.currency, 'EUR');
     totalEurBalance += balance.amount.toNumber() * rate;
   }
 
-  const usdtBalance = account.balances.find(b => b.currency === 'USDT')?.amount.toNumber() || 0;
+  const usdtBalance =
+    fiatBalances.find((b) => b.currency === 'USDT')?.amount.toNumber() ||
+    fiatBalances.find((b) => b.currency === 'USD')?.amount.toNumber() ||
+    0;
+
+  const yieldTransfers = await prisma.transfer.findMany({
+    where: {
+      senderId: session.userId,
+      yieldPositionId: { not: null },
+      status: { in: ['PENDING', 'PROCESSING', 'COMPLETED'] },
+    },
+    select: { amountSent: true, currencySent: true },
+    take: 200,
+  });
+
+  const yieldCurrencies = Array.from(new Set(yieldTransfers.map((tr) => tr.currencySent)));
+  const yieldRatesToEur: Record<string, number> = {};
+  for (const c of yieldCurrencies) {
+    yieldRatesToEur[c] = await getExchangeRate(c, 'EUR');
+  }
+
+  const totalYieldPrincipalEur = yieldTransfers.reduce((sum, tr) => {
+    const amount = tr.amountSent.toNumber();
+    const rate = yieldRatesToEur[tr.currencySent] ?? 1;
+    return sum + amount * rate;
+  }, 0);
+
+  const yieldUser = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { yieldEnabled: true },
+  });
+
+  const creditLine = await prisma.userCreditLine.findUnique({
+    where: { userId: session.userId },
+    select: { collateralValueUsd: true, ltvMax: true },
+  });
+
+  const yieldDebtAgg = await prisma.yieldLiability.aggregate({
+    where: { userId: session.userId, status: { in: ['PENDING_SETTLEMENT', 'SETTLED_READY'] } },
+    _sum: { amountUsd: true },
+  });
+
+  const yieldReservedAgg = await prisma.yieldLiability.aggregate({
+    where: { userId: session.userId, status: 'PENDING_SETTLEMENT' },
+    _sum: { amountUsd: true },
+  });
+
+  const collateralStubUsd = Number(process.env.YIELD_COLLATERAL_VALUE_USD_STUB || 0) || 0;
+  const collateralValueUsd = (creditLine?.collateralValueUsd?.toNumber() || 0) || collateralStubUsd;
+  const ltvMax = creditLine?.ltvMax?.toNumber() || (Number(process.env.YIELD_LTV_MAX_BPS || 3500) / 10000);
+  const powerUsd = collateralValueUsd * ltvMax;
+  const debtUsd = yieldDebtAgg._sum.amountUsd?.toNumber() || 0;
+  const reservedUsd = yieldReservedAgg._sum.amountUsd?.toNumber() || 0;
+  const availableUsd = Math.max(powerUsd - debtUsd, 0);
+  const usdToEur = await getExchangeRate('USD', 'EUR');
+  const powerEur = powerUsd * usdToEur;
+  const reservedEur = reservedUsd * usdToEur;
+  const availableEur = availableUsd * usdToEur;
   
   // Helper for transaction description
   const getTxDescription = (tx: any) => {
@@ -95,7 +168,7 @@ export default async function DashboardPage() {
            </Link>
            <Link href="/dashboard/claim/create">
              <Button variant="outline" className="gap-2 border-cyan-500/20 text-cyan-300 hover:text-cyan-200 hover:bg-cyan-500/10">
-               <Send className="w-4 h-4" /> Enviar Cartão
+              <Send className="w-4 h-4" /> {t('sendCard')}
              </Button>
            </Link>
            <Link href="/dashboard/transfers/create">
@@ -145,6 +218,53 @@ export default async function DashboardPage() {
               <Wallet className="w-3 h-3 text-purple-400" />
               {t('polygonNetwork')}
             </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#111116] border-white/5 backdrop-blur-sm relative overflow-hidden group hover:border-emerald-500/20 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+            <CardTitle className="text-sm font-medium text-slate-400">{t('yieldCardTitle')}</CardTitle>
+            <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative z-10 space-y-3">
+            <div className="text-3xl font-bold text-white tracking-tight">
+              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(totalYieldPrincipalEur)}
+            </div>
+            <div className="text-xs text-slate-500">
+              {t('yieldCardSubtitle', { count: yieldTransfers.length })}
+            </div>
+            <div className="flex justify-end">
+              <Link href="/dashboard/yield" className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium transition-colors">
+                {t('yieldCardCta')} <ArrowUpRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#111116] border-white/5 backdrop-blur-sm relative overflow-hidden group hover:border-amber-500/20 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+            <CardTitle className="text-sm font-medium text-slate-400">{t('yieldBuyingPower')}</CardTitle>
+            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative z-10 space-y-2">
+            <div className="text-3xl font-bold text-white tracking-tight">
+              {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(powerEur)}
+            </div>
+            <div className="text-xs text-slate-500">
+              {yieldUser?.yieldEnabled ? t('yieldEnabledStatus') : t('yieldDisabledStatus')}
+            </div>
+            <div className="text-xs text-slate-500">
+              {t('yieldReservedLabel')}: {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(reservedEur)}
+            </div>
+            <div className="text-xs text-slate-500">
+              {t('yieldAvailableLabel')}: {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(availableEur)}
+            </div>
           </CardContent>
         </Card>
       </div>

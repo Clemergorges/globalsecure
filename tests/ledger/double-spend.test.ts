@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import { createTestUsers, cleanupTestUsers, getTestUser } from '../fixtures/test-users';
 import { executeWithRaceCondition } from '../helpers/concurrent-operations';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 
 describe('Double Spend Prevention Tests', () => {
     beforeAll(async () => {
@@ -11,7 +9,6 @@ describe('Double Spend Prevention Tests', () => {
 
     afterAll(async () => {
         await cleanupTestUsers();
-        await prisma.$disconnect();
     });
 
     describe('2.1. Concurrent Transfers with Insufficient Balance', () => {

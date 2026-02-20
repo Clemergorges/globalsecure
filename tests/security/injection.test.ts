@@ -1,9 +1,7 @@
 import { POST } from '@/app/api/transfers/internal/route';
 import { NextRequest } from 'next/server';
 import { createTestUsers, cleanupTestUsers } from '../fixtures/test-users';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 
 // Mock Auth to be logged in as Attacker
 jest.mock('@/lib/auth', () => ({
@@ -25,7 +23,6 @@ describe('Security: Injection Attacks', () => {
 
     afterAll(async () => {
         await cleanupTestUsers();
-        await prisma.$disconnect();
     });
 
     it('should sanitize or reject SQL Injection in transfer description', async () => {

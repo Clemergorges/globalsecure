@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, CheckCircle, Copy, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 
 type ClaimPublic =
   | { ok: false; error: string }
@@ -27,10 +28,10 @@ type ClaimUnlock =
   | { ok: false; error: string; attemptsRemaining?: number }
   | { ok: true; cardNumber: string; cvc: string; expMonth: number; expYear: number; brand: string };
 
-function formatCurrency(amount: any, currency: string) {
+function formatCurrency(amount: any, currency: string, locale: string) {
   const num = typeof amount === 'number' ? amount : Number(amount);
   try {
-    return new Intl.NumberFormat('pt-PT', { style: 'currency', currency }).format(num);
+    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(num);
   } catch {
     return `${num} ${currency}`;
   }
@@ -39,6 +40,9 @@ function formatCurrency(amount: any, currency: string) {
 export default function ClaimPage() {
   const params = useParams<{ token: string }>();
   const token = params?.token || '';
+  const t = useTranslations('Claim');
+  const tc = useTranslations('Common');
+  const locale = useLocale();
 
   const [loading, setLoading] = useState(true);
   const [claim, setClaim] = useState<ClaimPublic | null>(null);
@@ -65,11 +69,11 @@ export default function ClaimPage() {
         if (cancelled) return;
         setClaim(data);
         if (!res.ok || !data || (data as any).ok === false) {
-          setError((data as any)?.error || 'Erro ao carregar link.');
+          setError((data as any)?.error || t('errors.loadFailed'));
         }
       } catch {
         if (cancelled) return;
-        setError('Erro ao carregar link. Tente novamente.');
+        setError(t('errors.loadFailedRetry'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -95,24 +99,24 @@ export default function ClaimPage() {
       if (!res.ok || (data as any).ok === false) {
         const errCode = (data as any)?.error || 'Erro ao desbloquear.';
         if (errCode === 'INVALID_UNLOCK_CODE') {
-          setError(`Código incorreto. Tentativas restantes: ${(data as any)?.attemptsRemaining ?? 0}/3.`);
+          setError(t('errors.invalidUnlockCode', { remaining: (data as any)?.attemptsRemaining ?? 0 }));
         } else if (errCode === 'TOO_MANY_ATTEMPTS') {
-          setError('Cartão bloqueado por segurança. Tente novamente mais tarde.');
+          setError(t('errors.tooManyAttempts'));
         } else if (errCode === 'CLAIM_EXPIRED') {
-          setError('Esse link expirou. Peça um novo ao remetente.');
+          setError(t('errors.claimExpired'));
         } else if (errCode === 'CLAIM_ALREADY_CLAIMED') {
-          setError('Esse cartão já foi desbloqueado. Se perdeu os dados, contate suporte.');
+          setError(t('errors.claimAlreadyClaimed'));
         } else if (errCode === 'CLAIM_NOT_FOUND') {
-          setError('Link inválido ou expirado.');
+          setError(t('errors.claimNotFound'));
         } else {
-          setError('Erro ao processar. Tente novamente.');
+          setError(t('errors.generic'));
         }
         return;
       }
       setUnlocked(data);
       setShowDetails(true);
     } catch {
-      setError('Erro ao processar. Tente novamente.');
+      setError(t('errors.generic'));
     } finally {
       setUnlocking(false);
     }
@@ -127,27 +131,27 @@ export default function ClaimPage() {
       <div className="max-w-xl mx-auto space-y-6">
         <Card className="bg-[#111116] border-white/10">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-2xl">Resgatar Pagamento Seguro</CardTitle>
+            <CardTitle className="text-2xl">{t('title')}</CardTitle>
             <CardDescription className="text-slate-400">
-              Insira o código de segurança fornecido pelo remetente para desbloquear.
+              {t('subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {loading ? (
               <div className="flex items-center gap-2 text-slate-300">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Carregando...
+                {tc('loading')}
               </div>
             ) : null}
 
             {!loading && claim?.ok ? (
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-black/20 rounded-xl p-3 border border-white/10">
-                  <div className="text-xs text-slate-400">Valor disponível</div>
-                  <div className="text-lg font-bold">{formatCurrency(claim.amount, claim.currency)}</div>
+                  <div className="text-xs text-slate-400">{t('availableAmount')}</div>
+                  <div className="text-lg font-bold">{formatCurrency(claim.amount, claim.currency, locale)}</div>
                 </div>
                 <div className="bg-black/20 rounded-xl p-3 border border-white/10">
-                  <div className="text-xs text-slate-400">Cartão</div>
+                  <div className="text-xs text-slate-400">{t('card')}</div>
                   <div className="text-lg font-bold">{claim.brand} •••• {claim.last4}</div>
                 </div>
               </div>
@@ -157,8 +161,8 @@ export default function ClaimPage() {
               <div className="bg-red-950/20 text-red-300 p-4 rounded-xl border border-red-500/20 flex gap-2">
                 <AlertCircle className="w-5 h-5 mt-0.5" />
                 <div>
-                  <div className="font-bold">Esse link expirou</div>
-                  <div className="text-sm text-red-200/80">Peça um novo ao remetente.</div>
+                  <div className="font-bold">{t('expired.title')}</div>
+                  <div className="text-sm text-red-200/80">{t('expired.subtitle')}</div>
                 </div>
               </div>
             ) : null}
@@ -173,7 +177,7 @@ export default function ClaimPage() {
             {!loading && !unlocked && claim?.ok && !isExpired ? (
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label>Código de segurança (6 caracteres)</Label>
+                  <Label>{t('unlockCodeLabel')}</Label>
                   <Input
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6))}
@@ -189,10 +193,10 @@ export default function ClaimPage() {
                 >
                   {unlocking ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Desbloqueando...
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t('unlocking')}
                     </span>
                   ) : (
-                    'Desbloquear cartão'
+                    t('unlock')
                   )}
                 </Button>
               </div>
@@ -203,26 +207,26 @@ export default function ClaimPage() {
                 <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-4 flex gap-3">
                   <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5" />
                   <div>
-                    <div className="font-bold text-emerald-300">Cartão desbloqueado</div>
-                    <div className="text-sm text-emerald-200/80">Esses dados só aparecem uma vez. Guarde com segurança.</div>
+                    <div className="font-bold text-emerald-300">{t('unlocked.title')}</div>
+                    <div className="text-sm text-emerald-200/80">{t('unlocked.subtitle')}</div>
                   </div>
                 </div>
 
                 <div className="bg-black/20 border border-white/10 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-semibold">Dados do cartão</div>
+                    <div className="text-sm font-semibold">{t('cardDetailsTitle')}</div>
                     <Button
                       variant="outline"
                       className="border-white/10 text-slate-200 hover:bg-white/5"
                       onClick={() => setShowDetails((v) => !v)}
                     >
                       {showDetails ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-                      {showDetails ? 'Ocultar' : 'Mostrar'}
+                      {showDetails ? t('hide') : t('show')}
                     </Button>
                   </div>
 
                   <div className="bg-black/30 rounded-lg p-3 border border-white/10">
-                    <div className="text-[10px] text-slate-500 uppercase tracking-widest">Número</div>
+                    <div className="text-[10px] text-slate-500 uppercase tracking-widest">{t('number')}</div>
                     <div className="mt-1 flex items-center justify-between gap-3">
                       <div className="font-mono text-lg tracking-wider">
                         {showDetails ? unlocked.cardNumber : '•••• •••• •••• ••••'}
@@ -240,13 +244,13 @@ export default function ClaimPage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-black/30 rounded-lg p-3 border border-white/10">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-widest">Validade</div>
+                      <div className="text-[10px] text-slate-500 uppercase tracking-widest">{t('expires')}</div>
                       <div className="mt-1 font-mono text-lg">
                         {showDetails ? `${String(unlocked.expMonth).padStart(2, '0')}/${String(unlocked.expYear).slice(-2)}` : '••/••'}
                       </div>
                     </div>
                     <div className="bg-black/30 rounded-lg p-3 border border-white/10">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-widest">CVC</div>
+                      <div className="text-[10px] text-slate-500 uppercase tracking-widest">{t('cvc')}</div>
                       <div className="mt-1 flex items-center justify-between gap-3">
                         <div className="font-mono text-lg">{showDetails ? unlocked.cvc : '•••'}</div>
                         <Button

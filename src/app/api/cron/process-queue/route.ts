@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { sendEmail, templates } from '@/lib/services/email';
+import { refreshFxRates, getConfiguredFxPairs } from '@/lib/services/fx-engine';
+import { runTreasuryCheck } from '@/lib/services/treasury';
 
 // This endpoint is called by Vercel Cron every minute
 export async function GET(req: Request) {
@@ -62,6 +64,14 @@ export async function GET(req: Request) {
             if (withdrawId) {
               await processWithdraw(withdrawId);
             }
+            break;
+
+          case 'REFRESH_FX_RATES':
+            await refreshFxRates(((job.payload as any)?.pairs as any[]) || getConfiguredFxPairs());
+            break;
+
+          case 'TREASURY_CHECK':
+            await runTreasuryCheck();
             break;
             
           default:

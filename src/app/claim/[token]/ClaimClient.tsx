@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription as DialogDesc, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertCircle, CheckCircle, Copy, Eye, EyeOff, Loader2, Smartphone } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatCurrencyLocale } from '@/lib/utils';
 
 type ClaimClientProps = {
   transferId: string;
@@ -28,21 +30,20 @@ function formatTimeLeft(expiresAtISO: string, nowMs: number) {
   const totalMinutes = Math.floor(diffMs / 60000);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  if (hours <= 0) return `${minutes} min`;
-  return `${hours}h ${minutes}min`;
-}
-
-function formatCurrency(amount: number, currency: string) {
-  try {
-    return new Intl.NumberFormat('pt-PT', { style: 'currency', currency }).format(amount);
-  } catch {
-    return `${amount} ${currency}`;
-  }
+  return { hours, minutes };
 }
 
 export default function ClaimClient(props: ClaimClientProps) {
   const [nowMs, setNowMs] = useState(0);
+  const t = useTranslations('ClaimClient');
+  const tc = useTranslations('Common');
+  const locale = useLocale();
   const timeLeft = useMemo(() => formatTimeLeft(props.expiresAtISO, nowMs), [props.expiresAtISO, nowMs]);
+  const timeLeftLabel = useMemo(() => {
+    if (!timeLeft) return '';
+    if (timeLeft.hours <= 0) return t('time.minutes', { minutes: timeLeft.minutes });
+    return t('time.hoursMinutes', { hours: timeLeft.hours, minutes: timeLeft.minutes });
+  }, [t, timeLeft]);
   const isExpired = useMemo(() => {
     const expiresAt = new Date(props.expiresAtISO).getTime();
     if (props.claimStatus === 'EXPIRED' || props.claimStatus === 'CANCELLED') return true;
@@ -87,12 +88,12 @@ export default function ClaimClient(props: ClaimClientProps) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        const msg = (data as any)?.error || 'Código inválido. Tente novamente.';
+        const msg = (data as any)?.error || t('errors.invalidCodeTryAgain');
         const nextAttempts = attempts + 1;
         setAttempts(nextAttempts);
         if (nextAttempts >= 5) {
           setBlocked(true);
-          setError('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+          setError(t('errors.tooManyAttempts'));
         } else {
           setError(msg);
         }
@@ -102,13 +103,13 @@ export default function ClaimClient(props: ClaimClientProps) {
       setUnlocked(true);
       setShowDetails(true);
     } catch {
-      setError('Falha de rede. Tente novamente.');
+      setError(t('errors.network'));
     } finally {
       setSubmitting(false);
     }
   }
 
-  function copy(text: string, label: string) {
+  function copy(text: string) {
     navigator.clipboard.writeText(text);
     setError(null);
   }
@@ -118,20 +119,20 @@ export default function ClaimClient(props: ClaimClientProps) {
       <div className="max-w-xl mx-auto space-y-6">
         <Card className="bg-[#111116] border-white/10">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-2xl">Você recebeu um cartão pré-pago GlobalSecureSend</CardTitle>
+            <CardTitle className="text-2xl">{t('title')}</CardTitle>
             <CardDescription className="text-slate-400">
-              Use agora, sem precisar criar conta bancária.
+              {t('subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-black/20 rounded-xl p-3 border border-white/10">
-                <div className="text-xs text-slate-400">Valor disponível</div>
-                <div className="text-lg font-bold">{formatCurrency(props.amount, props.currency)}</div>
+                <div className="text-xs text-slate-400">{t('availableAmount')}</div>
+                <div className="text-lg font-bold">{formatCurrencyLocale(props.amount, props.currency, locale)}</div>
               </div>
               <div className="bg-black/20 rounded-xl p-3 border border-white/10">
-                <div className="text-xs text-slate-400">Expira em</div>
-                <div className="text-lg font-bold">{isExpired ? 'Expirado' : timeLeft}</div>
+                <div className="text-xs text-slate-400">{t('expiresIn')}</div>
+                <div className="text-lg font-bold">{isExpired ? t('expiredStatus') : timeLeftLabel}</div>
               </div>
             </div>
 
@@ -139,15 +140,15 @@ export default function ClaimClient(props: ClaimClientProps) {
               <div className="bg-red-950/20 text-red-300 p-4 rounded-xl border border-red-500/20 flex gap-2">
                 <AlertCircle className="w-5 h-5 mt-0.5" />
                 <div>
-                  <div className="font-bold">Este cartão expirou</div>
-                  <div className="text-sm text-red-200/80">Peça para quem enviou gerar um novo link.</div>
+                  <div className="font-bold">{t('expired.title')}</div>
+                  <div className="text-sm text-red-200/80">{t('expired.subtitle')}</div>
                 </div>
               </div>
             ) : (
               <div className="bg-cyan-950/20 text-cyan-200 p-4 rounded-xl border border-cyan-500/20">
-                <div className="font-semibold">Passo 1 de 3</div>
+                <div className="font-semibold">{t('steps.step1Title')}</div>
                 <div className="text-sm text-cyan-200/80">
-                  Digite o código que você recebeu do remetente e desbloqueie seu cartão.
+                  {t('steps.step1Description')}
                 </div>
               </div>
             )}
@@ -155,15 +156,15 @@ export default function ClaimClient(props: ClaimClientProps) {
             {!isExpired && !unlocked && (
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label>Código de desbloqueio</Label>
+                  <Label>{t('unlockCode')}</Label>
                   <Input
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    placeholder="Digite o código"
+                    placeholder={t('unlockCodePlaceholder')}
                     className="bg-black/20 border-white/10 text-white placeholder:text-slate-500"
                     disabled={submitting || blocked}
                   />
-                  <p className="text-xs text-slate-500">Dica: o remetente envia esse código por um canal seguro.</p>
+                  <p className="text-xs text-slate-500">{t('unlockCodeHint')}</p>
                 </div>
                 <Button
                   onClick={handleUnlock}
@@ -172,10 +173,10 @@ export default function ClaimClient(props: ClaimClientProps) {
                 >
                   {submitting ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Desbloqueando...
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t('unlocking')}
                     </span>
                   ) : (
-                    'Desbloquear cartão'
+                    t('unlock')
                   )}
                 </Button>
               </div>
@@ -193,27 +194,27 @@ export default function ClaimClient(props: ClaimClientProps) {
                 <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-4 flex gap-3">
                   <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5" />
                   <div>
-                    <div className="font-bold text-emerald-300">Cartão desbloqueado</div>
-                    <div className="text-sm text-emerald-200/80">Passo 2 de 3: use os dados abaixo para comprar online.</div>
+                    <div className="font-bold text-emerald-300">{t('unlocked.title')}</div>
+                    <div className="text-sm text-emerald-200/80">{t('unlocked.subtitle')}</div>
                   </div>
                 </div>
 
                 <div className="bg-black/20 border border-white/10 rounded-xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-semibold">Dados do cartão (demonstração)</div>
+                    <div className="text-sm font-semibold">{t('cardDataDemo')}</div>
                     <Button
                       variant="outline"
                       className="border-white/10 text-slate-200 hover:bg-white/5"
                       onClick={() => setShowDetails((v) => !v)}
                     >
                       {showDetails ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-                      {showDetails ? 'Ocultar' : 'Mostrar'}
+                      {showDetails ? t('hide') : t('show')}
                     </Button>
                   </div>
 
                   <div className="grid grid-cols-1 gap-3">
                     <div className="bg-black/30 rounded-lg p-3 border border-white/10">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-widest">Número</div>
+                      <div className="text-[10px] text-slate-500 uppercase tracking-widest">{t('cardNumber')}</div>
                       <div className="mt-1 flex items-center justify-between gap-3">
                         <div className="font-mono text-lg tracking-wider">
                           {showDetails ? fakePan : '•••• •••• •••• ••••'}
@@ -222,7 +223,7 @@ export default function ClaimClient(props: ClaimClientProps) {
                           size="icon"
                           variant="ghost"
                           className="text-slate-300 hover:bg-white/5"
-                          onClick={() => copy(fakePan, 'Número')}
+                          onClick={() => copy(fakePan)}
                         >
                           <Copy className="w-4 h-4" />
                         </Button>
@@ -231,18 +232,18 @@ export default function ClaimClient(props: ClaimClientProps) {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-black/30 rounded-lg p-3 border border-white/10">
-                        <div className="text-[10px] text-slate-500 uppercase tracking-widest">Validade</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-widest">{t('expires')}</div>
                         <div className="mt-1 font-mono text-lg">{showDetails ? cardExpiry : '••/••'}</div>
                       </div>
                       <div className="bg-black/30 rounded-lg p-3 border border-white/10">
-                        <div className="text-[10px] text-slate-500 uppercase tracking-widest">CVC</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-widest">{t('cvc')}</div>
                         <div className="mt-1 flex items-center justify-between gap-3">
                           <div className="font-mono text-lg">{showDetails ? fakeCvc : '•••'}</div>
                           <Button
                             size="icon"
                             variant="ghost"
                             className="text-slate-300 hover:bg-white/5"
-                            onClick={() => copy(fakeCvc, 'CVC')}
+                            onClick={() => copy(fakeCvc)}
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
@@ -252,15 +253,15 @@ export default function ClaimClient(props: ClaimClientProps) {
                   </div>
 
                   <p className="text-xs text-slate-500">
-                    Integração para mostrar PAN/CVC reais será conectada ao emissor/TSP. 
+                    {t('demoNote')}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="bg-cyan-950/20 border border-cyan-500/20 rounded-xl p-4">
-                    <div className="font-semibold">Passo 3 de 3</div>
+                    <div className="font-semibold">{t('steps.step3Title')}</div>
                     <div className="text-sm text-cyan-200/80">
-                      Adicione ao seu telemóvel ou use para compras online.
+                      {t('steps.step3Description')}
                     </div>
                   </div>
 
@@ -269,42 +270,42 @@ export default function ClaimClient(props: ClaimClientProps) {
                     onClick={() => setShowComingSoon(true)}
                   >
                     <Smartphone className="w-5 h-5 mr-2" />
-                    Adicionar ao Apple Pay
+                    {t('addToApplePay')}
                   </Button>
                   <Button
                     className="w-full h-14 bg-white text-black hover:bg-slate-100 font-bold text-base"
                     onClick={() => setShowComingSoon(true)}
                   >
                     <Smartphone className="w-5 h-5 mr-2" />
-                    Adicionar ao Google Pay
+                    {t('addToGooglePay')}
                   </Button>
                 </div>
 
                 <Card className="bg-[#111116] border-white/10">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Onde posso usar?</CardTitle>
+                    <CardTitle className="text-lg">{t('whereToUse.title')}</CardTitle>
                     <CardDescription className="text-slate-400">
-                      Você pode usar este cartão como um cartão Visa normal.
+                      {t('whereToUse.subtitle')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm text-slate-200/90">
                     <ul className="list-disc pl-5 space-y-1">
-                      <li>Lojas físicas que aceitam contactless</li>
-                      <li>Compras online</li>
-                      <li>Apps que aceitam cartões Visa</li>
+                      <li>{t('whereToUse.items.contactless')}</li>
+                      <li>{t('whereToUse.items.online')}</li>
+                      <li>{t('whereToUse.items.apps')}</li>
                     </ul>
 
                     <Accordion type="single" collapsible className="w-full">
                       <AccordionItem value="advanced" className="border-white/10">
                         <AccordionTrigger className="text-slate-300 hover:text-white">
-                          Ver detalhes avançados
+                          {t('advanced.title')}
                         </AccordionTrigger>
                         <AccordionContent className="text-slate-400">
                           <div className="space-y-2">
-                            <div>Moeda: {props.currency}</div>
-                            <div>Últimos 4 dígitos: {props.cardLast4}</div>
-                            <div>Expira em: {timeLeft}</div>
-                            {props.recipientEmail ? <div>Email do destinatário: {props.recipientEmail}</div> : null}
+                            <div>{t('advanced.currency', { currency: props.currency })}</div>
+                            <div>{t('advanced.last4', { last4: props.cardLast4 })}</div>
+                            <div>{t('advanced.expiresIn', { time: timeLeftLabel })}</div>
+                            {props.recipientEmail ? <div>{t('advanced.recipientEmail', { email: props.recipientEmail })}</div> : null}
                           </div>
                         </AccordionContent>
                       </AccordionItem>
@@ -320,14 +321,14 @@ export default function ClaimClient(props: ClaimClientProps) {
       <Dialog open={showComingSoon} onOpenChange={setShowComingSoon}>
         <DialogContent className="bg-[#0A0A0F] border-white/10 text-white sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Em breve</DialogTitle>
+            <DialogTitle>{t('comingSoon.title')}</DialogTitle>
             <DialogDesc className="text-slate-400">
-              A integração com Apple Pay / Google Pay está em desenvolvimento.
+              {t('comingSoon.description')}
             </DialogDesc>
           </DialogHeader>
           <DialogFooter>
             <Button className="w-full bg-cyan-500 text-black hover:bg-cyan-600" onClick={() => setShowComingSoon(false)}>
-              Ok
+              {tc('confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -14,28 +14,37 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from 'next-intl';
 
-const registerSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string()
-    .min(8, "Mínimo 8 caracteres")
-    .regex(/[A-Z]/, "Pelo menos uma letra maiúscula")
-    .regex(/[0-9]/, "Pelo menos um número"),
-  country: z.string().length(2, "Selecione um país"),
-  gdprConsent: z.boolean().refine(val => val === true, {
-    message: "Consentimento obrigatório"
-  }),
-  marketingConsent: z.boolean().optional(),
-});
-
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type RegisterFormValues = {
+  email: string;
+  password: string;
+  country: string;
+  gdprConsent: boolean;
+  marketingConsent?: boolean;
+};
 
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const t = useTranslations('Register');
+  const tc = useTranslations('Common');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   
+  const registerSchema = z.object({
+    email: z.string().email(t('validation.invalidEmail')),
+    password: z.string()
+      .min(8, t('validation.passwordMin'))
+      .regex(/[A-Z]/, t('validation.passwordUpper'))
+      .regex(/[0-9]/, t('validation.passwordNumber')),
+    country: z.string().length(2, t('validation.selectCountry')),
+    gdprConsent: z.boolean().refine(val => val === true, {
+      message: t('validation.consentRequired')
+    }),
+    marketingConsent: z.boolean().optional(),
+  });
+
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -60,20 +69,20 @@ export default function RegisterPage() {
       const result = await res.json();
 
       if (!res.ok) {
-        throw new Error(result.error || 'Falha no registro');
+        throw new Error(result.error || t('errors.registerFailed'));
       }
 
       setSuccess(true);
       toast({
-        title: "Conta criada com sucesso!",
-        description: "Enviamos um código para seu email. Verifique para continuar.",
+        title: t('toast.successTitle'),
+        description: t('toast.successDescription'),
       });
 
       router.push(`/verify?email=${encodeURIComponent(data.email)}`);
 
     } catch (error: any) {
       toast({
-        title: "Erro no cadastro",
+        title: tc('error'),
         description: error.message,
         variant: "destructive"
       });
@@ -90,16 +99,18 @@ export default function RegisterPage() {
                     <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center">
                         <Mail className="w-8 h-8 text-green-500" />
                     </div>
-                    <CardTitle className="text-2xl font-bold text-white">Verifique seu Email</CardTitle>
+                    <CardTitle className="text-2xl font-bold text-white">{t('verify.title')}</CardTitle>
                     <CardDescription className="text-slate-400">
-                        Enviamos um código de verificação para <strong>{form.getValues('email')}</strong>.
-                        <br/><br/>
-                        Use o código para ativar sua conta e continuar.
+                        {t.rich('verify.description', {
+                          email: form.getValues('email'),
+                          strong: (chunks) => <strong>{chunks}</strong>,
+                          br: () => <br />,
+                        })}
                     </CardDescription>
                 </CardHeader>
                 <CardFooter>
                     <Button onClick={() => router.push(`/verify?email=${encodeURIComponent(form.getValues('email'))}`)} className="w-full bg-cyan-500 hover:bg-cyan-600 text-black">
-                        Continuar
+                        {t('verify.continue')}
                     </Button>
                 </CardFooter>
             </Card>
@@ -114,21 +125,21 @@ export default function RegisterPage() {
           <div className="mx-auto w-12 h-12 bg-cyan-500/10 rounded-full flex items-center justify-center mb-4">
             <ShieldCheck className="w-6 h-6 text-cyan-400" />
           </div>
-          <CardTitle className="text-2xl font-bold text-white">Criar Conta</CardTitle>
+          <CardTitle className="text-2xl font-bold text-white">{t('title')}</CardTitle>
           <CardDescription className="text-slate-400">
-            Comece sua jornada financeira global
+            {t('subtitle')}
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-slate-300">Email</Label>
+              <Label className="text-slate-300">{t('email')}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                 <Input 
                   {...register('email')} 
-                  placeholder="nome@exemplo.com" 
+                  placeholder={t('emailPlaceholder')}
                   disabled={loading}
                   className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20" 
                 />
@@ -137,7 +148,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-slate-300">Senha</Label>
+              <Label className="text-slate-300">{t('password')}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                 <Input 
@@ -152,21 +163,21 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-slate-300">País de Residência</Label>
+              <Label className="text-slate-300">{t('country')}</Label>
               <Select 
                 onValueChange={(val) => setValue('country', val)} 
                 defaultValue={watchedCountry}
                 disabled={loading}
               >
                 <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder={t('selectCountryPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent className="bg-[#111116] border-white/10 text-white">
-                  <SelectItem value="BR">🇧🇷 Brasil</SelectItem>
-                  <SelectItem value="US">🇺🇸 Estados Unidos</SelectItem>
-                  <SelectItem value="LU">🇱🇺 Luxemburgo</SelectItem>
-                  <SelectItem value="DE">🇩🇪 Alemanha</SelectItem>
-                  <SelectItem value="PT">🇵🇹 Portugal</SelectItem>
+                  <SelectItem value="BR">{t('countries.br')}</SelectItem>
+                  <SelectItem value="US">{t('countries.us')}</SelectItem>
+                  <SelectItem value="LU">{t('countries.lu')}</SelectItem>
+                  <SelectItem value="DE">{t('countries.de')}</SelectItem>
+                  <SelectItem value="PT">{t('countries.pt')}</SelectItem>
                 </SelectContent>
               </Select>
               {errors.country && <p className="text-xs text-red-400">{errors.country.message}</p>}
@@ -181,7 +192,7 @@ export default function RegisterPage() {
                   className="border-white/20 data-[state=checked]:bg-cyan-500 data-[state=checked]:text-black"
                 />
                 <label htmlFor="gdpr" className="text-xs text-slate-400 leading-tight">
-                  Concordo com os Termos de Uso e Política de Privacidade. Entendo que meus dados serão processados conforme a GDPR/LGPD.
+                  {t('gdprConsent')}
                 </label>
               </div>
               {errors.gdprConsent && <p className="text-xs text-red-400">{errors.gdprConsent.message}</p>}
@@ -193,11 +204,11 @@ export default function RegisterPage() {
                 className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold h-11"
             >
               {loading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-              Criar Conta Grátis
+              {t('submit')}
             </Button>
             
             <p className="text-center text-xs text-slate-500 mt-4">
-                Já tem uma conta? <a href="/auth/login" className="text-cyan-400 hover:underline">Fazer Login</a>
+                {t.rich('loginLink', { link: (chunks) => <a href="/auth/login" className="text-cyan-400 hover:underline">{chunks}</a> })}
             </p>
           </form>
         </CardContent>

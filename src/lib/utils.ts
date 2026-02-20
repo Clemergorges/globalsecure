@@ -12,3 +12,11 @@ export function formatCurrency(amount: number | string, currency = 'EUR') {
     currency: currency,
   }).format(value);
 }
+
+export function formatCurrencyLocale(amount: number | string, currency: string, locale: string) {
+  const value = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currency,
+  }).format(value);
+}

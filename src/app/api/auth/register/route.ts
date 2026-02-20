@@ -90,6 +90,9 @@ export async function POST(req: Request) {
           marketingConsent: marketingConsent || false,
           kycLevel: 0,
           kycStatus: 'PENDING',
+          fiatBalances: {
+            create: { currency: determinedCurrency, amount: 0 }
+          },
           account: {
             create: {
               status: 'UNVERIFIED',

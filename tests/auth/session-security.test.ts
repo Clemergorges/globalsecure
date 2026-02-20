@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import { createTestUsers, cleanupTestUsers, getTestUser } from '../fixtures/test-users';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 const JWT_SECRET = process.env.JWT_SECRET || 'test_secret_key';
 
 describe('Session Security and Authentication Tests', () => {
@@ -13,7 +11,6 @@ describe('Session Security and Authentication Tests', () => {
 
     afterAll(async () => {
         await cleanupTestUsers();
-        await prisma.$disconnect();
     });
 
     describe('5.1. Valid Login', () => {

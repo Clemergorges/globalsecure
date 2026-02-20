@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { isYieldSpendingEnabled } from '@/lib/services/fiat-ledger';
 
 export async function GET() {
   try {
@@ -7,7 +8,7 @@ export async function GET() {
     await prisma.$queryRaw`SELECT 1`;
     
     return NextResponse.json(
-      { status: 'ok', timestamp: new Date().toISOString() },
+      { status: 'ok', timestamp: new Date().toISOString(), yieldSpendingEnabled: isYieldSpendingEnabled() },
       { status: 200 }
     );
   } catch (error) {

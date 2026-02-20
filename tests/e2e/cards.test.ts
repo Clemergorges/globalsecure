@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { createVirtualCard, updateCardStatus, updateCardControls } from '@/lib/services/stripe';
+import { prisma } from '../setup/prisma';
 
 // Mock Stripe Service
 jest.mock('@/lib/services/stripe', () => ({
@@ -9,7 +9,6 @@ jest.mock('@/lib/services/stripe', () => ({
     createIssuingEphemeralKey: jest.fn(),
 }));
 
-const prisma = new PrismaClient();
 const E2E_PREFIX = 'e2e_cards_';
 
 describe('E2E: Virtual Cards', () => {
@@ -43,7 +42,6 @@ describe('E2E: Virtual Cards', () => {
         await prisma.virtualCard.deleteMany({ where: { userId: { in: ids } } });
         await prisma.transfer.deleteMany({ where: { senderId: { in: ids } } });
         await prisma.user.deleteMany({ where: { id: { in: ids } } });
-        await prisma.$disconnect();
     });
 
     it('should create a virtual card and debit balance', async () => {

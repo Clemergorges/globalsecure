@@ -18,6 +18,7 @@ export default function DepositPage() {
   const router = useRouter();
   const { toast } = useToast();
   const t = useTranslations('WalletDeposit');
+  const tc = useTranslations('Common');
   const [loading, setLoading] = useState(false);
   const [amount, setAmount] = useState('');
   
@@ -71,7 +72,7 @@ export default function DepositPage() {
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      toast({ title: tc('error'), description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -110,19 +111,19 @@ export default function DepositPage() {
         <div className="flex flex-col sm:flex-row items-end gap-4 w-full md:w-auto">
           <div className="w-full sm:w-[220px]">
             <Label className="text-xs text-slate-500 mb-1.5 block flex items-center gap-1">
-              <Globe className="w-3 h-3" /> País de Origem
+              <Globe className="w-3 h-3" /> {t('countryOrigin')}
             </Label>
             <Select value={detectedCountry} onValueChange={handleCountryChange}>
               <SelectTrigger className="bg-white/5 border-white/10 text-white h-10 hover:bg-white/10 transition-colors focus:ring-cyan-500/50">
-                <SelectValue placeholder="Selecione seu país" />
+                <SelectValue placeholder={t('countryPlaceholder')} />
               </SelectTrigger>
               <SelectContent className="bg-[#1A1A20] border-white/10 text-white">
-                <SelectItem value="BR">🇧🇷 Brasil</SelectItem>
-                <SelectItem value="LU">🇱🇺 Luxemburgo</SelectItem>
-                <SelectItem value="PT">🇵🇹 Portugal</SelectItem>
-                <SelectItem value="DE">🇩🇪 Alemanha</SelectItem>
-                <SelectItem value="FR">🇫🇷 França</SelectItem>
-                <SelectItem value="US">🇺🇸 Estados Unidos</SelectItem>
+                <SelectItem value="BR">{t('countries.br')}</SelectItem>
+                <SelectItem value="LU">{t('countries.lu')}</SelectItem>
+                <SelectItem value="PT">{t('countries.pt')}</SelectItem>
+                <SelectItem value="DE">{t('countries.de')}</SelectItem>
+                <SelectItem value="FR">{t('countries.fr')}</SelectItem>
+                <SelectItem value="US">{t('countries.us')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -136,40 +137,40 @@ export default function DepositPage() {
                 <MethodCard 
                     className="min-w-[280px] snap-center"
                     icon={<QrCode className="w-10 h-10 text-cyan-400" />}
-                    title="PIX Instantâneo"
-                    desc="Depósito imediato via QR Code. Disponível 24/7."
-                    time="Instantâneo"
+                    title={t('methods.pix.title')}
+                    desc={t('methods.pix.description')}
+                    time={t('methods.pix.time')}
                     onClick={() => setSelectedMethod('pix')}
                 />
             )}
             {showSepa && (
                 <MethodCard 
                     icon={<Landmark className="w-10 h-10 text-blue-400" />}
-                    title="SEPA Instant"
-                    desc="Transferência bancária europeia. IBAN LU dedicado."
-                    time="< 10 segundos"
+                    title={t('methods.sepaInstant.title')}
+                    desc={t('methods.sepaInstant.description')}
+                    time={t('methods.sepaInstant.time')}
                     onClick={() => setSelectedMethod('sepa')}
                 />
             )}
             <MethodCard 
                 icon={<Wallet className="w-10 h-10 text-purple-400" />}
-                title="Criptoativos"
-                desc="Depósito via USDT (Polygon). Taxas reduzidas."
-                time="~5 minutos"
+                title={t('methods.crypto.title')}
+                desc={t('methods.crypto.description')}
+                time={t('methods.crypto.time')}
                 onClick={() => setSelectedMethod('crypto')}
             />
             <MethodCard 
                 icon={<Building className="w-10 h-10 text-emerald-400" />}
-                title="Transferência Bancária"
-                desc="SWIFT/Wire internacional para grandes volumes."
-                time="1-3 dias úteis"
+                title={t('methods.bank.title')}
+                desc={t('methods.bank.description')}
+                time={t('methods.bank.time')}
                 onClick={() => setSelectedMethod('bank')}
             />
           </div>
       ) : (
           <div className="space-y-6">
               <Button variant="ghost" onClick={() => setSelectedMethod(null)} className="pl-0 text-slate-400 hover:text-white">
-                  ← Voltar para métodos
+                  ← {t('backToMethods')}
               </Button>
 
               {/* PIX Content */}
@@ -178,13 +179,13 @@ export default function DepositPage() {
                       <Card className="bg-[#111116] border-white/10">
                         <CardHeader>
                             <CardTitle className="text-white flex items-center gap-2">
-                                <QrCode className="w-6 h-6 text-cyan-400" /> Depósito PIX
+                                <QrCode className="w-6 h-6 text-cyan-400" /> {t('pix.formTitle')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handlePixDeposit} className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label className="text-slate-300">Valor em BRL</Label>
+                                    <Label className="text-slate-300">{t('pixAmountLabel')}</Label>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">R$</span>
                                         <Input 
@@ -197,7 +198,7 @@ export default function DepositPage() {
                                     </div>
                                 </div>
                                 <Button type="submit" disabled={loading || !amount} className="w-full h-12 text-base font-bold bg-cyan-500 hover:bg-cyan-400 text-black">
-                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Gerar PIX Copia e Cola'}
+                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('pix.copyPaste')}
                                 </Button>
                             </form>
                         </CardContent>
@@ -217,27 +218,27 @@ export default function DepositPage() {
                             style={{ width: `${((transferStep - 1) / 2) * 100}%` }} 
                           />
                           
-                          <Step number={1} title="Dados Bancários" active={transferStep >= 1} />
-                          <Step number={2} title="Comprovante" active={transferStep >= 2} />
-                          <Step number={3} title="Conclusão" active={transferStep >= 3} />
+                          <Step number={1} title={t('bank.steps.details')} active={transferStep >= 1} />
+                          <Step number={2} title={t('bank.steps.proof')} active={transferStep >= 2} />
+                          <Step number={3} title={t('bank.steps.done')} active={transferStep >= 3} />
                       </div>
 
                       <Card className="bg-[#111116] border-white/10">
                           {transferStep === 1 && (
                               <div className="p-6 space-y-6">
                                   <div className="bg-white/5 p-6 rounded-xl space-y-4">
-                                      <h3 className="text-lg font-medium text-white mb-4">Dados para Transferência</h3>
-                                      <DetailRow label="Beneficiário" value="Global Secure Send Ltd." />
-                                      <DetailRow label="IBAN" value="LU88 0000 0000 0000 0000" copy />
-                                      <DetailRow label="BIC/SWIFT" value="GSSLULLL" copy />
-                                      <DetailRow label="Banco" value="BGL BNP Paribas" />
+                                      <h3 className="text-lg font-medium text-white mb-4">{t('bank.transferDetailsTitle')}</h3>
+                                      <DetailRow label={t('bank.labels.beneficiary')} value="Global Secure Send Ltd." />
+                                      <DetailRow label={t('bank.labels.iban')} value="LU88 0000 0000 0000 0000" copy />
+                                      <DetailRow label={t('bank.labels.bicSwift')} value="GSSLULLL" copy />
+                                      <DetailRow label={t('bank.labels.bank')} value="BGL BNP Paribas" />
                                       <div className="pt-4 border-t border-white/10">
-                                          <p className="text-sm text-amber-400 font-medium">⚠️ Referência Obrigatória:</p>
+                                          <p className="text-sm text-amber-400 font-medium">{t('bank.referenceRequired')}</p>
                                           <p className="text-2xl font-mono text-white mt-1 select-all">DEPOSIT-{profile.country}-USER</p>
                                       </div>
                                   </div>
                                   <Button onClick={() => setTransferStep(2)} className="w-full h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold">
-                                      Já realizei a transferência
+                                      {t('bank.doneTransfer')}
                                   </Button>
                               </div>
                           )}
@@ -248,8 +249,8 @@ export default function DepositPage() {
                                       <input type="file" id="proof" className="hidden" onChange={handleFileUpload} accept="image/*,.pdf" />
                                       <label htmlFor="proof" className="cursor-pointer block">
                                           <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                                          <p className="text-white font-medium mb-2">Clique para enviar o comprovante</p>
-                                          <p className="text-sm text-slate-500">PDF, JPG ou PNG (Max 5MB)</p>
+                                          <p className="text-white font-medium mb-2">{t('bank.uploadTitle')}</p>
+                                          <p className="text-sm text-slate-500">{t('bank.uploadFormats')}</p>
                                       </label>
                                       {proofFile && (
                                           <div className="mt-4 bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-lg inline-flex items-center gap-2">
@@ -258,7 +259,7 @@ export default function DepositPage() {
                                       )}
                                   </div>
                                   <Button onClick={submitProof} disabled={!proofFile || loading} className="w-full h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold">
-                                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Enviar Comprovante'}
+                                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('bank.uploadSubmit')}
                                   </Button>
                               </div>
                           )}
@@ -268,16 +269,16 @@ export default function DepositPage() {
                                   <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
                                       <CheckCircle className="w-10 h-10 text-emerald-400" />
                                   </div>
-                                  <h3 className="text-2xl font-bold text-white">Comprovante Enviado!</h3>
+                                  <h3 className="text-2xl font-bold text-white">{t('bank.successTitle')}</h3>
                                   <p className="text-slate-400 max-w-md mx-auto">
-                                      Recebemos seus dados. O valor será creditado em sua conta em até 24-48 horas úteis após a compensação bancária.
+                                      {t('bank.successDescription')}
                                   </p>
                                   <div className="bg-slate-900 p-4 rounded-lg inline-block text-left text-sm">
-                                      <p className="text-slate-500">Protocolo:</p>
+                                      <p className="text-slate-500">{t('bank.protocol')}</p>
                                       <p className="text-white font-mono">REQ-{Math.floor(Math.random()*10000)}</p>
                                   </div>
                                   <Button onClick={() => { setSelectedMethod(null); setTransferStep(1); }} variant="outline" className="w-full border-white/10 text-white hover:bg-white/5">
-                                      Voltar ao Início
+                                      {t('bank.backHome')}
                                   </Button>
                               </div>
                           )}
@@ -293,13 +294,13 @@ export default function DepositPage() {
                               <div className="bg-white p-4 inline-block rounded-xl mb-6">
                                   <div className="w-48 h-48 bg-slate-200" /> {/* QR Placeholder */}
                               </div>
-                              <p className="text-slate-400 mb-2">Endereço USDT (Polygon)</p>
+                              <p className="text-slate-400 mb-2">{t('crypto.addressTitle')}</p>
                               <code className="bg-black/40 px-4 py-3 rounded-lg text-purple-400 font-mono block mb-6 break-all select-all border border-purple-500/20">
                                   0x71C7656EC7ab88b098defB751B7401B5f6d8976F
                               </code>
                               <div className="flex gap-2 justify-center">
                                   <Button variant="secondary" className="bg-white/10 hover:bg-white/20 text-white">
-                                      Copiar Endereço
+                                      {t('crypto.copyAddress')}
                                   </Button>
                               </div>
                           </CardContent>
@@ -311,26 +312,26 @@ export default function DepositPage() {
 
       {/* Instructions Accordion */}
       <div className="mt-12 pt-12 border-t border-white/10">
-          <h2 className="text-xl font-bold text-white mb-6">Instruções Detalhadas e FAQ</h2>
+          <h2 className="text-xl font-bold text-white mb-6">{t('faq.title')}</h2>
           <Accordion type="single" collapsible className="w-full space-y-4">
             <AccordionItem value="item-1" className="border border-white/10 rounded-lg bg-[#111116] px-4">
               <AccordionTrigger className="text-slate-300 hover:text-white py-4">
                  <div className="flex items-center gap-3">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-bold">1</span>
-                    Como depositar via Transferência Bancária?
+                    {t('faq.bankHowTo.title')}
                  </div>
               </AccordionTrigger>
               <AccordionContent className="text-slate-400 pt-2 pb-4 space-y-4">
                 <ol className="list-decimal list-inside space-y-2 ml-2">
-                    <li>Selecione a opção <strong>Transferência Bancária</strong> acima.</li>
-                    <li>Copie os dados bancários (IBAN e BIC/SWIFT) fornecidos.</li>
-                    <li>Acesse o aplicativo do seu banco e inicie uma transferência internacional (SEPA ou SWIFT).</li>
-                    <li><strong>Importante:</strong> Insira o código de referência no campo "Descrição" ou "Motivo".</li>
-                    <li>Após realizar a transferência, salve o comprovante (PDF ou Imagem).</li>
-                    <li>Volte aqui e envie o comprovante na etapa 2 do assistente.</li>
+                    <li>{t('faq.bankHowTo.steps.1')}</li>
+                    <li>{t('faq.bankHowTo.steps.2')}</li>
+                    <li>{t('faq.bankHowTo.steps.3')}</li>
+                    <li>{t('faq.bankHowTo.steps.4')}</li>
+                    <li>{t('faq.bankHowTo.steps.5')}</li>
+                    <li>{t('faq.bankHowTo.steps.6')}</li>
                 </ol>
                 <div className="bg-amber-950/20 text-amber-400 p-3 rounded text-sm border border-amber-500/20">
-                    Prazo: 1 a 3 dias úteis após o envio do comprovante.
+                    {t('faq.bankHowTo.deadline')}
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -339,25 +340,25 @@ export default function DepositPage() {
               <AccordionTrigger className="text-slate-300 hover:text-white py-4">
                  <div className="flex items-center gap-3">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-bold">2</span>
-                    Limites e Taxas
+                    {t('faq.limitsFees.title')}
                  </div>
               </AccordionTrigger>
               <AccordionContent className="text-slate-400 pt-2 pb-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="bg-white/5 p-3 rounded">
-                        <p className="text-xs text-slate-500 uppercase mb-1">Depósito Mínimo</p>
+                        <p className="text-xs text-slate-500 uppercase mb-1">{t('faq.limitsFees.minimumDeposit')}</p>
                         <p className="text-white font-mono">€ 10,00</p>
                     </div>
                     <div className="bg-white/5 p-3 rounded">
-                        <p className="text-xs text-slate-500 uppercase mb-1">Depósito Máximo</p>
+                        <p className="text-xs text-slate-500 uppercase mb-1">{t('faq.limitsFees.maximumDeposit')}</p>
                         <p className="text-white font-mono">€ 10.000,00</p>
                     </div>
                     <div className="bg-white/5 p-3 rounded">
-                        <p className="text-xs text-slate-500 uppercase mb-1">Taxa SEPA</p>
-                        <p className="text-emerald-400 font-mono">GRÁTIS</p>
+                        <p className="text-xs text-slate-500 uppercase mb-1">{t('faq.limitsFees.sepaFee')}</p>
+                        <p className="text-emerald-400 font-mono">{t('faq.limitsFees.free')}</p>
                     </div>
                     <div className="bg-white/5 p-3 rounded">
-                        <p className="text-xs text-slate-500 uppercase mb-1">Taxa SWIFT</p>
+                        <p className="text-xs text-slate-500 uppercase mb-1">{t('faq.limitsFees.swiftFee')}</p>
                         <p className="text-white font-mono">€ 25,00</p>
                     </div>
                 </div>
@@ -368,26 +369,26 @@ export default function DepositPage() {
               <AccordionTrigger className="text-slate-300 hover:text-white py-4">
                  <div className="flex items-center gap-3">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-bold">3</span>
-                    Prazo de Compensação
+                    {t('faq.settlement.title')}
                  </div>
               </AccordionTrigger>
               <AccordionContent className="text-slate-400 pt-2 pb-4">
                 <ul className="space-y-2 text-sm">
                     <li className="flex justify-between">
                         <span>SEPA Instant</span>
-                        <span className="text-white">Imediato (24/7)</span>
+                        <span className="text-white">{t('faq.settlement.instant')}</span>
                     </li>
                     <li className="flex justify-between">
                         <span>PIX (Brasil)</span>
-                        <span className="text-white">Imediato (24/7)</span>
+                        <span className="text-white">{t('faq.settlement.instant')}</span>
                     </li>
                     <li className="flex justify-between">
-                        <span>Transferência SEPA</span>
-                        <span className="text-white">1 dia útil</span>
+                        <span>{t('faq.settlement.sepaTransfer')}</span>
+                        <span className="text-white">{t('faq.settlement.oneBusinessDay')}</span>
                     </li>
                     <li className="flex justify-between">
-                        <span>SWIFT (Internacional)</span>
-                        <span className="text-white">3-5 dias úteis</span>
+                        <span>{t('faq.settlement.swiftInternational')}</span>
+                        <span className="text-white">{t('faq.settlement.threeToFiveBusinessDays')}</span>
                     </li>
                 </ul>
               </AccordionContent>

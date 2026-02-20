@@ -45,9 +45,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 
-# Add non-root user for security
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
+RUN mkdir -p .next/cache/images && chown -R nextjs:nodejs .next
 USER nextjs
 
 # Expose port

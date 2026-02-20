@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../setup/prisma';
 
 describe('E2E: Audit & Reconciliation', () => {
     // Read-only tests on existing data or specific audit checks

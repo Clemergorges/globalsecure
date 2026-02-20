@@ -9,9 +9,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export default function LoginPage() {
   const router = useRouter()
+  const t = useTranslations('Login')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -47,7 +49,7 @@ export default function LoginPage() {
         if (data?.code === 'EMAIL_NOT_VERIFIED') {
           setVerifyEmail(formData.email)
         }
-        throw new Error(data.error || 'Falha ao fazer login')
+        throw new Error(data.error || t('errors.loginFailed'))
       }
 
       // Login bem sucedido
@@ -63,9 +65,9 @@ export default function LoginPage() {
   return (
     <Card className="border-none shadow-xl">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Acessar Conta</CardTitle>
+        <CardTitle className="text-2xl font-bold text-center">{t('title')}</CardTitle>
         <CardDescription className="text-center">
-          Digite seu email e senha para entrar
+          {t('subtitle')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -80,19 +82,19 @@ export default function LoginPage() {
                     href={`/verify?email=${encodeURIComponent(verifyEmail)}`}
                     className="mt-1 inline-block text-sm font-medium text-blue-600 hover:text-blue-500"
                   >
-                    Verificar email agora
+                    {t('verifyEmailNow')}
                   </Link>
                 ) : null}
               </div>
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('email')}</Label>
             <Input
               id="email"
               name="email"
               type="email"
-              placeholder="seu@email.com"
+              placeholder={t('emailPlaceholder')}
               required
               value={formData.email}
               onChange={handleChange}
@@ -101,12 +103,12 @@ export default function LoginPage() {
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <Link
                 href="/auth/forgot-password"
                 className="text-sm font-medium text-blue-600 hover:text-blue-500"
               >
-                Esqueceu a senha?
+                {t('forgotPassword')}
               </Link>
             </div>
             <div className="relative">
@@ -138,19 +140,19 @@ export default function LoginPage() {
             {loading ? (
               <span key="loading" className="flex items-center justify-center">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Entrando...
+                {t('submitting')}
               </span>
             ) : (
-              <span key="idle">Entrar</span>
+              <span key="idle">{t('submit')}</span>
             )}
           </Button>
         </form>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-gray-500">
-          Não tem uma conta?{' '}
+          {t('noAccount')}{' '}
           <Link href="/auth/register" className="font-semibold text-blue-600 hover:text-blue-500">
-            Criar agora
+            {t('createNow')}
           </Link>
         </p>
       </CardFooter>

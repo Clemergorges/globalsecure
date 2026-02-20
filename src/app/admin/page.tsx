@@ -64,7 +64,7 @@ export default function AdminDashboard() {
             body: JSON.stringify({
                 userId,
                 status: approve ? 'APPROVED' : 'REJECTED',
-                rejectionReason: approve ? null : 'Documentos ilegíveis ou inválidos.'
+                rejectionReason: approve ? null : t('rejectionReasonDefault')
             })
         });
         fetchUsers();
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant={user.kycStatus === 'APPROVED' ? 'default' : user.kycStatus === 'PENDING' ? 'secondary' : 'destructive'}>
-                            KYC: {user.kycStatus}
+                            {t('kycLabel')}: {user.kycStatus}
                         </Badge>
                     </div>
                 </CardHeader>
