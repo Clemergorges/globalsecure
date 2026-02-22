@@ -7,6 +7,9 @@ import { applyFiatMovement, isYieldSpendingEnabled, recordUserConsent } from '@/
 import { getFxRate } from '@/lib/services/fx-engine';
 import { checkAmlForYieldSpend } from '@/lib/services/aml-rules';
 import { coverFiatSpend } from '@/lib/services/fiat-pool';
+import { getYieldGuardForAsset } from '@/lib/services/market-guard';
+import { checkUserGeoFraudContext } from '@/lib/services/risk-gates';
+import { logger } from '@/lib/logger';
 
 function getMinorUnitDivisor(currency: string) {
   const c = currency.toUpperCase();
@@ -111,6 +114,7 @@ export async function POST(req: Request) {
 
       if (!virtualCard) {
           console.warn(`Card not found for authorization: ${cardId}`);
+          logger.warn({ stripeAuthId: auth.id, stripeCardId: cardId }, 'Issuing authorization: card not found');
           return NextResponse.json({ approved: false, metadata: { reason: 'card_not_found' } });
       }
 
@@ -152,6 +156,7 @@ export async function POST(req: Request) {
       });
 
       if (existing) {
+        logger.info({ stripeAuthId: auth.id, stripeCardId: cardId, approved: existing.status === 'approved' }, 'Issuing authorization: idempotent');
         return NextResponse.json({ approved: existing.status === 'approved' });
       }
 
@@ -281,6 +286,34 @@ export async function POST(req: Request) {
                 return false;
               }
 
+              const geo = await checkUserGeoFraudContext(refreshed.userId, auth.merchant_data?.country || null, {
+                source: 'MERCHANT',
+                mcc: auth.merchant_data?.category || null,
+              });
+              if (!geo.allowed) {
+                await tx.spendTransaction.create({
+                  data: {
+                    cardId: refreshed.id,
+                    stripeAuthId: auth.id,
+                    amount: amountInCardCurrency,
+                    currency: cardCurrency,
+                    merchantName: auth.merchant_data?.name || null,
+                    merchantCategory: auth.merchant_data?.category || null,
+                    merchantCity: auth.merchant_data?.city || null,
+                    merchantCountry: auth.merchant_data?.country || null,
+                    status: 'declined',
+                    metadata: {
+                      spend: { currency: spendCurrency, amount: spendAmount },
+                      fx: fxMeta,
+                      declineReason: 'GEOFRAUD',
+                      geofraud: { code: geo.code, details: geo.details || null },
+                      yield: { missingUsd },
+                    },
+                  },
+                });
+                return false;
+              }
+
               const aml = await checkAmlForYieldSpend(refreshed.userId, {
                 amountUsd: missingUsd,
                 merchantCountry: auth.merchant_data?.country || null,
@@ -339,13 +372,38 @@ export async function POST(req: Request) {
                 return false;
               }
 
-              const ltvMax = getYieldLtvMax();
+              const collateralAsset = 'EETH';
+              const guard = await getYieldGuardForAsset(tx, collateralAsset);
+              if (guard.isYieldPaused) {
+                await tx.spendTransaction.create({
+                  data: {
+                    cardId: refreshed.id,
+                    stripeAuthId: auth.id,
+                    amount: amountInCardCurrency,
+                    currency: cardCurrency,
+                    merchantName: auth.merchant_data?.name || null,
+                    merchantCategory: auth.merchant_data?.category || null,
+                    merchantCity: auth.merchant_data?.city || null,
+                    merchantCountry: auth.merchant_data?.country || null,
+                    status: 'declined',
+                    metadata: {
+                      spend: { currency: spendCurrency, amount: spendAmount },
+                      fx: fxMeta,
+                      declineReason: 'YIELD_PAUSED_BY_MARKET_GUARD',
+                      yield: { missingUsd, marketGuard: guard },
+                    },
+                  },
+                });
+                return false;
+              }
+
+              const ltvMax = Math.min(getYieldLtvMax(), guard.ltvMaxCap.toNumber());
               const creditLine = await tx.userCreditLine.upsert({
                 where: { userId: refreshed.userId },
-                update: { ltvMax },
+                update: { ltvMax, collateralAsset },
                 create: {
                   userId: refreshed.userId,
-                  collateralAsset: 'EETH',
+                  collateralAsset,
                   collateralAmount: 0,
                   collateralValueUsd: 0,
                   ltvMax,
@@ -433,6 +491,17 @@ export async function POST(req: Request) {
         return true;
       });
 
+      if (approved) {
+        logger.info(
+          { stripeAuthId: auth.id, stripeCardId: cardId, userId: virtualCard.userId || null, spendCurrency, spendAmount },
+          'Issuing authorization approved',
+        );
+      } else {
+        logger.warn(
+          { stripeAuthId: auth.id, stripeCardId: cardId, userId: virtualCard.userId || null, spendCurrency, spendAmount },
+          'Issuing authorization declined',
+        );
+      }
       return NextResponse.json({ approved });
     }
     

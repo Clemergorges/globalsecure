@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { updateCardControls } from '@/lib/services/stripe';
+import { getIssuerConnector } from '@/lib/services/issuer-connector';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -37,8 +37,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Call Stripe
-    await updateCardControls(card.stripeCardId, {
+    const issuer = getIssuerConnector();
+    await issuer.updateCardControls(card.stripeCardId, {
         spending_limits: spendingLimit ? [spendingLimit] : undefined,
         blocked_categories: blockedCategories
     });

@@ -6,6 +6,7 @@ module.exports = {
     setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.ts'],
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
+        '^next-intl$': '<rootDir>/tests/mocks/next-intl.ts',
     },
     transformIgnorePatterns: [
         'node_modules/(?!(jose|uuid)/)'

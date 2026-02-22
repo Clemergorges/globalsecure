@@ -8,6 +8,7 @@ import { sendEmail, templates } from '@/lib/services/email';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { logAudit } from '@/lib/logger';
 import { getCurrencyForCountry } from '@/lib/country-config';
+import { getOrCreateCurrentConsentDocument } from '@/lib/services/privacy-consent';
 
 // Etapa 1: Cadastro Simplificado (Sign Up)
 // Apenas Email, Senha, País e Termos
@@ -61,6 +62,8 @@ export async function POST(req: Request) {
     const { email, password, country, gdprConsent, marketingConsent } = parsed.data;
     const normalizedEmail = email.toLowerCase();
 
+    const consentDoc = await getOrCreateCurrentConsentDocument({ locale: 'en' });
+
     // Check existing user
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail }
@@ -104,6 +107,17 @@ export async function POST(req: Request) {
           }
         },
         include: { account: true }
+      });
+
+      await tx.userConsentRecord.create({
+        data: {
+          userId: user.id,
+          consentType: 'GDPR_TERMS',
+          documentVersion: consentDoc.version,
+          acceptedAt: new Date(),
+          ip,
+          userAgent,
+        }
       });
 
       const otp = await tx.oTP.create({

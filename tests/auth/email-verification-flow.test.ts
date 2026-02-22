@@ -6,6 +6,9 @@ const mockTx = {
     delete: jest.fn(),
     update: jest.fn(),
   },
+  userConsentRecord: {
+    create: jest.fn(),
+  },
   account: {
     delete: jest.fn(),
     deleteMany: jest.fn(),
@@ -32,6 +35,10 @@ const mockPrisma = {
     findUnique: jest.fn(),
     delete: jest.fn(),
     update: jest.fn(),
+  },
+  consentDocument: {
+    findFirst: jest.fn(),
+    create: jest.fn(),
   },
   account: {
     delete: jest.fn(),
@@ -111,6 +118,16 @@ describe('Auth: Email verification flow', () => {
     mockComparePassword.mockResolvedValue(true);
     mockGetCurrencyForCountry.mockReturnValue('EUR');
     mockSendEmail.mockResolvedValue({ ok: true, messageId: 'm1' });
+
+    mockPrisma.consentDocument.findFirst.mockResolvedValue({
+      id: 'cd1',
+      version: 'v1',
+      locale: 'en',
+      renderedTextHash: 'bootstrap',
+      createdAt: new Date(),
+      createdByUserId: null,
+    });
+
     mockPrisma.$transaction.mockImplementation(async (arg: any) => {
       if (typeof arg === 'function') return arg(mockTx as any);
       return Promise.all(arg);
@@ -140,6 +157,14 @@ describe('Auth: Email verification flow', () => {
     expect(json.success).toBe(true);
     expect(json.email).toBe('user@test.com');
     expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockTx.userConsentRecord.create).toHaveBeenCalledTimes(1);
+    expect(mockTx.userConsentRecord.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: 'u1',
+        consentType: 'GDPR_TERMS',
+        documentVersion: 'v1',
+      })
+    });
   });
 
   test('register: existing email returns 409', async () => {

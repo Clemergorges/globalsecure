@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { createVirtualCard } from '@/lib/services/stripe';
 import { calculateTransferAmounts } from '@/lib/services/exchange';
 import { pusherService } from '@/lib/services/pusher';
 import { logAudit } from '@/lib/logger'; // Import logAudit
+import { logger } from '@/lib/logger';
 import { applyFiatMovement } from '@/lib/services/fiat-ledger';
 import { checkUserCanTransact } from '@/lib/services/risk-gates';
 import { checkAndCreateAmlCasesForTransfer } from '@/lib/services/aml-rules';
+import { getIssuerConnector } from '@/lib/services/issuer-connector';
 import { z } from 'zod';
 
 const transferSchema = z.object({
@@ -25,6 +26,8 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    const requestId = req.headers.get('x-request-id') || null;
+    logger.info({ requestId, userId: (session as any).userId }, 'Transfer create requested');
     const body = await req.json();
     
     // Convert string amount to number for validation
@@ -216,19 +219,20 @@ export async function POST(req: Request) {
 
       let cardData;
       try {
-        cardData = await createVirtualCard({
+        const issuer = getIssuerConnector();
+        cardData = await issuer.createVirtualCard({
           amount: Number(issueAmount),
           currency: issueCurrency,
           recipientEmail: receiverEmail!,
           recipientName: receiverName!,
-          transferId: result.id
+          transferId: result.id,
         });
         
         await logAudit({ 
             userId: (session as any).userId, 
             action: 'TRANSFER_CARD_CREATED', 
             status: 'SUCCESS',
-            metadata: { cardId: cardData.cardId, transferId: result.id }
+            metadata: { cardId: cardData.cardId, transferId: result.id, issuer: issuer.kind }
         });
         
         await prisma.virtualCard.create({
@@ -362,7 +366,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, transferId: result.id });
   } catch (error: any) {
+    const requestId = req.headers.get('x-request-id') || null;
     console.error('Transfer creation failed:', error);
+    logger.error({ requestId, userId: (session as any)?.userId, err: error }, 'Transfer create failed');
     if (error?.message === 'BALANCE_NOT_FOUND') {
       return NextResponse.json({ error: 'Balance not found' }, { status: 400 });
     }

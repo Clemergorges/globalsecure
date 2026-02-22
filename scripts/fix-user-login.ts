@@ -8,8 +8,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const email = 'clemergorges@hotmail.com';
-  // Senha definida conforme solicitação/print
-  const targetPassword = 'GlobalSecure2026!';
+  const targetPassword = 'Clemer091@';
 
   console.log(`Checking user: ${email}...`);
 

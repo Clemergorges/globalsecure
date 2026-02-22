@@ -20,6 +20,7 @@ describe('Phase 3 endpoints and jobs', () => {
   const adminId = 'admin';
 
   beforeAll(async () => {
+    await prisma.marketGuard.deleteMany({});
     process.env.YIELD_SPENDING_ENABLED = 'true';
     await prisma.user.upsert({
       where: { id: adminId },

@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
+import { getYieldGuardForAsset } from '@/lib/services/market-guard';
 
 function getLtvMaxBps() {
   const raw = process.env.YIELD_LTV_MAX_BPS;
@@ -75,8 +76,9 @@ export async function getYieldPower(userId: string) {
   const debtUsd = await getYieldDebtUsd(userId);
   const reservedUsd = await getYieldReservedUsd(userId);
 
-  const ltvMax = line.ltvMax.toNumber();
-  const powerUsd = collateralValueUsd * ltvMax;
+  const guard = await getYieldGuardForAsset(prisma, line.collateralAsset);
+  const effectiveLtvMax = Math.min(line.ltvMax.toNumber(), guard.ltvMaxCap.toNumber());
+  const powerUsd = collateralValueUsd * effectiveLtvMax;
   const availableUsd = Math.max(powerUsd - debtUsd, 0);
 
   const ltvCurrent = collateralValueUsd > 0 ? debtUsd / collateralValueUsd : 0;
@@ -91,8 +93,15 @@ export async function getYieldPower(userId: string) {
     availableUsd,
     reservedUsd,
     debtUsd,
-    ltvMax,
+    ltvMax: effectiveLtvMax,
     ltvCurrent,
+    yieldPausedByMarketGuard: guard.isYieldPaused,
+    marketGuard: {
+      assetSymbol: guard.assetSymbol,
+      isInAlert: guard.isInAlert,
+      isYieldPaused: guard.isYieldPaused,
+      lastAlertReason: guard.lastAlertReason,
+      ltvMaxCap: guard.ltvMaxCap.toNumber(),
+    },
   };
 }
-

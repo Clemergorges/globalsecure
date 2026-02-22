@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 type FxPair = { base: string; quote: string };
 
@@ -91,6 +92,7 @@ export async function getFxRate(base: string, quote: string) {
     const mid = fallback ?? 1;
     const spreadBps = getDefaultSpreadBps();
     const applied = mid * (1 - spreadBps / 10000);
+    logger.warn({ base: b, quote: q, mid, applied, spreadBps }, 'FX rate missing; using manual fallback');
     return { base: b, quote: q, rateMid: mid, rateApplied: applied, spreadBps, source: 'MANUAL_FALLBACK', fetchedAt: new Date(0) };
   }
 
@@ -101,6 +103,7 @@ export async function getFxRate(base: string, quote: string) {
   const age = Date.now() - row.fetchedAt.getTime();
   if (age > getMaxAgeMs()) {
     await enqueueFxRefreshIfNeeded();
+    logger.info({ base: b, quote: q, ageMs: age }, 'FX rate stale; enqueued refresh');
   }
 
   return { base: b, quote: q, rateMid: mid, rateApplied: applied, spreadBps, source: row.source, fetchedAt: row.fetchedAt };

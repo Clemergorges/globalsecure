@@ -116,5 +116,25 @@ export const templates = {
       <p>Este código expira em 15 minutos.</p>
       <p style="font-size: 12px; color: #666;">Se você não solicitou este código, ignore este e-mail.</p>
     </div>
+  `,
+
+  passwordResetLink: (resetUrl: string) => `
+    <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+      <h2 style="color: #2563eb;">Redefinir Senha 🔐</h2>
+      <p>Você solicitou a redefinição de senha para sua conta GlobalSecure.</p>
+      
+      <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p style="margin: 5px 0;"><strong>Ação:</strong> Redefinir senha</p>
+        <p style="margin: 5px 0;"><strong>Validade:</strong> 1 hora</p>
+      </div>
+
+      <p>Clique no link abaixo para criar uma nova senha:</p>
+      <a href="${resetUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Redefinir Senha</a>
+      
+      <p style="margin-top: 20px;"><em>Se você não solicitou esta redefinição, ignore este e-mail. Seu senha atual continuará válida.</em></p>
+      
+      <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+      <p style="font-size: 12px; color: #666;">Este link expira em 1 hora por segurança.</p>
+    </div>
   `
 };

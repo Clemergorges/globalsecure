@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { updateCardStatus } from '@/lib/services/stripe';
+import { getIssuerConnector } from '@/lib/services/issuer-connector';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -29,8 +29,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         return NextResponse.json({ error: 'Card already active' }, { status: 400 });
     }
 
-    // Call Stripe to activate
-    await updateCardStatus(card.stripeCardId, 'active');
+    const issuer = getIssuerConnector();
+    await issuer.updateCardStatus(card.stripeCardId, 'active');
 
     // Update DB
     const updatedCard = await prisma.virtualCard.update({

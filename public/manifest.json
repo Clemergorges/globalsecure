@@ -1,7 +1,7 @@
 {
   "name": "GlobalSecureSend",
   "short_name": "GlobalSecure",
-  "description": "Banco digital global com foco na Europa e Brasil.",
+  "description": "Sistema digital global com foco na segurança e privacidade.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0a0a0c",

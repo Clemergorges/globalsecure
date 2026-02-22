@@ -15,6 +15,7 @@ describe('Yield credit helpers', () => {
   });
 
   beforeEach(async () => {
+    await prisma.marketGuard.deleteMany({});
     const email = `${uid()}@test.com`;
     const user = await prisma.user.create({
       data: { email, passwordHash: 'hash', firstName: 'Test', lastName: 'User' },
@@ -52,4 +53,3 @@ describe('Yield credit helpers', () => {
     expect(cl?.ltvCurrent.toNumber()).toBeCloseTo(0.05, 4);
   });
 });
-

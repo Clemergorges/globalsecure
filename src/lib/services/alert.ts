@@ -31,14 +31,25 @@ export const alertService = {
         try {
             await prisma.auditLog.create({
                 data: {
-                    userId: userId || 'SYSTEM',
+                    userId: userId || null,
                     action: `ALERT_${severity}`,
                     status: severity === 'INFO' ? 'SUCCESS' : 'FAILURE',
-                    metadata: { title, message, source, ...metadata }
+                    metadata: { title, message, source, userId: userId || null, ...metadata }
                 }
             });
         } catch (error) {
-            console.error('Failed to log alert to DB:', error);
+            try {
+              await prisma.auditLog.create({
+                data: {
+                  userId: null,
+                  action: `ALERT_${severity}`,
+                  status: severity === 'INFO' ? 'SUCCESS' : 'FAILURE',
+                  metadata: { title, message, source, userId: userId || null, ...metadata, fallback: 'USER_ID_FK' }
+                }
+              });
+            } catch (e) {
+              console.error('Failed to log alert to DB:', e);
+            }
         }
     }
 

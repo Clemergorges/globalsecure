@@ -67,6 +67,37 @@
       "loginFailed": "Falha ao fazer login"
     }
   },
+  "ForgotPassword": {
+    "title": "Esqueceu sua senha?",
+    "subtitle": "Insira seu email e enviaremos instruções para redefinir sua senha",
+    "email": "Email",
+    "emailPlaceholder": "seu@email.com",
+    "submit": "Enviar instruções",
+    "submitting": "Enviando...",
+    "success": "Se o email existir, enviaremos instruções.",
+    "backToLogin": "Voltar para login",
+    "errors": {
+      "sendFailed": "Erro ao enviar email. Tente novamente."
+    }
+  },
+  "ResetPassword": {
+    "title": "Redefinir senha",
+    "subtitle": "Digite sua nova senha",
+    "newPassword": "Nova senha",
+    "confirmPassword": "Confirmar nova senha",
+    "passwordPlaceholder": "••••••••",
+    "passwordRequirements": "Mínimo 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial",
+    "submit": "Redefinir senha",
+    "submitting": "Redefinindo...",
+    "success": "Senha redefinida com sucesso!",
+    "backToLogin": "Voltar para login",
+    "invalidToken": "Token inválido ou ausente",
+    "passwordMismatch": "As senhas não coincidem",
+    "errors": {
+      "resetFailed": "Erro ao redefinir senha. Tente novamente.",
+      "invalidToken": "Token inválido ou expirado"
+    }
+  },
   "VerifyEmail": {
     "title": "Verificar Email",
     "missingEmail": "Informe seu email para continuar.",

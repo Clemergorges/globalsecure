@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { issueCard } from '@/lib/services/stripe';
 import { logAudit } from '@/lib/logger';
+import { getIssuerConnector } from '@/lib/services/issuer-connector';
 import { z } from 'zod';
 
 const createCardSchema = z.object({
@@ -35,18 +35,24 @@ export async function POST(req: Request) {
     const account = await prisma.account.findUnique({ where: { userId: session.userId } });
     if (!account) return NextResponse.json({ error: 'Account not found' }, { status: 404 });
 
-    // Emitir cartão no Stripe (Mock)
-    const stripeCard = await issueCard(session.userId, type.toLowerCase() as any, currency.toLowerCase() as any, limit);
+    const issuer = getIssuerConnector();
+    const issued = await issuer.createVirtualCard({
+      amount: limit || 0,
+      currency: currency.toLowerCase(),
+      userId: session.userId,
+      recipientEmail: session.email,
+      recipientName: 'User',
+    });
 
     const card = await prisma.virtualCard.create({
       data: {
         userId: session.userId,
-        stripeCardId: stripeCard.id,
-        stripeCardholderId: 'mock_holder',
-        last4: stripeCard.last4,
-        brand: stripeCard.brand,
-        expMonth: stripeCard.exp_month,
-        expYear: stripeCard.exp_year,
+        stripeCardId: issued.cardId,
+        stripeCardholderId: issued.cardholderId,
+        last4: issued.last4,
+        brand: issued.brand,
+        expMonth: issued.exp_month,
+        expYear: issued.exp_year,
         amount: limit || 0,
         currency: currency,
         status: 'ACTIVE',
@@ -58,7 +64,7 @@ export async function POST(req: Request) {
       userId: session.userId,
       action: 'CARD_ISSUED',
       status: 'SUCCESS',
-      metadata: { cardId: card.id, type, currency }
+      metadata: { cardId: card.id, type, currency, issuer: issuer.kind }
     });
 
     return NextResponse.json({ card });

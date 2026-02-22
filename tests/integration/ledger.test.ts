@@ -1,5 +1,6 @@
 import { processInternalTransfer } from '@/lib/services/ledger';
 import { prisma } from '../setup/prisma';
+import { Prisma } from '@prisma/client';
 
 // Mock Pusher
 jest.mock('@/lib/services/pusher', () => ({
@@ -28,9 +29,11 @@ describe('Ledger ACID Compliance', () => {
       // 1. Logs & Transactions linked to Transfer
       await prisma.transactionLog.deleteMany({ where: { transfer: { OR: [{ senderId: { in: ids } }, { recipientId: { in: ids } }] } } });
       await prisma.accountTransaction.deleteMany({ where: { account: { userId: { in: ids } } } });
+      await prisma.userTransaction.deleteMany({ where: { userId: { in: ids } } });
       
       // 2. Balances
       await prisma.balance.deleteMany({ where: { account: { userId: { in: ids } } } });
+      await prisma.fiatBalance.deleteMany({ where: { userId: { in: ids } } });
       
       // 3. Transfers
       await prisma.transfer.deleteMany({ where: { OR: [{ senderId: { in: ids } }, { recipientId: { in: ids } }] } });
@@ -66,6 +69,11 @@ describe('Ledger ACID Compliance', () => {
       include: { account: true }
     });
     senderId = sender.id;
+    await prisma.fiatBalance.upsert({
+      where: { userId_currency: { userId: senderId, currency: 'EUR' } },
+      update: { amount: new Prisma.Decimal(100) },
+      create: { userId: senderId, currency: 'EUR', amount: new Prisma.Decimal(100) },
+    });
 
     const recipient = await prisma.user.create({
       data: {
@@ -84,6 +92,11 @@ describe('Ledger ACID Compliance', () => {
       include: { account: true }
     });
     recipientId = recipient.id;
+    await prisma.fiatBalance.upsert({
+      where: { userId_currency: { userId: recipientId, currency: 'EUR' } },
+      update: { amount: new Prisma.Decimal(0) },
+      create: { userId: recipientId, currency: 'EUR', amount: new Prisma.Decimal(0) },
+    });
   });
 
   it('ATOMICITY: Should fail transfer if funds are insufficient and not change balances', async () => {
@@ -94,15 +107,15 @@ describe('Ledger ACID Compliance', () => {
     ).rejects.toThrow('Insufficient funds');
 
     // Verify Balances Unchanged
-    const senderBalance = await prisma.balance.findFirst({
-      where: { account: { userId: senderId }, currency: 'EUR' }
+    const senderBalance = await prisma.fiatBalance.findUnique({
+      where: { userId_currency: { userId: senderId, currency: 'EUR' } }
     });
-    const recipientBalance = await prisma.balance.findFirst({
-      where: { account: { userId: recipientId }, currency: 'EUR' }
+    const recipientBalance = await prisma.fiatBalance.findUnique({
+      where: { userId_currency: { userId: recipientId, currency: 'EUR' } }
     });
 
-    expect(Number(senderBalance?.amount)).toBe(100.00);
-    expect(Number(recipientBalance?.amount)).toBe(0.00);
+    expect(senderBalance?.amount.toNumber()).toBeCloseTo(100.00, 2);
+    expect(recipientBalance?.amount.toNumber()).toBeCloseTo(0.00, 2);
   });
 
   it('CONSISTENCY: Should deduct amount + fees and credit exact amount', async () => {
@@ -113,15 +126,15 @@ describe('Ledger ACID Compliance', () => {
 
     await processInternalTransfer(senderId, senderEmail, recipientEmail, amount, 'EUR');
 
-    const senderBalance = await prisma.balance.findFirst({
-      where: { account: { userId: senderId }, currency: 'EUR' }
+    const senderBalance = await prisma.fiatBalance.findUnique({
+      where: { userId_currency: { userId: senderId, currency: 'EUR' } }
     });
-    const recipientBalance = await prisma.balance.findFirst({
-      where: { account: { userId: recipientId }, currency: 'EUR' }
+    const recipientBalance = await prisma.fiatBalance.findUnique({
+      where: { userId_currency: { userId: recipientId, currency: 'EUR' } }
     });
 
-    expect(Number(senderBalance?.amount)).toBeCloseTo(100.00 - totalDeduction, 2);
-    expect(Number(recipientBalance?.amount)).toBeCloseTo(50.00, 2);
+    expect(senderBalance?.amount.toNumber()).toBeCloseTo(100.00 - totalDeduction, 2);
+    expect(recipientBalance?.amount.toNumber()).toBeCloseTo(50.00, 2);
   });
 
   it('ISOLATION: Should handle concurrent transfers correctly (prevent double spend)', async () => {
@@ -153,14 +166,14 @@ describe('Ledger ACID Compliance', () => {
     const totalDeductionPerTx = amount + fee; // 30.54
     const totalDeducted = totalDeductionPerTx * 3; // 91.62
 
-    const senderBalance = await prisma.balance.findFirst({
-      where: { account: { userId: senderId }, currency: 'EUR' }
+    const senderBalance = await prisma.fiatBalance.findUnique({
+      where: { userId_currency: { userId: senderId, currency: 'EUR' } }
     });
-    const recipientBalance = await prisma.balance.findFirst({
-      where: { account: { userId: recipientId }, currency: 'EUR' }
+    const recipientBalance = await prisma.fiatBalance.findUnique({
+      where: { userId_currency: { userId: recipientId, currency: 'EUR' } }
     });
 
-    expect(Number(senderBalance?.amount)).toBeCloseTo(100.00 - totalDeducted, 2); // 8.38
-    expect(Number(recipientBalance?.amount)).toBeCloseTo(30.00 * 3, 2); // 90.00
+    expect(senderBalance?.amount.toNumber()).toBeCloseTo(100.00 - totalDeducted, 2); // 8.38
+    expect(recipientBalance?.amount.toNumber()).toBeCloseTo(30.00 * 3, 2); // 90.00
   });
 });
