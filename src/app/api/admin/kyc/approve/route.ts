@@ -16,43 +16,54 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
-    // Update User
-    const user = await prisma.user.update({
+    // All KYC-related DB updates in a single transaction (User, Documents, KycVerification, Account)
+    await prisma.$transaction(async (tx) => {
+      // Update User
+      await tx.user.update({
         where: { id: userId },
         data: {
-            kycStatus: status,
-            kycLevel: status === 'APPROVED' ? 2 : 0,
-        }
-    });
+          kycStatus: status,
+          kycLevel: status === 'APPROVED' ? 2 : 0,
+        },
+      });
 
-    // Update Documents
-    await prisma.kYCDocument.updateMany({
+      // Update Documents
+      await tx.kYCDocument.updateMany({
         where: { userId, status: 'PENDING' },
         data: {
-            status: status,
-            rejectionReason: status === 'REJECTED' ? rejectionReason : null,
-            verifiedAt: new Date()
-        }
-    });
+          status: status,
+          rejectionReason: status === 'REJECTED' ? rejectionReason : null,
+          verifiedAt: new Date(),
+        },
+      });
 
-    // Update KycVerification (New Model)
-    await prisma.kycVerification.upsert({
+      // Update KycVerification (New Model)
+      await tx.kycVerification.upsert({
         where: { userId },
         update: {
-            status: status,
-            level: status === 'APPROVED' ? 'ADVANCED' : 'BASIC',
-            rejectionReason: status === 'REJECTED' ? rejectionReason : null,
-            approvedAt: status === 'APPROVED' ? new Date() : null
+          status: status,
+          level: status === 'APPROVED' ? 'ADVANCED' : 'BASIC',
+          rejectionReason: status === 'REJECTED' ? rejectionReason : null,
+          approvedAt: status === 'APPROVED' ? new Date() : null,
         },
         create: {
-            userId,
-            status: status,
-            level: status === 'APPROVED' ? 'ADVANCED' : 'BASIC',
-            approvedAt: status === 'APPROVED' ? new Date() : null
-        }
+          userId,
+          status: status,
+          level: status === 'APPROVED' ? 'ADVANCED' : 'BASIC',
+          approvedAt: status === 'APPROVED' ? new Date() : null,
+        },
+      });
+
+      // When KYC is approved, set Account to ACTIVE so user is no longer redirected to onboarding
+      if (status === 'APPROVED') {
+        await tx.account.update({
+          where: { userId },
+          data: { status: 'ACTIVE' },
+        });
+      }
     });
 
-    // Notify User
+    // Notify User (outside transaction so notification failure does not rollback KYC)
     await createNotification({
         userId,
         title: status === 'APPROVED' ? 'Conta Verificada! 🎉' : 'Verificação Falhou ⚠️',

@@ -4,6 +4,7 @@ import crypto from "crypto"
 import { prisma } from "@/lib/db"
 import { sendEmail, templates } from "@/lib/services/email"
 import { logAudit, logger } from "@/lib/logger"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 const schema = z.object({
   email: z.string().email(),
@@ -34,6 +35,38 @@ export async function POST(req: Request) {
 
     normalizedEmail = parsed.data.email.trim().toLowerCase()
 
+    // Rate limit por IP e por email, resposta genérica
+    const rlIp = await checkRateLimit(`forgot_password:ip:${ip}`, 10, 15 * 60)
+    if (!rlIp.success) {
+      await logAudit({
+        action: "FORGOT_PASSWORD_BLOCKED",
+        status: "429",
+        ipAddress: ip,
+        userAgent,
+        path: "/api/auth/forgot-password",
+        metadata: { scope: "IP", remaining: rlIp.remaining },
+      })
+      return NextResponse.json(
+        { success: true, message: "Se o email existir, enviaremos instruções." },
+        { status: 200 },
+      )
+    }
+    const rlEmail = await checkRateLimit(`forgot_password:email:${normalizedEmail}`, 5, 15 * 60)
+    if (!rlEmail.success) {
+      await logAudit({
+        action: "FORGOT_PASSWORD_BLOCKED",
+        status: "429",
+        ipAddress: ip,
+        userAgent,
+        path: "/api/auth/forgot-password",
+        metadata: { scope: "EMAIL", remaining: rlEmail.remaining },
+      })
+      return NextResponse.json(
+        { success: true, message: "Se o email existir, enviaremos instruções." },
+        { status: 200 },
+      )
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
       select: { id: true, email: true },
@@ -60,7 +93,7 @@ export async function POST(req: Request) {
       process.env.SMTP_HOST &&
         process.env.SMTP_USER &&
         process.env.SMTP_PASS &&
-        process.env.EMAIL_FROM,
+        (process.env.EMAIL_FROM || process.env.FROM_EMAIL),
     )
 
     if (!smtpConfigured) {
@@ -74,8 +107,8 @@ export async function POST(req: Request) {
         metadata: { email: maskEmail(normalizedEmail), reason: "SMTP_NOT_CONFIGURED" },
       })
       return NextResponse.json(
-        { error: "Não foi possível enviar o email de recuperação. Tente novamente." },
-        { status: 500 },
+        { success: true, message: "Se o email existir, enviaremos instruções." },
+        { status: 200 },
       )
     }
 
@@ -90,7 +123,7 @@ export async function POST(req: Request) {
       },
     })
 
-    const baseUrl = process.env.APP_BASE_URL || new URL(req.url).origin
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || new URL(req.url).origin
     const resetUrl = `${baseUrl.replace(/\/$/, "")}/auth/reset-password?token=${encodeURIComponent(token)}`
 
     const emailResult = await sendEmail({
@@ -110,8 +143,8 @@ export async function POST(req: Request) {
         metadata: { email: maskEmail(normalizedEmail), error: emailResult.error },
       })
       return NextResponse.json(
-        { error: "Não foi possível enviar o email de recuperação. Tente novamente." },
-        { status: 500 },
+        { success: true, message: "Se o email existir, enviaremos instruções." },
+        { status: 200 },
       )
     }
 

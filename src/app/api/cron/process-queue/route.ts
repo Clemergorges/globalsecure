@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db';
 import { sendEmail, templates } from '@/lib/services/email';
 import { refreshFxRates, getConfiguredFxPairs } from '@/lib/services/fx-engine';
 import { runTreasuryCheck } from '@/lib/services/treasury';
+import { sendUsdtFromHotWallet } from '@/lib/services/polygon';
+import { logAudit } from '@/lib/logger';
 
 // This endpoint is called by Vercel Cron every minute
 export async function GET(req: Request) {
@@ -121,21 +123,29 @@ async function processWithdraw(withdrawId: string) {
   try {
     console.log(`Executing On-Chain Withdraw for ${withdrawId}...`);
     
-    // 1. Send USDT via Polygon (Simulated for now, can use sendUsdtFromHotWallet from lib)
-    // In a real scenario, we would call the blockchain here.
-    // For MVP, we simulate a successful TX hash.
-    const fakeTxHash = '0x' + Math.random().toString(16).substr(2, 64);
-    
-    // Simulate delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // GSS-MVP-FIX: Execute real on-chain transfer for USDT withdrawals (replace simulation) behind feature flag.
+    let txHash: string;
+    if (process.env.CRYPTO_WITHDRAW_ONCHAIN_ENABLED === 'true') {
+      txHash = await sendUsdtFromHotWallet(withdraw.toAddress, withdraw.amount.toString());
+    } else {
+      // GSS-MVP-FIX: keep simulated path when on-chain is disabled
+      txHash = `simulated-${withdraw.id}`;
+    }
 
     // 2. Update Withdraw Record
     await prisma.cryptoWithdraw.update({
       where: { id: withdrawId },
       data: {
         status: 'CONFIRMED',
-        txHash: fakeTxHash
+        txHash
       }
+    });
+
+    await logAudit({
+      userId: withdraw.userId,
+      action: 'CRYPTO_WITHDRAW_CONFIRMED',
+      status: 'SUCCESS',
+      metadata: { withdrawId, txHash, asset: withdraw.asset, amount: withdraw.amount.toString(), toAddress: withdraw.toAddress },
     });
 
     // 3. Update Ledger Transaction Status
@@ -144,10 +154,16 @@ async function processWithdraw(withdrawId: string) {
     // Since Prisma JSON filter is tricky, we might need to query by description or just skip if not critical for MVP.
     // Ideally we linked it better, but let's assume success.
 
-    console.log(`Withdraw ${withdrawId} confirmed. TX: ${fakeTxHash}`);
+    console.log(`Withdraw ${withdrawId} confirmed. TX: ${txHash}`);
 
   } catch (error: any) {
     console.error(`Withdraw execution failed:`, error);
+    await logAudit({
+      userId: withdraw.userId,
+      action: 'CRYPTO_WITHDRAW_FAILED',
+      status: 'ERROR',
+      metadata: { withdrawId, asset: withdraw.asset, amount: withdraw.amount.toString(), toAddress: withdraw.toAddress, error: String(error?.message || error) },
+    }).catch(() => {});
     
     // If failed, we should probably mark as FAILED and Refund user?
     // For job retry logic, we might throw error to let the job system retry.

@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { 
-  ShieldCheck, 
-  Globe2, 
-  Zap, 
-  ArrowRight, 
-  Smartphone, 
-  Lock, 
+import {
+  ShieldCheck,
+  Globe2,
+  Zap,
+  ArrowRight,
+  Smartphone,
+  Lock,
   CreditCard,
   ChevronRight,
   Activity, Wallet,
@@ -38,7 +38,7 @@ const GlowingBadge = ({ children }: { children: React.ReactNode }) => (
 );
 
 const FeatureCard = ({ icon: Icon, title, description, delay }: { icon: any, title: string, description: string, delay: number }) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
@@ -80,7 +80,7 @@ export default function LandingPage() {
             </div>
             <span className="font-bold text-xl tracking-tight text-white">GlobalSecureSend</span>
           </div>
-          
+
           <div className="hidden md:flex items-center gap-8">
             <Link href="#features" className="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-colors">Features</Link>
             <Link href="#security" className="text-sm font-medium text-slate-300 hover:text-cyan-400 transition-colors">Security</Link>
@@ -103,9 +103,9 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 overflow-hidden">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-          
+
           {/* Hero Content */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
@@ -117,14 +117,14 @@ export default function LandingPage() {
                 <span className="tracking-wide uppercase text-[10px]">Future of Finance</span>
               </span>
             </GlowingBadge>
-            
+
             <h1 className="text-5xl lg:text-7xl font-bold text-white mt-8 mb-6 leading-[1.1] tracking-tight">
               Borderles<span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">s</span> Money <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-500">Instant Reality.</span>
             </h1>
-            
+
             <p className="text-lg text-slate-400 mb-8 max-w-lg leading-relaxed border-l-2 border-cyan-500/50 pl-6 shadow-[inset_10px_0_20px_-10px_rgba(6,182,212,0.1)]">
-              Move capital globally in seconds using stablecoin rails with local bank settlement. 
+              Move capital globally in seconds using stablecoin rails with local bank settlement.
               <span className="text-cyan-400 font-medium"> Zero friction. Zero hidden fees.</span>
             </p>
 
@@ -157,7 +157,7 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Hero Visual - Futuristic HUD */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9, rotateX: 10 }}
             animate={{ opacity: 1, scale: 1, rotateX: 0 }}
             transition={{ duration: 1, delay: 0.2 }}
@@ -167,7 +167,7 @@ export default function LandingPage() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse-slow" />
 
             {/* Main Interface Card */}
-            <motion.div 
+            <motion.div
               animate={{ y: [0, -15, 0] }}
               transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
               className="relative w-full max-w-md bg-[#0A0A0F]/90 backdrop-blur-xl rounded-[2rem] border border-cyan-500/20 shadow-[0_0_50px_-20px_rgba(6,182,212,0.3)] overflow-hidden"
@@ -191,7 +191,7 @@ export default function LandingPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <div className="text-sm text-slate-400 font-medium uppercase tracking-wider">Total Balance</div>
-                    <button 
+                    <button
                       onClick={() => setShowPassword(!showPassword)}
                       className="text-slate-500 hover:text-cyan-400 transition-colors p-1"
                     >
@@ -251,7 +251,7 @@ export default function LandingPage() {
               </div>
 
               {/* Floating Elements (Decorations) */}
-              <motion.div 
+              <motion.div
                 animate={{ y: [0, 10, 0], opacity: [0.6, 1, 0.6] }}
                 transition={{ repeat: Infinity, duration: 4, delay: 1 }}
                 className="absolute -right-8 top-20 bg-black/80 backdrop-blur-xl p-4 rounded-xl border border-cyan-500/30 shadow-[0_0_30px_-10px_rgba(6,182,212,0.4)]"
@@ -286,19 +286,19 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <FeatureCard 
+            <FeatureCard
               delay={0.1}
               icon={Zap}
               title="Instant Settlement"
               description="Funds move on-chain via Polygon. No waiting 3-5 business days for SWIFT. Settlement happens in seconds, 24/7/365."
             />
-            <FeatureCard 
+            <FeatureCard
               delay={0.2}
               icon={Lock}
               title="Military-Grade Security"
               description="Your assets are protected by MPC wallets and real-time fraud detection. We use Stripe Identity for biometric verification."
             />
-            <FeatureCard 
+            <FeatureCard
               delay={0.3}
               icon={CreditCard}
               title="Virtual VISA Cards"

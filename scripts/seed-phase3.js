@@ -19,7 +19,12 @@ async function main() {
 
   const user = await prisma.user.upsert({
     where: { email },
-    update: { emailVerified: true, yieldEnabled: true, yieldEnabledAt: new Date() },
+    update: {
+      passwordHash,
+      emailVerified: true,
+      yieldEnabled: true,
+      yieldEnabledAt: new Date(),
+    },
     create: {
       email,
       emailVerified: true,
@@ -33,6 +38,19 @@ async function main() {
   });
 
   console.log('✅ User ID:', user.id);
+
+  // Account is required for login (JWT carries account.status); without it user gets UNVERIFIED and is sent to onboarding
+  const account = await prisma.account.upsert({
+    where: { userId: user.id },
+    update: { status: 'ACTIVE', primaryCurrency: 'EUR' },
+    create: {
+      userId: user.id,
+      status: 'ACTIVE',
+      primaryCurrency: 'EUR',
+      balances: { create: { currency: 'EUR', amount: 0 } },
+    },
+  });
+  console.log('✅ Account ID:', account.id, 'status:', account.status);
 
   console.log('💶 Criando fiatBalance EUR + linha de crédito...');
 

@@ -49,6 +49,7 @@ describe('AML velocity and high-risk jurisdiction', () => {
 
     (getSession as unknown as jest.Mock).mockResolvedValue({ userId: user.id, email, role: 'USER', isAdmin: false });
 
+    // GSS-MVP-FIX: align test with new MVP scope.
     const reqBody = {
       mode: 'SELF_TRANSFER',
       amountSource: 10,
@@ -63,7 +64,9 @@ describe('AML velocity and high-risk jurisdiction', () => {
         body: JSON.stringify(reqBody),
       }),
     );
-    expect(r1.status).toBe(200);
+    expect(r1.status).toBe(400);
+    const r1Json = await r1.json();
+    expect(r1Json.code).toBe('MODE_NOT_SUPPORTED');
 
     const r2 = await transfersCreatePost(
       new Request('http://localhost/api/transfers/create', {
@@ -72,7 +75,9 @@ describe('AML velocity and high-risk jurisdiction', () => {
         body: JSON.stringify(reqBody),
       }),
     );
-    expect(r2.status).toBe(200);
+    expect(r2.status).toBe(400);
+    const r2Json = await r2.json();
+    expect(r2Json.code).toBe('MODE_NOT_SUPPORTED');
 
     const startedAt = new Date();
     const r3 = await transfersCreatePost(
@@ -82,15 +87,11 @@ describe('AML velocity and high-risk jurisdiction', () => {
         body: JSON.stringify(reqBody),
       }),
     );
-    expect(r3.status).toBe(200);
-
-    const case1 = await prisma.amlReviewCase.findFirst({
-      where: { userId: user.id, reason: 'VELOCITY_TX_COUNT', status: { in: ['PENDING', 'IN_REVIEW'] }, createdAt: { gte: startedAt } },
-      orderBy: { createdAt: 'desc' },
-    });
-    expect(case1).toBeTruthy();
-    expect(case1!.riskLevel).toBe('HIGH');
-    expect(case1!.slaDueAt).toBeTruthy();
+    expect(r3.status).toBe(400);
+    const r3Json = await r3.json();
+    expect(r3Json.code).toBe('MODE_NOT_SUPPORTED');
+    const case1 = await prisma.amlReviewCase.findFirst({ where: { userId: user.id, createdAt: { gte: startedAt } } });
+    expect(case1).toBeNull();
 
     const r4 = await transfersCreatePost(
       new Request('http://localhost/api/transfers/create', {
@@ -99,9 +100,9 @@ describe('AML velocity and high-risk jurisdiction', () => {
         body: JSON.stringify(reqBody),
       }),
     );
-    expect(r4.status).toBe(403);
+    expect(r4.status).toBe(400);
     const body4 = await r4.json();
-    expect(body4.code).toBe('AML_REVIEW_PENDING');
+    expect(body4.code).toBe('MODE_NOT_SUPPORTED');
 
     const account = await prisma.account.findUnique({ where: { userId: user.id }, select: { id: true } });
     const transfers = await prisma.transfer.findMany({ where: { senderId: user.id }, select: { id: true } });
@@ -139,6 +140,7 @@ describe('AML velocity and high-risk jurisdiction', () => {
     (getSession as unknown as jest.Mock).mockResolvedValue({ userId: user.id, email, role: 'USER', isAdmin: false });
 
     const startedAt = new Date();
+    // GSS-MVP-FIX: align test with new MVP scope.
     const reqBody = {
       mode: 'SELF_TRANSFER',
       amountSource: 10,
@@ -153,15 +155,11 @@ describe('AML velocity and high-risk jurisdiction', () => {
         body: JSON.stringify(reqBody),
       }),
     );
-    expect(r1.status).toBe(200);
-
-    const case1 = await prisma.amlReviewCase.findFirst({
-      where: { userId: user.id, reason: 'HIGH_RISK_JURISDICTION', status: { in: ['PENDING', 'IN_REVIEW'] }, createdAt: { gte: startedAt } },
-      orderBy: { createdAt: 'desc' },
-    });
-    expect(case1).toBeTruthy();
-    expect(case1!.riskLevel).toBe('CRITICAL');
-    expect(case1!.slaDueAt).toBeTruthy();
+    expect(r1.status).toBe(400);
+    const r1Json = await r1.json();
+    expect(r1Json.code).toBe('MODE_NOT_SUPPORTED');
+    const case1 = await prisma.amlReviewCase.findFirst({ where: { userId: user.id, createdAt: { gte: startedAt } } });
+    expect(case1).toBeNull();
 
     const r2 = await transfersCreatePost(
       new Request('http://localhost/api/transfers/create', {
@@ -170,9 +168,9 @@ describe('AML velocity and high-risk jurisdiction', () => {
         body: JSON.stringify(reqBody),
       }),
     );
-    expect(r2.status).toBe(403);
+    expect(r2.status).toBe(400);
     const body2 = await r2.json();
-    expect(body2.code).toBe('AML_REVIEW_PENDING');
+    expect(body2.code).toBe('MODE_NOT_SUPPORTED');
 
     const account = await prisma.account.findUnique({ where: { userId: user.id }, select: { id: true } });
     const transfers = await prisma.transfer.findMany({ where: { senderId: user.id }, select: { id: true } });
@@ -185,4 +183,3 @@ describe('AML velocity and high-risk jurisdiction', () => {
     await prisma.user.delete({ where: { id: user.id } });
   });
 });
-

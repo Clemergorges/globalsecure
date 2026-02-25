@@ -160,6 +160,7 @@
       "transactions": "Transações",
       "send": "Enviar Dinheiro",
       "cards": "Cartões",
+      "limits": "Limites",
       "history": "Histórico",
       "security": "Segurança",
       "settings": "Configurações",
@@ -618,6 +619,11 @@
       "description": "Tem certeza que deseja remover este cartão? Esta ação não pode ser desfeita.",
       "confirm": "Remover Cartão"
     },
+    "cancelDialog": {
+      "title": "Cancelar Cartão",
+      "description": "Tem certeza que deseja cancelar este cartão? Esta ação é irreversível.",
+      "confirm": "Cancelar cartão"
+    },
     "detailsDialog": {
       "title": "Dados do Cartão",
       "description": "Use estes dados para realizar compras online. Nunca compartilhe com terceiros.",
@@ -636,7 +642,8 @@
       "revealFailed": "Falha ao revelar dados",
       "deleteFailed": "Falha ao excluir cartão"
     },
-    "removeCardAria": "Remover cartão"
+    "removeCardAria": "Remover cartão",
+    "cardBlockUnavailable": "Bloqueio de cartão indisponível no momento."
   },
   "SecureTransfer": {
     "title": "Global Link (Transferência Segura)",
@@ -854,6 +861,50 @@
     "uploadFormats": "JPG, PNG ou PDF (Max 5MB)",
     "fileSelected": "Arquivo selecionado",
     "submitForReview": "Enviar para Análise"
+  },
+  "Limits": {
+    "title": "Seu KYC, risco e limites",
+    "subtitle": "Entenda o que você pode fazer hoje e como aumentar seus limites.",
+    "backToDashboard": "Voltar para dashboard",
+    "reload": "Recarregar",
+    "loading": "Carregando…",
+    "error": {
+      "loadFailedTitle": "Não foi possível carregar seus limites",
+      "loadFailedDesc": "Tente novamente.",
+      "retryButton": "Tentar novamente"
+    },
+    "completeKyc": "Completar KYC",
+    "kycTitle": "KYC",
+    "level": "Nível",
+    "status": "Status",
+    "country": "País",
+    "kycNextStep": {
+      "none": "Complete seu KYC para liberar limites.",
+      "basic": "Envie comprovante de endereço para aumentar seus limites.",
+      "advanced": "Finalize a verificação adicional para aumentar seus limites.",
+      "premium": "Você já está no nível máximo de KYC.",
+      "generic": "Complete etapas adicionais para aumentar seus limites."
+    },
+    "riskTitle": "Perfil de risco",
+    "riskTierLabel": "Nível de risco",
+    "riskExplanation": {
+      "low": "Perfil conservador: limites típicos e menos revisões.",
+      "medium": "Perfil moderado: limites podem ser ajustados conforme uso e histórico.",
+      "high": "Perfil de alto risco: limites reduzidos e mais verificações.",
+      "generic": "Limites podem variar conforme seu perfil."
+    },
+    "riskNote": "O nível de risco influencia limites, revisões e requisitos adicionais.",
+    "limitsTitle": "Limites de envio",
+    "limitsDesc": "Valores aplicados ao seu perfil atual.",
+    "limitsUnavailable": "Limites ainda não disponíveis para este perfil.",
+    "perTx": "Por transação",
+    "perDay": "Por dia",
+    "perMonth": "Por mês",
+    "amlTitle": "AML & Segurança",
+    "openCases": "Casos em análise",
+    "highestRisk": "Risco mais alto",
+    "amlNote": "Se detectarmos algo suspeito, suas operações podem entrar em revisão AML.",
+    "viewSecurity": "Ver segurança"
   },
   "Admin": {
     "adminPanel": "Painel Admin (Super User)",

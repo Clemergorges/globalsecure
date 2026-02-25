@@ -1,50 +1,55 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const nodemailer = require('nodemailer');
-require('dotenv').config();
+const dotenv = require('dotenv');
+
+dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env' });
+
+function getArg(name) {
+  const idx = process.argv.indexOf(name);
+  if (idx === -1) return null;
+  return process.argv[idx + 1] || null;
+}
 
 async function testEmail() {
-  console.log('🧪 Testando configuração SMTP...');
-  
-  // Configuração do transporter
-  const transporter = nodemailer.createTransporter({
-    host: 'mail.privateemail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: 'noreply@globalsecuresend.com',
-      pass: 'Clemer091@'
-    }
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 465);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.EMAIL_FROM || process.env.FROM_EMAIL;
+  const to = getArg('--to');
+
+  if (!host || !user || !pass || !from) {
+    console.error('ERRO: SMTP não configurado (faltam SMTP_HOST/SMTP_USER/SMTP_PASS/EMAIL_FROM|FROM_EMAIL).');
+    process.exit(1);
+  }
+
+  if (!to) {
+    console.error('ERRO: informe --to email@dominio.com');
+    process.exit(1);
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+    requireTLS: port === 587,
   });
 
   try {
-    // Testar conexão
-    console.log('🔌 Verificando conexão...');
     await transporter.verify();
-    console.log('✅ Conexão SMTP estabelecida!');
-
-    // Enviar email de teste
-    console.log('📧 Enviando email de teste...');
     const info = await transporter.sendMail({
-      from: 'noreply@globalsecuresend.com',
-      to: 'teste@globalsecuresend.com',
-      subject: 'Teste GlobalSecure - Email Funcionando!',
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>🎉 Email Configurado com Sucesso!</h2>
-          <p>Sua configuração SMTP está funcionando corretamente.</p>
-          <p><strong>Host:</strong> mail.privateemail.com</p>
-          <p><strong>Porta:</strong> 465</p>
-          <p><strong>Usuário:</strong> noreply@globalsecuresend.com</p>
-        </div>
-      `
+      from,
+      to,
+      subject: 'Teste SMTP - GlobalSecureSend',
+      text: 'Teste SMTP OK',
+      html: '<p>Teste SMTP OK</p>',
     });
-
-    console.log('✅ Email enviado com sucesso!');
-    console.log('📨 ID da mensagem:', info.messageId);
-    
+    console.log('OK:', info.messageId || '(sem messageId)');
   } catch (error) {
-    console.error('❌ Erro ao enviar email:', error.message);
-    console.error('📋 Detalhes:', error);
+    console.error(error && error.stack ? error.stack : error);
+    process.exit(2);
   } finally {
     transporter.close();
   }

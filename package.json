@@ -27,7 +27,8 @@
     "test:failure": "dotenv -e .env.test -- jest --ci --runInBand --testPathPattern=tests/failure",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:failure",
     "dedupe:creditlines": "node scripts/dedupe-creditlines.js",
-    "seed:phase3": "dotenv -e .env.local -- node scripts/seed-phase3.js"
+    "seed:phase3": "dotenv -e .env.local -- node scripts/seed-phase3.js",
+    "ensure:login": "dotenv -e .env.local -- node scripts/ensure-login-user.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

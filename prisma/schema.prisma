@@ -172,12 +172,34 @@ enum AmlDecision {
   BLOCK
 }
 
+enum UserRole {
+  END_USER
+  COMPLIANCE
+  TREASURY
+  ADMIN
+}
+
+enum UserRiskTier {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum SensitiveActionType {
+  SENSITIVE_CHANGE_PASSWORD
+  SENSITIVE_UPDATE_CONTACT
+  SENSITIVE_HIGH_VALUE_TRANSFER
+}
+
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
   emailVerified Boolean   @default(false)
   passwordHash  String
   
+  // Role-Based Access Control
+  role          UserRole  @default(END_USER)
+
   // Basic Identity
   firstName     String?
   lastName      String?
@@ -200,6 +222,10 @@ model User {
   
   kycLevel      Int       @default(0)
   kycStatus     KYCStatus @default(PENDING)
+  kycCompletedAt DateTime?
+
+  riskTier      UserRiskTier @default(LOW)
+  riskScore     Int?
   
   // Consent
   gdprConsent   Boolean   @default(false)
@@ -240,6 +266,7 @@ model User {
   kycDocuments  KYCDocument[]
   sessions      Session[]
   otps          OTP[]
+  sensitiveActionOtps SensitiveActionOtp[]
   passwordResetTokens PasswordResetToken[]
   notifications Notification[]
   cryptoDeposits CryptoDeposit[]
@@ -746,6 +773,7 @@ model Session {
   lastScaAt DateTime?
   createdAt DateTime @default(now())
   expiresAt DateTime
+  revokedAt DateTime?
 
   user User @relation(fields: [userId], references: [id])
 
@@ -769,6 +797,24 @@ model OTP {
 
   @@index([target, code])
   @@index([userId])
+}
+
+model SensitiveActionOtp {
+  id        String              @id @default(uuid())
+  userId    String
+  actionType SensitiveActionType
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime            @default(now())
+  ipAddress String?
+  userAgent String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, actionType, createdAt])
+  @@index([expiresAt])
+  @@index([userId, usedAt])
 }
 
 model TransactionLog {
@@ -1022,6 +1068,8 @@ model AuditLog {
   @@index([createdAt])
   @@index([action])
   @@index([status])
+  @@index([userId, action, createdAt])
+  @@index([action, createdAt])
 }
 
 enum TransactionCategory {

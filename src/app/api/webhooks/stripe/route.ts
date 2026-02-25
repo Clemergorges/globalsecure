@@ -10,6 +10,8 @@ import { coverFiatSpend } from '@/lib/services/fiat-pool';
 import { getYieldGuardForAsset } from '@/lib/services/market-guard';
 import { checkUserGeoFraudContext } from '@/lib/services/risk-gates';
 import { logger } from '@/lib/logger';
+// GSS-MVP-FIX
+import { sendEmail, templates } from '@/lib/services/email';
 
 function getMinorUnitDivisor(currency: string) {
   const c = currency.toUpperCase();
@@ -496,6 +498,50 @@ export async function POST(req: Request) {
           { stripeAuthId: auth.id, stripeCardId: cardId, userId: virtualCard.userId || null, spendCurrency, spendAmount },
           'Issuing authorization approved',
         );
+
+        // GSS-MVP-FIX: Post-approval notifications only (no change to approval/ledger logic).
+        try {
+          const updated = await prisma.virtualCard.findUnique({
+            where: { id: virtualCard.id },
+            include: { transfer: true },
+          });
+          if (updated?.transfer?.recipientEmail) {
+            const to = updated.transfer.recipientEmail;
+            const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to) && to !== 'unknown' && to !== 'claim-placeholder@globalsecuresend.com';
+            if (isValidEmail) {
+              const available = (updated.amount.toNumber() - updated.amountUsed.toNumber()).toFixed(2);
+              const spentInCardCurrency = updated.currency.toUpperCase() === spendCurrency ? spendAmount.toFixed(2) : (amountInCardCurrency as number).toFixed(2);
+
+              await sendEmail({
+                to,
+                // TODO GSS: i18n key 'card.spentEmail.subject'
+                subject: 'Your GlobalSecure card has been used',
+                html: templates.cardSpent({
+                  recipientName: updated.transfer.recipientName || undefined,
+                  currency: updated.currency.toUpperCase(),
+                  spentAmount: spentInCardCurrency,
+                  availableAmount: available,
+                  merchantName: auth.merchant_data?.name || null,
+                }),
+              });
+
+              const recipientUser = await prisma.user.findUnique({
+                where: { email: to },
+                select: { id: true },
+              });
+              if (recipientUser?.id) {
+                await prisma.notification.create({
+                  data: {
+                    userId: recipientUser.id,
+                    title: 'Card spent',
+                    body: `Spent ${updated.currency.toUpperCase()} ${spentInCardCurrency}. Available ${updated.currency.toUpperCase()} ${available}.`,
+                    type: 'CARD_SPENT',
+                  },
+                });
+              }
+            }
+          }
+        } catch {}
       } else {
         logger.warn(
           { stripeAuthId: auth.id, stripeCardId: cardId, userId: virtualCard.userId || null, spendCurrency, spendAmount },

@@ -9,6 +9,9 @@ import { applyFiatMovement } from '@/lib/services/fiat-ledger';
 import { checkUserCanTransact } from '@/lib/services/risk-gates';
 import { checkAndCreateAmlCasesForTransfer } from '@/lib/services/aml-rules';
 import { getIssuerConnector } from '@/lib/services/issuer-connector';
+import { getExchangeRate } from '@/lib/services/exchange';
+import { getKycTierLimits } from '@/lib/services/kyc-limits';
+import { determineUserRiskTier } from '@/lib/services/risk-profile';
 import { z } from 'zod';
 
 const transferSchema = z.object({
@@ -17,7 +20,8 @@ const transferSchema = z.object({
   currencySource: z.string().length(3),
   currencyTarget: z.string().length(3),
   receiverEmail: z.string().email().optional(),
-  receiverName: z.string().optional()
+  receiverName: z.string().optional(),
+  personalMessage: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -25,8 +29,34 @@ export async function POST(req: Request) {
 
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  async function sumTransfersEur(senderId: string, since: Date) {
+    const transfers = await prisma.transfer.findMany({
+      where: { senderId, createdAt: { gte: since } },
+      select: { amountSent: true, currencySent: true },
+    });
+
+    const currencies = Array.from(new Set(transfers.map((t) => t.currencySent.toUpperCase())));
+    const rates = new Map<string, number>();
+    for (const c of currencies) {
+      if (c === 'EUR') rates.set(c, 1);
+      else rates.set(c, await getExchangeRate(c, 'EUR'));
+    }
+
+    let total = 0;
+    for (const t of transfers) {
+      const c = t.currencySent.toUpperCase();
+      const rate = rates.get(c) || 1;
+      total += Number(t.amountSent) * rate;
+    }
+    return total;
+  }
+
   try {
     const requestId = req.headers.get('x-request-id') || null;
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const method = req.method;
+    const path = new URL(req.url).pathname;
     logger.info({ requestId, userId: (session as any).userId }, 'Transfer create requested');
     const body = await req.json();
     
@@ -46,8 +76,26 @@ export async function POST(req: Request) {
       currencySource,
       currencyTarget,
       receiverEmail,
-      receiverName
+      receiverName,
+      personalMessage,
     } = validation.data;
+
+    // GSS-MVP-FIX: MVP hardening — do not expose unfinished modes via this endpoint.
+    if (mode !== 'CARD_EMAIL') {
+      return NextResponse.json(
+        { error: 'Mode not supported', code: 'MODE_NOT_SUPPORTED' },
+        { status: 400 },
+      );
+    }
+    // GSS-MVP-FIX: CARD_EMAIL requires a recipient email.
+    if (!receiverEmail) {
+      return NextResponse.json({ error: 'Missing receiverEmail', code: 'VALIDATION_ERROR' }, { status: 400 });
+    }
+
+    const senderMessage = personalMessage ? personalMessage.trim() : null;
+    if (senderMessage && senderMessage.length > 240) {
+      return NextResponse.json({ error: 'Personal message too long', code: 'PERSONAL_MESSAGE_TOO_LONG' }, { status: 400 });
+    }
 
     // 0. KYC Check
     const user = await prisma.user.findUnique({ 
@@ -65,8 +113,17 @@ export async function POST(req: Request) {
     }
 
     // SCA CHECK (Strong Customer Authentication)
-    // Required for amounts > 30 EUR (approx)
-    if (amountSource > 30) {
+    // Base threshold: require SCA only when amount in EUR exceeds threshold.
+    // In production, default is 30 EUR; in dev, default is higher to ease local tests.
+    const highValueThresholdEur = Number(process.env.SENSITIVE_HIGH_VALUE_TRANSFER_THRESHOLD_EUR || 2000);
+    const baseScaThresholdEur = Number(
+      process.env.SCA_BASE_THRESHOLD_EUR ??
+      (process.env.NODE_ENV === 'production' ? 30 : 1000)
+    );
+    const rateToEur = currencySource.toUpperCase() === 'EUR' ? 1 : await getExchangeRate(currencySource, 'EUR');
+    const amountEur = Number(amountSource) * rateToEur;
+
+    if (amountEur > baseScaThresholdEur) {
         // We need to verify if the session has a recent SCA verification
         const sessionId = (session as any).sessionId;
         
@@ -79,6 +136,14 @@ export async function POST(req: Request) {
             const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
             if (!dbSession?.lastScaAt || dbSession.lastScaAt < fiveMinutesAgo) {
+                if (amountEur > highValueThresholdEur) {
+                  return NextResponse.json({ 
+                      error: 'Confirmação por OTP necessária', 
+                      code: 'SENSITIVE_OTP_REQUIRED',
+                      actionType: 'SENSITIVE_HIGH_VALUE_TRANSFER',
+                      message: 'Solicite e confirme o OTP por e-mail para continuar com esta transferência de alto valor.'
+                  }, { status: 403 });
+                }
                 return NextResponse.json({ 
                     error: 'Autenticação Forte (SCA) Necessária', 
                     code: 'SCA_REQUIRED',
@@ -94,15 +159,73 @@ export async function POST(req: Request) {
         }
     }
 
-    // Limits based on KYC Level
-    const amount = amountSource;
-    const kycLevel = user.kycLevel;
+    const riskTier = user.riskTier || determineUserRiskTier(user);
+    const limits = getKycTierLimits(user.kycLevel, riskTier);
+    const amountEurForLimits = amountEur;
 
-    if (kycLevel === 0 && amount > 100) {
-      return NextResponse.json({ error: 'Unverified account limit exceeded. Please complete KYC to send more than €100.' }, { status: 403 });
+    const now = new Date();
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const dailyTotalEur = await sumTransfersEur(user.id, dayStart);
+    const monthlyTotalEur = await sumTransfersEur(user.id, monthStart);
+
+    const block = async (limitType: 'TX' | 'DAILY' | 'MONTHLY') => {
+      logAudit({
+        userId: user.id,
+        action: 'KYC_LIMIT_BLOCK',
+        status: 'FAILURE',
+        ipAddress,
+        userAgent,
+        method,
+        path,
+        metadata: {
+          limitType,
+          kycLevel: user.kycLevel,
+          riskTier,
+          amount: amountSource,
+          currency: currencySource,
+          amountEur: amountEurForLimits,
+          totals: { dailyEur: dailyTotalEur, monthlyEur: monthlyTotalEur },
+          limits: limits.effective,
+        },
+      });
+
+      if (riskTier === 'HIGH' || limitType !== 'TX') {
+        await prisma.amlReviewCase.create({
+          data: {
+            userId: user.id,
+            reason: 'KYC_LIMIT_EXCEEDED',
+            contextJson: {
+              limitType,
+              kycLevel: user.kycLevel,
+              riskTier,
+              amount: amountSource,
+              currency: currencySource,
+              amountEur: amountEurForLimits,
+              totals: { dailyEur: dailyTotalEur, monthlyEur: monthlyTotalEur },
+              limits: limits.effective,
+            },
+            status: 'PENDING',
+            riskLevel: riskTier === 'HIGH' ? 'HIGH' : 'MEDIUM',
+            riskScore: riskTier === 'HIGH' ? 80 : 50,
+            slaDueAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          },
+        }).catch(() => {});
+      }
+    };
+
+    if (amountEurForLimits > limits.effective.perTxEur) {
+      await block('TX');
+      return NextResponse.json({ error: 'Forbidden', code: 'KYC_LIMIT_TX_EXCEEDED' }, { status: 403 });
     }
-    if (kycLevel === 1 && amount > 500) {
-      return NextResponse.json({ error: 'Pending verification limit exceeded. Please wait for approval to send more than €500.' }, { status: 403 });
+    if (dailyTotalEur + amountEurForLimits > limits.effective.dailyEur) {
+      await block('DAILY');
+      return NextResponse.json({ error: 'Forbidden', code: 'KYC_LIMIT_DAILY_EXCEEDED' }, { status: 403 });
+    }
+    if (monthlyTotalEur + amountEurForLimits > limits.effective.monthlyEur) {
+      await block('MONTHLY');
+      return NextResponse.json({ error: 'Forbidden', code: 'KYC_LIMIT_MONTHLY_EXCEEDED' }, { status: 403 });
     }
 
     // 1. Calculate Amounts
@@ -112,8 +235,9 @@ export async function POST(req: Request) {
       currencyTarget
     );
     
-    // Total to deduct = Amount + Fee
-    const totalDeduction = Number(amountSource) + Number(calculation.fee);
+    // GSS-MVP-FIX: Align fee economics with exchange.ts (fee is deducted from amountSource; do not debit fee twice).
+    // Total to deduct = amountSource (fee is already represented inside amountReceived calculation)
+    const totalDeduction = Number(amountSource);
 
     // 2. Transaction: Debit & Create Transfer
     const result = await prisma.$transaction(async (tx) => {
@@ -136,18 +260,10 @@ export async function POST(req: Request) {
             }
         });
 
-        // 2.2 Find Receiver if Account mode
-        let receiverId = null;
-        let receiverCountry: string | null = null;
-        if (mode === 'ACCOUNT_CONTROLLED' && receiverEmail) {
-            const receiver = await tx.user.findUnique({ where: { email: receiverEmail }, select: { id: true, country: true } });
-            if (receiver) {
-              receiverId = receiver.id;
-              receiverCountry = receiver.country || null;
-            }
-        }
+        // GSS-MVP-FIX: MVP limits this endpoint to CARD_EMAIL (no internal recipient settlement here).
+        const receiverId = null;
+        const receiverCountry: string | null = null;
 
-        const now = new Date();
         const velocityWindowMinutes = Number(process.env.AML_VELOCITY_WINDOW_MINUTES || 10);
         const since = new Date(now.getTime() - (Number.isFinite(velocityWindowMinutes) && velocityWindowMinutes > 0 ? velocityWindowMinutes : 10) * 60 * 1000);
         const velocityCountBefore = await tx.transfer.count({ where: { senderId: (session as any).userId, createdAt: { gte: since } } });
@@ -171,7 +287,7 @@ export async function POST(req: Request) {
                 logs: {
                     create: {
                         type: 'CREATE_TRANSFER',
-                        metadata: { receiverEmail, receiverName }
+                        metadata: { receiverEmail, receiverName, senderMessage }
                     }
                 }
             }
@@ -202,6 +318,10 @@ export async function POST(req: Request) {
           userId: (session as any).userId, 
           action: 'TRANSFER_CARD_INIT', 
           status: 'PENDING',
+          ipAddress,
+          userAgent,
+          method,
+          path,
           metadata: { amount: amountSource, currency: currencySource }
       });
 
@@ -232,12 +352,17 @@ export async function POST(req: Request) {
             userId: (session as any).userId, 
             action: 'TRANSFER_CARD_CREATED', 
             status: 'SUCCESS',
+            ipAddress,
+            userAgent,
+            method,
+            path,
             metadata: { cardId: cardData.cardId, transferId: result.id, issuer: issuer.kind }
         });
         
         await prisma.virtualCard.create({
             data: {
               transferId: result.id,
+              userId: (session as any).userId,
               stripeCardId: cardData.cardId,
               stripeCardholderId: cardData.cardholderId,
               last4: cardData.last4,
@@ -259,12 +384,13 @@ export async function POST(req: Request) {
             const { sendEmail, templates } = await import('@/lib/services/email');
             await sendEmail({
               to: receiverEmail!,
-              subject: '🎁 You received a GlobalSecure Virtual Card',
+              subject: 'You received a GlobalSecure virtual card',
               html: templates.cardCreated(
-                receiverName || 'Cliente',
+                receiverName || 'Customer',
                 cardData.last4,
                 Number(issueAmount).toFixed(2),
-                issueCurrency.toUpperCase()
+                issueCurrency.toUpperCase(),
+                senderMessage
               )
             });
         } catch (emailError) {
@@ -364,11 +490,36 @@ export async function POST(req: Request) {
       console.warn('Pusher trigger failed:', pusherError);
     }
 
+    logAudit({
+      userId: (session as any).userId,
+      action: 'TRANSFER_CREATE',
+      status: 'SUCCESS',
+      ipAddress,
+      userAgent,
+      method,
+      path,
+      metadata: { transferId: result.id, mode, amount: amountSource, currencySource, currencyTarget },
+    });
+
     return NextResponse.json({ success: true, transferId: result.id });
   } catch (error: any) {
     const requestId = req.headers.get('x-request-id') || null;
     console.error('Transfer creation failed:', error);
     logger.error({ requestId, userId: (session as any)?.userId, err: error }, 'Transfer create failed');
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const method = req.method;
+    const path = new URL(req.url).pathname;
+    logAudit({
+      userId: (session as any)?.userId,
+      action: 'TRANSFER_CREATE',
+      status: 'FAILURE',
+      ipAddress,
+      userAgent,
+      method,
+      path,
+      metadata: { reason: error?.message || 'UNKNOWN' },
+    });
     if (error?.message === 'BALANCE_NOT_FOUND') {
       return NextResponse.json({ error: 'Balance not found' }, { status: 400 });
     }

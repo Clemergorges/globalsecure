@@ -67,6 +67,37 @@
       "loginFailed": "Sign-in failed"
     }
   },
+  "ForgotPassword": {
+    "title": "Forgot your password?",
+    "subtitle": "Enter your email and we'll send reset instructions",
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "submit": "Send instructions",
+    "submitting": "Sending...",
+    "success": "If the email exists, we'll send instructions.",
+    "backToLogin": "Back to login",
+    "errors": {
+      "sendFailed": "Failed to send email. Try again."
+    }
+  },
+  "ResetPassword": {
+    "title": "Reset password",
+    "subtitle": "Enter your new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordPlaceholder": "••••••••",
+    "passwordRequirements": "Minimum 8 characters, including uppercase, lowercase, number and special character",
+    "submit": "Reset password",
+    "submitting": "Resetting...",
+    "success": "Password reset successfully!",
+    "backToLogin": "Back to login",
+    "invalidToken": "Invalid or missing token",
+    "passwordMismatch": "Passwords do not match",
+    "errors": {
+      "resetFailed": "Could not reset password. Try again.",
+      "invalidToken": "Invalid or expired token"
+    }
+  },
   "VerifyEmail": {
     "title": "Verify email",
     "missingEmail": "Enter your email to continue.",
@@ -129,6 +160,7 @@
       "transactions": "Transactions",
       "send": "Send Money",
       "cards": "Cards",
+      "limits": "Limits",
       "history": "History",
       "security": "Security",
       "settings": "Settings",
@@ -587,6 +619,11 @@
       "description": "Are you sure you want to remove this card? This action cannot be undone.",
       "confirm": "Remove card"
     },
+    "cancelDialog": {
+      "title": "Cancel card",
+      "description": "Are you sure you want to cancel this card? This action is irreversible.",
+      "confirm": "Cancel card"
+    },
     "detailsDialog": {
       "title": "Card details",
       "description": "Use these details for online purchases. Never share them with others.",
@@ -605,7 +642,8 @@
       "revealFailed": "Failed to reveal card details",
       "deleteFailed": "Failed to delete card"
     },
-    "removeCardAria": "Remove card"
+    "removeCardAria": "Remove card",
+    "cardBlockUnavailable": "Card blocking is currently unavailable."
   },
   "SecureTransfer": {
     "title": "Global Link (Secure transfer)",
@@ -827,6 +865,50 @@
     "stripeConnectionError": "Stripe Identity connection failed.",
     "documentSendError": "Could not submit documents.",
     "connectionError": "Connection error."
+  },
+  "Limits": {
+    "title": "Your KYC, risk and limits",
+    "subtitle": "Understand what you can do today and how to increase your limits.",
+    "backToDashboard": "Back to dashboard",
+    "reload": "Reload",
+    "loading": "Loading…",
+    "error": {
+      "loadFailedTitle": "Could not load your limits",
+      "loadFailedDesc": "Please try again.",
+      "retryButton": "Try again"
+    },
+    "completeKyc": "Complete KYC",
+    "kycTitle": "KYC",
+    "level": "Level",
+    "status": "Status",
+    "country": "Country",
+    "kycNextStep": {
+      "none": "Complete your KYC to unlock limits.",
+      "basic": "Submit proof of address to increase your limits.",
+      "advanced": "Finish additional verification to increase your limits.",
+      "premium": "You're already at the maximum KYC level.",
+      "generic": "Complete additional steps to increase your limits."
+    },
+    "riskTitle": "Risk profile",
+    "riskTierLabel": "Risk tier",
+    "riskExplanation": {
+      "low": "Conservative profile: typical limits and fewer reviews.",
+      "medium": "Moderate profile: limits may be adjusted based on usage and history.",
+      "high": "High-risk profile: reduced limits and more checks.",
+      "generic": "Limits may vary based on your profile."
+    },
+    "riskNote": "Risk tier influences limits, reviews and additional requirements.",
+    "limitsTitle": "Sending limits",
+    "limitsDesc": "Values applied to your current profile.",
+    "limitsUnavailable": "Limits are not available for this profile yet.",
+    "perTx": "Per transaction",
+    "perDay": "Per day",
+    "perMonth": "Per month",
+    "amlTitle": "AML & Security",
+    "openCases": "Open cases",
+    "highestRisk": "Highest risk",
+    "amlNote": "If we detect something suspicious, your operations may undergo AML review.",
+    "viewSecurity": "View security"
   },
   "Admin": {
     "adminPanel": "Admin panel",

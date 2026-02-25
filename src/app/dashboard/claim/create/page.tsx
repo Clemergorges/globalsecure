@@ -24,6 +24,8 @@ export default function ClaimCreatePage() {
   const t = useTranslations('ClaimCreate');
   const tc = useTranslations('Common');
   const locale = useLocale();
+  // GSS-MVP-FIX: Claim links are DEMO-only for MVP unless explicitly enabled.
+  const claimLinksEnabled = process.env.NEXT_PUBLIC_CLAIM_LINKS_ENABLED === 'true';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SuccessData | null>(null);
@@ -35,6 +37,50 @@ export default function ClaimCreatePage() {
     currency: 'EUR',
     message: '',
   });
+
+  if (!claimLinksEnabled) {
+    // GSS-MVP-FIX
+    return (
+      <div className="p-6 md:p-8 max-w-3xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            {(() => {
+              try {
+                return t('title');
+              } catch {
+                // TODO GSS: add i18n key 'ClaimCreate.title'
+                return 'Claim (Link + código)';
+              }
+            })()}
+          </h1>
+          <p className="text-slate-400">
+            {/* TODO GSS: add i18n key 'ClaimCreate.disabledMvp' */}
+            Claim links estão desativados no MVP (DEMO).
+          </p>
+        </div>
+
+        <Card className="bg-[#111116] border-white/10 text-white">
+          <CardHeader>
+            <CardTitle>
+              {/* TODO GSS: add i18n key 'ClaimCreate.disabledTitle' */}
+              Recurso desativado
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              {/* TODO GSS: add i18n key 'ClaimCreate.disabledDescription' */}
+              Para o MVP, use transferências internas em /dashboard/transfers/create ou cartão por e‑mail (CARD_EMAIL).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/dashboard" className="inline-block">
+              <Button variant="outline" className="border-white/10 text-slate-200 hover:bg-white/5">
+                {tc('back')}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   async function handleSubmit() {
     setLoading(true);

@@ -71,6 +71,7 @@ const mockHashPassword = jest.fn();
 const mockComparePassword = jest.fn();
 const mockLogAudit = jest.fn();
 const mockGetCurrencyForCountry = jest.fn();
+const mockCreateSession = jest.fn();
 
 jest.mock('@/lib/db', () => ({ prisma: mockPrisma }));
 jest.mock('@/lib/rate-limit', () => ({ checkRateLimit: (...args: any[]) => mockCheckRateLimit(...args) }));
@@ -78,6 +79,13 @@ jest.mock('@/lib/services/email', () => ({
   sendEmail: (...args: any[]) => mockSendEmail(...args),
   templates: { verificationCode: (code: string) => `<div>${code}</div>` },
 }));
+jest.mock('@/lib/session', () => {
+  const actual = jest.requireActual('@/lib/session');
+  return {
+    ...actual,
+    createSession: (...args: any[]) => mockCreateSession(...args),
+  };
+});
 jest.mock('@/lib/auth', () => ({
   hashPassword: (...args: any[]) => mockHashPassword(...args),
   comparePassword: (...args: any[]) => mockComparePassword(...args),
@@ -118,6 +126,14 @@ describe('Auth: Email verification flow', () => {
     mockComparePassword.mockResolvedValue(true);
     mockGetCurrencyForCountry.mockReturnValue('EUR');
     mockSendEmail.mockResolvedValue({ ok: true, messageId: 'm1' });
+    mockPrisma.user.update.mockResolvedValue({});
+    // GSS-MVP-FIX: align test with new MVP scope.
+    mockCreateSession.mockResolvedValue({
+      token: 'test.jwt.token',
+      sessionId: 'sess1',
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      maxAgeSeconds: 60 * 60,
+    });
 
     mockPrisma.consentDocument.findFirst.mockResolvedValue({
       id: 'cd1',
@@ -182,7 +198,7 @@ describe('Auth: Email verification flow', () => {
     expect(json.error).toMatch(/Email já cadastrado/i);
   });
 
-  test('register: email send failure rolls back user and returns 503', async () => {
+  test('register: email send failure creates user, logs, and returns 201', async () => {
     mockPrisma.user.findUnique.mockResolvedValue(null);
 
     mockTx.user.create.mockResolvedValue({
@@ -202,16 +218,14 @@ describe('Auth: Email verification flow', () => {
 
     const res = await registerPOST(req);
     const json = await res.json();
-    expect(res.status).toBe(503);
-    expect(json.error).toMatch(/Falha ao enviar/i);
-    expect(mockTx.oTP.deleteMany).toHaveBeenCalledTimes(1);
-    expect(mockTx.balance.deleteMany).toHaveBeenCalledTimes(1);
-    expect(mockTx.account.deleteMany).toHaveBeenCalledTimes(1);
-    expect(mockTx.user.delete).toHaveBeenCalledTimes(1);
-
-    const accountDeleteOrder = mockTx.account.deleteMany.mock.invocationCallOrder[0];
-    const userDeleteOrder = mockTx.user.delete.mock.invocationCallOrder[0];
-    expect(accountDeleteOrder).toBeLessThan(userDeleteOrder);
+    expect(res.status).toBe(201);
+    expect(json.success).toBe(true);
+    expect(json.emailSent).toBe(false);
+    // No rollback should occur
+    expect(mockTx.oTP.deleteMany).not.toHaveBeenCalled();
+    expect(mockTx.balance.deleteMany).not.toHaveBeenCalled();
+    expect(mockTx.account.deleteMany).not.toHaveBeenCalled();
+    expect(mockTx.user.delete).not.toHaveBeenCalled();
   });
 
   test('verify-email: correct code marks emailVerified and updates account', async () => {
@@ -298,6 +312,7 @@ describe('Auth: Email verification flow', () => {
       email: 'user@test.com',
       emailVerified: false,
       passwordHash: 'hashed',
+      role: 'END_USER',
       account: { status: 'UNVERIFIED' }
     });
 
@@ -319,6 +334,7 @@ describe('Auth: Email verification flow', () => {
       email: 'user@test.com',
       emailVerified: true,
       passwordHash: 'hashed',
+      role: 'END_USER',
       account: { status: 'ACTIVE' }
     });
 

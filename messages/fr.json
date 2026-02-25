@@ -76,6 +76,37 @@
       "loginFailed": "Échec de connexion"
     }
   },
+  "ForgotPassword": {
+    "title": "Mot de passe oublié ?",
+    "subtitle": "Entrez votre e-mail et nous enverrons des instructions pour réinitialiser votre mot de passe",
+    "email": "E-mail",
+    "emailPlaceholder": "nom@exemple.com",
+    "submit": "Envoyer les instructions",
+    "submitting": "Envoi...",
+    "success": "Si l'e-mail existe, nous enverrons des instructions.",
+    "backToLogin": "Retour à la connexion",
+    "errors": {
+      "sendFailed": "Échec de l'envoi de l'e-mail. Réessayez."
+    }
+  },
+  "ResetPassword": {
+    "title": "Réinitialiser le mot de passe",
+    "subtitle": "Saisissez votre nouveau mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le nouveau mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "passwordRequirements": "Minimum 8 caractères, incluant majuscule, minuscule, chiffre et caractère spécial",
+    "submit": "Réinitialiser le mot de passe",
+    "submitting": "Réinitialisation...",
+    "success": "Mot de passe réinitialisé avec succès !",
+    "backToLogin": "Retour à la connexion",
+    "invalidToken": "Jeton invalide ou manquant",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "errors": {
+      "resetFailed": "Impossible de réinitialiser le mot de passe. Réessayez.",
+      "invalidToken": "Jeton invalide ou expiré"
+    }
+  },
   "VerifyEmail": {
     "title": "Vérifier l'e-mail",
     "missingEmail": "Saisissez votre e-mail pour continuer.",
@@ -129,6 +160,7 @@
       "transactions": "Transactions",
       "send": "Envoyer de l'argent",
       "cards": "Cartes",
+      "limits": "Limites",
       "history": "Historique",
       "security": "Sécurité",
       "settings": "Paramètres",
@@ -587,6 +619,11 @@
       "description": "Voulez-vous vraiment supprimer cette carte ? Cette action est irréversible.",
       "confirm": "Supprimer la carte"
     },
+    "cancelDialog": {
+      "title": "Annuler la carte",
+      "description": "Êtes-vous sûr de vouloir annuler cette carte ? Cette action est irréversible.",
+      "confirm": "Annuler la carte"
+    },
     "detailsDialog": {
       "title": "Détails de la carte",
       "description": "Utilisez ces informations pour des achats en ligne. Ne les partagez jamais.",
@@ -605,7 +642,8 @@
       "revealFailed": "Impossible d'afficher les données de la carte",
       "deleteFailed": "Impossible de supprimer la carte"
     },
-    "removeCardAria": "Supprimer la carte"
+    "removeCardAria": "Supprimer la carte",
+    "cardBlockUnavailable": "Blocage de carte indisponible pour le moment."
   },
   "SecureTransfer": {
     "title": "Global Link (virement sécurisé)",
@@ -827,6 +865,50 @@
     "stripeConnectionError": "Échec de connexion à Stripe Identity.",
     "documentSendError": "Impossible d'envoyer les documents.",
     "connectionError": "Erreur de connexion."
+  },
+  "Limits": {
+    "title": "Votre KYC, risque et limites",
+    "subtitle": "Comprenez ce que vous pouvez faire aujourd'hui et comment augmenter vos limites.",
+    "backToDashboard": "Retour au tableau de bord",
+    "reload": "Recharger",
+    "loading": "Chargement…",
+    "error": {
+      "loadFailedTitle": "Impossible de charger vos limites",
+      "loadFailedDesc": "Veuillez réessayer.",
+      "retryButton": "Réessayer"
+    },
+    "completeKyc": "Compléter le KYC",
+    "kycTitle": "KYC",
+    "level": "Niveau",
+    "status": "Statut",
+    "country": "Pays",
+    "kycNextStep": {
+      "none": "Complétez votre KYC pour débloquer des limites.",
+      "basic": "Envoyez un justificatif de domicile pour augmenter vos limites.",
+      "advanced": "Terminez la vérification supplémentaire pour augmenter vos limites.",
+      "premium": "Vous êtes déjà au niveau KYC maximum.",
+      "generic": "Complétez des étapes supplémentaires pour augmenter vos limites."
+    },
+    "riskTitle": "Profil de risque",
+    "riskTierLabel": "Niveau de risque",
+    "riskExplanation": {
+      "low": "Profil conservateur : limites typiques et moins de contrôles.",
+      "medium": "Profil modéré : les limites peuvent être ajustées selon l'usage et l'historique.",
+      "high": "Profil à haut risque : limites réduites et plus de vérifications.",
+      "generic": "Les limites peuvent varier selon votre profil."
+    },
+    "riskNote": "Le niveau de risque influence les limites, les contrôles et les exigences supplémentaires.",
+    "limitsTitle": "Limites d'envoi",
+    "limitsDesc": "Valeurs appliquées à votre profil actuel.",
+    "limitsUnavailable": "Limites non disponibles pour ce profil pour le moment.",
+    "perTx": "Par transaction",
+    "perDay": "Par jour",
+    "perMonth": "Par mois",
+    "amlTitle": "AML & Sécurité",
+    "openCases": "Dossiers en analyse",
+    "highestRisk": "Risque le plus élevé",
+    "amlNote": "Si nous détectons quelque chose de suspect, vos opérations peuvent passer en revue AML.",
+    "viewSecurity": "Voir la sécurité"
   },
   "Admin": {
     "adminPanel": "Panneau d'administration",

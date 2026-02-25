@@ -141,40 +141,33 @@ export async function POST(req: Request) {
     });
 
     if (!emailResult?.ok) {
-      try {
-        await prisma.$transaction(async (tx) => {
-          const userId = created.user.id;
-          const accountId = created.user.account?.id;
-
-          await tx.oTP.deleteMany({ where: { userId, type: 'EMAIL' } });
-
-          if (accountId) {
-            await tx.balance.deleteMany({ where: { accountId } });
-            await tx.accountTransaction.deleteMany({ where: { accountId } });
-            await tx.account.deleteMany({ where: { id: accountId } });
-          } else {
-            await tx.account.deleteMany({ where: { userId } });
-          }
-
-          await tx.user.delete({ where: { id: userId } });
-        });
-      } catch (rollbackError) {
-        console.error('Registration rollback error:', rollbackError);
-      }
-
       await logAudit({
+        userId: created.user.id,
         action: 'REGISTER_EMAIL_FAILED',
-        status: '503',
+        status: '200',
         ipAddress: ip,
         userAgent,
         path: '/api/auth/register',
         metadata: { email: normalizedEmail, reason: emailResult?.error || 'UNKNOWN' }
       });
 
-      return NextResponse.json(
-        { error: 'Falha ao enviar o email de verificação. Tente novamente.' },
-        { status: 503 }
-      );
+      await logAudit({
+        userId: created.user.id,
+        action: 'REGISTER_CREATED',
+        status: '201',
+        ipAddress: ip,
+        userAgent,
+        path: '/api/auth/register',
+        metadata: { email: normalizedEmail, emailSent: false }
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        userId: created.user.id,
+        email: created.user.email,
+        emailSent: false,
+        message: "Usuário criado. Não foi possível enviar o email agora; tente reenviar o código."
+      }, { status: 201 });
     }
 
     await logAudit({

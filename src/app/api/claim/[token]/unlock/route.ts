@@ -5,6 +5,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { logAudit } from '@/lib/logger';
 import { getCardData } from '@/lib/services/card';
 import { closeEtherFiPosition } from '@/lib/services/etherfiService';
+import { sendEmail, templates } from '@/lib/services/email';
 
 const unlockSchema = z.object({
   unlockCode: z
@@ -181,6 +182,32 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
         duration: updated.createdAt ? Date.now() - new Date(updated.createdAt).getTime() : null
       }
     });
+
+    // GSS-MVP-FIX: Inform recipient (even without GSS account) that the card is now active + current available amount.
+    try {
+      const transferId2 = claim.virtualCard?.transferId;
+      if (transferId2) {
+        const transfer = await prisma.transfer.findUnique({
+          where: { id: transferId2 },
+          select: { recipientEmail: true, recipientName: true },
+        });
+        const to = transfer?.recipientEmail || null;
+        const isValidEmail = typeof to === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to) && to !== 'unknown' && to !== 'claim-placeholder@globalsecuresend.com';
+        if (isValidEmail) {
+          const amountAvailable = (claim.virtualCard.amount.toNumber() - claim.virtualCard.amountUsed.toNumber()).toFixed(2);
+          await sendEmail({
+            to,
+            // TODO GSS: i18n key 'card.activatedEmail.subject'
+            subject: 'Your GlobalSecure virtual card is active',
+            html: templates.cardActivated({
+              recipientName: transfer?.recipientName || undefined,
+              currency: claim.virtualCard.currency.toUpperCase(),
+              amountAvailable,
+            }),
+          });
+        }
+      }
+    } catch {}
 
     return NextResponse.json({
       ok: true,

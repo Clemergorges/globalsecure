@@ -7,6 +7,14 @@ import { logAudit } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
+    // GSS-MVP-FIX: Claim links are DEMO-only for the MVP unless explicitly enabled.
+    if (process.env.CLAIM_LINKS_ENABLED !== 'true') {
+      return NextResponse.json(
+        { error: 'Claim links are disabled for MVP', code: 'CLAIM_LINKS_DISABLED' },
+        { status: 410 },
+      );
+    }
+
     const session = await getSession();
     // @ts-ignore
     if (!session || !session.userId) {

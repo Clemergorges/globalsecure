@@ -1,11 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../setup/prisma';
-
-jest.mock('@/lib/auth', () => ({
-  checkAdmin: jest.fn(),
-}));
-
-import { checkAdmin } from '@/lib/auth';
+import { createSession } from '@/lib/session';
+import { UserRole } from '@prisma/client';
+import { NextRequest } from 'next/server';
 import { GET as amlQueueGet, POST as amlQueuePost } from '@/app/api/admin/aml/review-queue/route';
 
 function uid(prefix: string) {
@@ -19,13 +16,14 @@ describe('AML review workflow', () => {
     await prisma.user.upsert({
       where: { id: adminId },
       update: {},
-      create: { id: adminId, email: 'admin.workflow@test.com', passwordHash: 'hash', firstName: 'Admin', lastName: 'Workflow', emailVerified: true },
+      create: { id: adminId, email: 'admin.workflow@test.com', passwordHash: 'hash', firstName: 'Admin', lastName: 'Workflow', emailVerified: true, role: 'ADMIN' },
     });
   });
 
   afterAll(async () => {
     await prisma.amlReviewNote.deleteMany({ where: { authorId: adminId } });
     await prisma.auditLog.deleteMany({ where: { userId: adminId } });
+    await prisma.session.deleteMany({ where: { userId: adminId } });
     await prisma.user.deleteMany({ where: { id: adminId } });
   });
 
@@ -49,14 +47,14 @@ describe('AML review workflow', () => {
       select: { id: true },
     });
 
-    (checkAdmin as unknown as jest.Mock).mockResolvedValue({ userId: adminId, email: 'admin.workflow@test.com', role: 'ADMIN', isAdmin: true });
+    const { token } = await createSession({ id: adminId, role: UserRole.ADMIN }, '127.0.0.1', 'jest-agent');
 
     const assignRes = await amlQueuePost(
-      new Request('http://localhost/api/admin/aml/review-queue', {
+      new NextRequest('http://localhost/api/admin/aml/review-queue', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', cookie: `auth_token=${token}`, 'user-agent': 'jest-agent' },
         body: JSON.stringify({ action: 'ASSIGN', id: created.id, assignedToId: adminId }),
-      }),
+      }) as any,
     );
     expect(assignRes.status).toBe(200);
     const assignBody = await assignRes.json();
@@ -65,22 +63,22 @@ describe('AML review workflow', () => {
     expect(assignBody.case.status).toBe('IN_REVIEW');
 
     const noteRes = await amlQueuePost(
-      new Request('http://localhost/api/admin/aml/review-queue', {
+      new NextRequest('http://localhost/api/admin/aml/review-queue', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', cookie: `auth_token=${token}`, 'user-agent': 'jest-agent' },
         body: JSON.stringify({ action: 'ADD_NOTE', id: created.id, body: 'Reviewed documents, ok.' }),
-      }),
+      }) as any,
     );
     const noteBody = await noteRes.json();
     expect(noteBody.success).toBe(true);
     expect(noteBody.note.caseId).toBe(created.id);
 
     const decideRes = await amlQueuePost(
-      new Request('http://localhost/api/admin/aml/review-queue', {
+      new NextRequest('http://localhost/api/admin/aml/review-queue', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', cookie: `auth_token=${token}`, 'user-agent': 'jest-agent' },
         body: JSON.stringify({ action: 'DECIDE', id: created.id, decision: 'CLEAR', decisionNote: 'No red flags.' }),
-      }),
+      }) as any,
     );
     const decideBody = await decideRes.json();
     expect(decideBody.success).toBe(true);
@@ -89,7 +87,11 @@ describe('AML review workflow', () => {
     expect(decideBody.case.decidedById).toBe(adminId);
     expect(decideBody.case.decidedAt).toBeTruthy();
 
-    const listRes = await amlQueueGet(new Request('http://localhost/api/admin/aml/review-queue?status=CLEARED&take=50'));
+    const listRes = await amlQueueGet(
+      new NextRequest('http://localhost/api/admin/aml/review-queue?status=CLEARED&take=50', {
+        headers: { cookie: `auth_token=${token}`, 'user-agent': 'jest-agent' },
+      }) as any
+    );
     const listBody = await listRes.json();
     expect(listBody.cases.some((c: any) => c.id === created.id)).toBe(true);
 

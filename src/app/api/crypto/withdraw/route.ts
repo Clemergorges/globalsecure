@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { checkAuth } from '@/lib/auth';
 import { ethers } from 'ethers';
 import { applyFiatMovement } from '@/lib/services/fiat-ledger';
+import { logAudit } from '@/lib/logger';
 
 // Helper: Validate Polygon Address
 function isValidAddress(address: string) {
@@ -18,6 +19,13 @@ export async function POST(req: Request) {
     }
 
     const { amount, toAddress } = await req.json();
+    // GSS-MVP-FIX: Audit crypto withdraw request (MVP baseline observability).
+    await logAudit({
+      userId: (auth as any).userId,
+      action: 'CRYPTO_WITHDRAW_REQUESTED',
+      status: 'PENDING',
+      metadata: { amount, toAddress: typeof toAddress === 'string' ? `${toAddress.slice(0, 10)}...` : null },
+    }).catch(() => {});
 
     // 1. Validation
     if (!amount || amount <= 0) {
@@ -100,6 +108,18 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Withdraw error:', error);
+    // GSS-MVP-FIX: Audit withdraw failures (best-effort).
+    try {
+      const auth = await checkAuth();
+      if (auth) {
+        await logAudit({
+          userId: (auth as any).userId,
+          action: 'CRYPTO_WITHDRAW_REQUESTED',
+          status: 'ERROR',
+          metadata: { error: String(error?.message || error) },
+        });
+      }
+    } catch {}
     if (error?.message === 'INSUFFICIENT_FUNDS') {
       return NextResponse.json({ error: 'Insufficient USDT/USD balance' }, { status: 409 });
     }

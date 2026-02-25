@@ -1,121 +1,108 @@
-/**
- * KYC Limits Service
- * Centralized logic for KYC level limits and validation
- */
+import { UserRiskTier } from '@prisma/client';
+import { getExchangeRate } from '@/lib/services/exchange';
 
-export const KYC_LIMITS = {
-    0: {
-        dailyLimit: 100,
-        singleTransactionLimit: 100,
-        monthlyLimit: 500,
-    },
-    1: {
-        dailyLimit: 500,
-        singleTransactionLimit: 500,
-        monthlyLimit: 5000,
-    },
-    2: {
-        dailyLimit: 10000,
-        singleTransactionLimit: 10000,
-        monthlyLimit: 100000,
-    },
-} as const;
+type KycBand = 'NONE' | 'BASIC' | 'FULL';
+type KYCLimitType = 'single' | 'daily' | 'monthly';
 
-export type KYCLevel = 0 | 1 | 2;
+export const KYC_LIMITS: Record<number, { singleTransactionLimit: number; dailyLimit: number; monthlyLimit: number }> = {
+  0: { singleTransactionLimit: 100, dailyLimit: 100, monthlyLimit: 500 },
+  1: { singleTransactionLimit: 500, dailyLimit: 500, monthlyLimit: 5000 },
+  2: { singleTransactionLimit: 10000, dailyLimit: 10000, monthlyLimit: 100000 },
+};
 
-/**
- * Check if amount is within KYC limits
- */
-export function isWithinKYCLimit(
-    kycLevel: KYCLevel,
-    amount: number,
-    type: 'daily' | 'single' | 'monthly' = 'single'
-): boolean {
-    const limits = KYC_LIMITS[kycLevel];
-
-    switch (type) {
-        case 'daily':
-            return amount <= limits.dailyLimit;
-        case 'single':
-            return amount <= limits.singleTransactionLimit;
-        case 'monthly':
-            return amount <= limits.monthlyLimit;
-        default:
-            return false;
-    }
+export function getKYCLimit(kycLevel: number, type: KYCLimitType = 'single') {
+  const cfg = KYC_LIMITS[kycLevel];
+  if (!cfg) return 0;
+  if (type === 'daily') return cfg.dailyLimit;
+  if (type === 'monthly') return cfg.monthlyLimit;
+  if (type === 'single') return cfg.singleTransactionLimit;
+  return 0;
 }
 
-/**
- * Get KYC limit for a specific level and type
- */
-export function getKYCLimit(
-    kycLevel: KYCLevel,
-    type: 'daily' | 'single' | 'monthly' = 'single'
-): number {
-    const limits = KYC_LIMITS[kycLevel];
-
-    switch (type) {
-        case 'daily':
-            return limits.dailyLimit;
-        case 'single':
-            return limits.singleTransactionLimit;
-        case 'monthly':
-            return limits.monthlyLimit;
-        default:
-            return 0;
-    }
+export function isWithinKYCLimit(kycLevel: number, amount: number, type: KYCLimitType = 'single') {
+  const limit = getKYCLimit(kycLevel, type);
+  if (!limit) return false;
+  return amount <= limit;
 }
 
-/**
- * Validate transaction against KYC limits
- */
-export function validateKYCLimit(
-    kycLevel: KYCLevel,
-    amount: number,
-    type: 'daily' | 'single' | 'monthly' = 'single'
-): { valid: boolean; limit: number; message?: string } {
-    const limit = getKYCLimit(kycLevel, type);
-    const valid = amount <= limit;
-
-    if (!valid) {
-        return {
-            valid: false,
-            limit,
-            message: `Amount €${amount} exceeds KYC level ${kycLevel} ${type} limit of €${limit}`,
-        };
-    }
-
-    return { valid: true, limit };
+export function validateKYCLimit(kycLevel: number, amount: number, type: KYCLimitType = 'single') {
+  const limit = getKYCLimit(kycLevel, type);
+  const valid = limit > 0 && amount <= limit;
+  if (valid) return { valid: true as const, limit };
+  return { valid: false as const, limit, message: `Amount exceeds KYC level ${kycLevel} ${type} limit` };
 }
 
-/**
- * Get human-readable KYC level name
- */
-export function getKYCLevelName(kycLevel: KYCLevel): string {
-    switch (kycLevel) {
-        case 0:
-            return 'Basic (Unverified)';
-        case 1:
-            return 'Standard (ID Verified)';
-        case 2:
-            return 'Premium (Full KYC)';
-        default:
-            return 'Unknown';
-    }
+export function getKYCLevelName(kycLevel: number) {
+  if (kycLevel === 0) return 'Basic (Level 0)';
+  if (kycLevel === 1) return 'Standard (Level 1)';
+  if (kycLevel === 2) return 'Premium (Level 2)';
+  return 'Unknown';
 }
 
-/**
- * Get required documents for KYC level
- */
-export function getRequiredDocuments(kycLevel: KYCLevel): string[] {
-    switch (kycLevel) {
-        case 0:
-            return [];
-        case 1:
-            return ['ID_FRONT', 'ID_BACK'];
-        case 2:
-            return ['ID_FRONT', 'ID_BACK', 'PROOF_OF_ADDRESS', 'SELFIE'];
-        default:
-            return [];
-    }
+export function getRequiredDocuments(kycLevel: number) {
+  if (kycLevel === 1) return ['ID_FRONT', 'ID_BACK'];
+  if (kycLevel >= 2) return ['ID_FRONT', 'ID_BACK', 'PROOF_OF_ADDRESS', 'SELFIE'];
+  return [];
+}
+
+function numEnv(name: string, fallback: number) {
+  const raw = Number(process.env[name]);
+  if (!Number.isFinite(raw) || raw <= 0) return fallback;
+  return raw;
+}
+
+function riskMultiplier(riskTier: UserRiskTier) {
+  if (riskTier === UserRiskTier.MEDIUM) return numEnv('RISK_TIER_MEDIUM_MULTIPLIER', 0.7);
+  if (riskTier === UserRiskTier.HIGH) return numEnv('RISK_TIER_HIGH_MULTIPLIER', 0.4);
+  return numEnv('RISK_TIER_LOW_MULTIPLIER', 1);
+}
+
+export function normalizeKycBand(kycLevel: number): KycBand {
+  if (!Number.isFinite(kycLevel) || kycLevel <= 0) return 'NONE';
+  if (kycLevel === 1) return 'BASIC';
+  return 'FULL';
+}
+
+export function getKycTierLimits(kycLevel: number, riskTier: UserRiskTier) {
+  const band = normalizeKycBand(kycLevel);
+  const mult = riskMultiplier(riskTier);
+
+  const base =
+    band === 'NONE'
+      ? {
+          perTxEur: numEnv('KYC_NONE_TX_EUR', 100),
+          dailyEur: numEnv('KYC_NONE_DAILY_EUR', 100),
+          monthlyEur: numEnv('KYC_NONE_MONTHLY_EUR', 500),
+        }
+      : band === 'BASIC'
+        ? {
+            perTxEur: numEnv('KYC_BASIC_TX_EUR', 500),
+            dailyEur: numEnv('KYC_BASIC_DAILY_EUR', 1000),
+            monthlyEur: numEnv('KYC_BASIC_MONTHLY_EUR', 5000),
+          }
+        : {
+            perTxEur: numEnv('KYC_FULL_TX_EUR', 2000),
+            dailyEur: numEnv('KYC_FULL_DAILY_EUR', 5000),
+            monthlyEur: numEnv('KYC_FULL_MONTHLY_EUR', 20000),
+          };
+
+  const effective = {
+    perTxEur: base.perTxEur * mult,
+    dailyEur: base.dailyEur * mult,
+    monthlyEur: base.monthlyEur * mult,
+  };
+
+  return {
+    band,
+    riskTier,
+    multiplier: mult,
+    base,
+    effective,
+  };
+}
+
+export async function convertAmountToEur(amount: number, currency: string) {
+  if (currency.toUpperCase() === 'EUR') return amount;
+  const rate = await getExchangeRate(currency, 'EUR');
+  return amount * rate;
 }

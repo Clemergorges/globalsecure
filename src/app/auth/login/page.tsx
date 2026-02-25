@@ -39,6 +39,7 @@ export default function LoginPage() {
     try {
       const res = await fetch('/api/auth/login-secure', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
@@ -54,7 +55,6 @@ export default function LoginPage() {
 
       // Login bem sucedido
       router.push('/dashboard')
-      router.refresh()
     } catch (err: any) {
       setError(err.message)
     } finally {
