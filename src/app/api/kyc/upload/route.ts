@@ -3,10 +3,15 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { supabase, KYC_BUCKET } from '@/lib/supabase';
 
+function deprecatedJson(body: unknown, init?: { status?: number }) {
+  const res = NextResponse.json(body, { status: init?.status });
+  res.headers.set('X-Deprecated', 'true');
+  return res;
+}
+
 export async function POST(req: Request) {
   const session = await getSession();
-  // @ts-ignore
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session || typeof session === 'string' || !session.userId) return deprecatedJson({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const formData = await req.formData();
@@ -19,10 +24,10 @@ export async function POST(req: Request) {
     const selfieImage = formData.get('selfieImage') as File | null;
 
     if (!frontImage || !documentNumber || !issuingCountry) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return deprecatedJson({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const userId = (session as any).userId;
+    const userId = session.userId;
 
     // Helper to upload to Supabase Storage
     const uploadToSupabase = async (file: File, prefix: string) => {
@@ -65,7 +70,6 @@ export async function POST(req: Request) {
     // The field names in Prisma are still '...Url', but we will treat them as paths for Supabase.
     await prisma.kYCDocument.create({
       data: {
-        // @ts-ignore
         userId: session.userId,
         documentType,
         documentNumber,
@@ -79,7 +83,6 @@ export async function POST(req: Request) {
 
     // Update User Status
     await prisma.user.update({
-      // @ts-ignore
       where: { id: session.userId },
       data: {
         kycStatus: 'PENDING',
@@ -87,10 +90,10 @@ export async function POST(req: Request) {
       }
     });
 
-    return NextResponse.json({ success: true, status: 'PENDING' });
+    return deprecatedJson({ success: true, status: 'PENDING' });
 
   } catch (error) {
     console.error('KYC Upload failed:', error);
-    return NextResponse.json({ error: 'KYC submission failed' }, { status: 500 });
+    return deprecatedJson({ error: 'KYC submission failed' }, { status: 500 });
   }
 }

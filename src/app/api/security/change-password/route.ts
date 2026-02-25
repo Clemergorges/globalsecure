@@ -13,6 +13,20 @@ const changePasswordSchema = z.object({
   otpCode: z.string().regex(/^\d{6}$/),
 });
 
+type PasswordChangeErrorCode =
+  | 'OTP_INVALID'
+  | 'OTP_EXPIRED'
+  | 'OTP_USED'
+  | 'INVALID_CURRENT_PASSWORD'
+  | 'VALIDATION_ERROR'
+  | 'UNKNOWN_ERROR';
+
+function mapOtpReason(reason: string): PasswordChangeErrorCode {
+  if (reason === 'EXPIRED') return 'OTP_EXPIRED';
+  if (reason === 'ALREADY_USED') return 'OTP_USED';
+  return 'OTP_INVALID';
+}
+
 export async function POST(req: NextRequest) {
   const session = await validateSession(req);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -33,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     const isValid = await comparePassword(currentPassword, user.passwordHash);
     if (!isValid) {
-      return NextResponse.json({ error: 'Incorrect current password' }, { status: 400 });
+      return NextResponse.json({ error: 'Incorrect current password', code: 'INVALID_CURRENT_PASSWORD' satisfies PasswordChangeErrorCode }, { status: 400 });
     }
 
     const consumed = await consumeSensitiveActionOtp({
@@ -42,6 +56,7 @@ export async function POST(req: NextRequest) {
       code: otpCode,
     });
     if (!consumed.ok) {
+      const code = mapOtpReason(consumed.reason);
       logAudit({
         userId: session.userId,
         action: 'SENSITIVE_OTP_FAILURE',
@@ -52,7 +67,7 @@ export async function POST(req: NextRequest) {
         path,
         metadata: { actionType: 'SENSITIVE_CHANGE_PASSWORD', reason: consumed.reason },
       });
-      return NextResponse.json({ error: 'Invalid or expired OTP', code: consumed.reason }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid or expired OTP', code }, { status: 400 });
     }
 
     const newPasswordHash = await hashPassword(newPassword);
@@ -77,8 +92,8 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.issues[0]?.message || 'Validation Error' }, { status: 400 });
+      return NextResponse.json({ error: error.issues[0]?.message || 'Validation Error', code: 'VALIDATION_ERROR' satisfies PasswordChangeErrorCode }, { status: 400 });
     }
-    return NextResponse.json({ error: 'Failed to update password' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update password', code: 'UNKNOWN_ERROR' satisfies PasswordChangeErrorCode }, { status: 500 });
   }
 }

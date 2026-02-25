@@ -6,7 +6,10 @@
     "back": "Zurück",
     "next": "Weiter",
     "loading": "Laden...",
-    "error": "Fehler"
+    "error": "Fehler",
+    "disclaimer": {
+      "tax": "Steuern und steuerliche Pflichten liegen in der Verantwortung des Nutzers. GSS stellt Kontoauszüge und Berichte zur Unterstützung der Erklärung bereit, ersetzt jedoch keinen Steuerberater oder Buchhalter."
+    }
   },
   "Register": {
     "title": "Konto erstellen",
@@ -522,6 +525,29 @@
       "errorVerifyingCode": "Ungültiger Code",
       "errorDisconnecting": "Fehler beim Trennen",
       "passwordChangedSuccessfully": "Passwort erfolgreich aktualisiert.",
+      "passwordChange": {
+        "requestingOtp": "Sicherheitscode wird an {{email}} gesendet...",
+        "enterOtp": "Geben Sie den 6-stelligen Code ein, der an Ihre E-Mail gesendet wurde",
+        "otpResend": "Code erneut senden ({{seconds}}s)",
+        "otpResendReady": "Code erneut senden",
+        "otpInvalid": "Ungültiger Code. Bitte erneut versuchen.",
+        "otpExpired": "Code abgelaufen. Bitte einen neuen anfordern.",
+        "otpUsed": "Code bereits verwendet. Bitte einen neuen anfordern.",
+        "passwordChanged": "Passwort erfolgreich geändert!",
+        "passwordChangeFailed": "Passwort konnte nicht geändert werden. Bitte erneut versuchen."
+      },
+      "sessions": {
+        "title": "Aktive Sitzungen",
+        "description": "Verwalten Sie die mit Ihrem Konto verbundenen Geräte.",
+        "current": "Aktuelle Sitzung",
+        "revoke": "Beenden",
+        "revokeAll": "Alle anderen beenden",
+        "revokeConfirm": "Möchten Sie diese Sitzung wirklich beenden?",
+        "revokeAllConfirm": "Möchten Sie wirklich alle anderen Sitzungen beenden?",
+        "device": "Gerät: {{device}}",
+        "location": "Ort: {{location}}",
+        "lastActive": "Aktiv seit: {{time}}"
+      },
       "connectionError": "Verbindungsfehler."
     },
     "Profile": {
@@ -641,6 +667,44 @@
       "createFailed": "Karte konnte nicht erstellt werden",
       "revealFailed": "Kartendaten konnten nicht angezeigt werden",
       "deleteFailed": "Karte konnte nicht gelöscht werden"
+    },
+    "EmailCard": {
+      "title": "Karte per E-Mail",
+      "description": "Senden Sie eine virtuelle Karte per E-Mail an einen Empfänger.",
+      "amount": "Betrag",
+      "currency": "Währung",
+      "recipientEmail": "E-Mail des Empfängers",
+      "recipientName": "Name des Empfängers (optional)",
+      "recipientNamePlaceholder": "Name",
+      "message": "Nachricht an den Empfänger (optional)",
+      "messagePlaceholder": "Schreiben Sie eine kurze Nachricht an den Empfänger.",
+      "send": "Senden",
+      "breakdown": {
+        "youPay": "Sie zahlen",
+        "cardValue": "Kartenwert"
+      },
+      "success": {
+        "title": "Karte gesendet",
+        "description": "Eine virtuelle Karte wurde an {{email}} gesendet.",
+        "transferId": "Transfer ID"
+      },
+      "errors": {
+        "missingEmailAmount": "E-Mail und Betrag sind erforderlich.",
+        "invalidAmount": "Ungültiger Betrag.",
+        "messageTooLong": "Nachricht zu lang (max. 240 Zeichen).",
+        "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+        "submitFailed": "Karte konnte nicht gesendet werden. Bitte erneut versuchen."
+      },
+      "sca": {
+        "required": "Starke Kundenauthentifizierung (SCA) ist erforderlich, um diese Überweisung abzuschließen.",
+        "requestCode": "Code per E-Mail senden",
+        "codeLabel": "Bestätigungscode (6 Ziffern)",
+        "confirm": "Bestätigen und abschließen",
+        "codeSent": "Wir haben einen Bestätigungscode an Ihre E-Mail gesendet.",
+        "requestFailed": "Bestätigungscode konnte nicht angefordert werden.",
+        "confirmFailed": "Code konnte nicht bestätigt werden. Bitte erneut versuchen.",
+        "invalidFormat": "Geben Sie den 6-stelligen Code ein."
+      }
     },
     "removeCardAria": "Karte entfernen",
     "cardBlockUnavailable": "Kartenblockierung derzeit nicht verfügbar."
@@ -833,6 +897,9 @@
     "recommended": "Empfohlen",
     "automaticVerification": "Automatische Verifizierung",
     "useStripeIdentity": "Stripe Identity für eine sofortige Verifizierung verwenden",
+    "cameraHttpsHint": "Auf Mobilgeräten funktioniert die Kamera nur über sichere Verbindungen (HTTPS).",
+    "verificationRedirecting": "Weiterleitung zur sicheren Verifizierung...",
+    "verificationCancelled": "Verifizierung abgebrochen. Sie können es später erneut versuchen.",
     "startVerification": "Verifizierung starten",
     "manualVerification": "Manuelle Verifizierung",
     "uploadDocuments": "Dokumente hochladen",
@@ -841,6 +908,7 @@
     "docTypePassport": "Reisepass",
     "docTypeDriverLicense": "Führerschein",
     "documentNumber": "Dokumentnummer",
+    "documentNumberPlaceholder": "z. B. 123456789",
     "issuingCountry": "Ausstellungsland",
     "frontImage": "Vorderseite",
     "backImage": "Rückseite",
@@ -862,7 +930,7 @@
     "fileSelected": "Datei ausgewählt",
     "submitForReview": "Zur Prüfung senden",
     "autoVerificationError": "Automatische Verifizierung konnte nicht gestartet werden.",
-    "stripeConnectionError": "Verbindung zu Stripe Identity fehlgeschlagen.",
+    "stripeConnectionError": "Verbindung zum Verifizierungsdienst nicht möglich. Bitte erneut versuchen oder manuell hochladen.",
     "documentSendError": "Dokumente konnten nicht gesendet werden.",
     "connectionError": "Verbindungsfehler."
   },

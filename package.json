@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "verify:code": "npm run lint && npm run typecheck",
     "db:migrate": "prisma migrate deploy",
+    "db:migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
     "db:status": "prisma migrate status",
     "db:reset": "prisma migrate reset --force",
     "test": "jest --watch",

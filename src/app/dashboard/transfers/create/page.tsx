@@ -206,6 +206,9 @@ export default function CreateTransferPage() {
                 </span>
               </div>
             </div>
+            <div className="text-xs text-slate-500">
+              {tc('disclaimer.tax')}
+            </div>
 
             <div className="flex items-center gap-3">
               <Checkbox

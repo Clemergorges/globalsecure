@@ -4,8 +4,10 @@ import { prisma } from '@/lib/db';
 import { sendEmail, templates } from '@/lib/services/email';
 import { refreshFxRates, getConfiguredFxPairs } from '@/lib/services/fx-engine';
 import { runTreasuryCheck } from '@/lib/services/treasury';
+import { runTreasuryReconciliation } from '@/lib/services/treasury-reconciliation';
 import { sendUsdtFromHotWallet } from '@/lib/services/polygon';
 import { logAudit } from '@/lib/logger';
+import { runSettlementSweep } from '@/lib/services/settlement-engine';
 
 // This endpoint is called by Vercel Cron every minute
 export async function GET(req: Request) {
@@ -74,6 +76,14 @@ export async function GET(req: Request) {
 
           case 'TREASURY_CHECK':
             await runTreasuryCheck();
+            break;
+
+          case 'TREASURY_RECONCILE':
+            await runTreasuryReconciliation(job.payload as any);
+            break;
+
+          case 'SETTLEMENT_SWEEP':
+            await runSettlementSweep(job.payload as any);
             break;
             
           default:

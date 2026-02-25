@@ -129,7 +129,10 @@
     "back": "Back",
     "next": "Next",
     "loading": "Loading...",
-    "error": "Error"
+    "error": "Error",
+    "disclaimer": {
+      "tax": "Taxes and fiscal obligations are the user’s responsibility. GSS provides statements and reports to support filing, but does not replace an accountant or tax advisor."
+    }
   },
   "Dashboard": {
     "title": "Dashboard",
@@ -522,6 +525,29 @@
       "errorVerifyingCode": "Invalid code",
       "errorDisconnecting": "Error disconnecting",
       "passwordChangedSuccessfully": "Password updated successfully.",
+      "passwordChange": {
+        "requestingOtp": "Sending a security code to {{email}}...",
+        "enterOtp": "Enter the 6-digit code sent to your email",
+        "otpResend": "Resend code ({{seconds}}s)",
+        "otpResendReady": "Resend code",
+        "otpInvalid": "Invalid code. Please try again.",
+        "otpExpired": "Code expired. Request a new one.",
+        "otpUsed": "Code already used. Request a new one.",
+        "passwordChanged": "Password changed successfully!",
+        "passwordChangeFailed": "Could not change your password. Please try again."
+      },
+      "sessions": {
+        "title": "Active sessions",
+        "description": "Manage the devices connected to your account.",
+        "current": "Current session",
+        "revoke": "End",
+        "revokeAll": "End all others",
+        "revokeConfirm": "Are you sure you want to end this session?",
+        "revokeAllConfirm": "Are you sure you want to end all other sessions?",
+        "device": "Device: {{device}}",
+        "location": "Location: {{location}}",
+        "lastActive": "Active: {{time}}"
+      },
       "connectionError": "Connection error."
     },
     "Profile": {
@@ -641,6 +667,44 @@
       "createFailed": "Failed to create card",
       "revealFailed": "Failed to reveal card details",
       "deleteFailed": "Failed to delete card"
+    },
+    "EmailCard": {
+      "title": "Email card",
+      "description": "Send a virtual card to a recipient by email.",
+      "amount": "Amount",
+      "currency": "Currency",
+      "recipientEmail": "Recipient email",
+      "recipientName": "Recipient name (optional)",
+      "recipientNamePlaceholder": "Name",
+      "message": "Message to recipient (optional)",
+      "messagePlaceholder": "Write a short message for the recipient.",
+      "send": "Send",
+      "breakdown": {
+        "youPay": "You pay",
+        "cardValue": "Card value"
+      },
+      "success": {
+        "title": "Card sent",
+        "description": "A virtual card was sent to {{email}}.",
+        "transferId": "Transfer ID"
+      },
+      "errors": {
+        "missingEmailAmount": "Enter email and amount.",
+        "invalidAmount": "Invalid amount.",
+        "messageTooLong": "Message is too long (max 240 characters).",
+        "sessionExpired": "Your session expired. Please sign in again.",
+        "submitFailed": "Could not send the card. Please try again."
+      },
+      "sca": {
+        "required": "Strong customer authentication (SCA) is required to complete this transfer.",
+        "requestCode": "Send code by email",
+        "codeLabel": "Verification code (6 digits)",
+        "confirm": "Confirm and complete",
+        "codeSent": "We sent a verification code to your email.",
+        "requestFailed": "Could not request a verification code.",
+        "confirmFailed": "Could not confirm the code. Please try again.",
+        "invalidFormat": "Enter the 6-digit code."
+      }
     },
     "removeCardAria": "Remove card",
     "cardBlockUnavailable": "Card blocking is currently unavailable."
@@ -833,6 +897,9 @@
     "recommended": "Recommended",
     "automaticVerification": "Automatic verification",
     "useStripeIdentity": "Use Stripe Identity for instant verification",
+    "cameraHttpsHint": "On mobile devices, the camera only works on secure connections (HTTPS).",
+    "verificationRedirecting": "Redirecting to secure verification...",
+    "verificationCancelled": "Verification cancelled. You can try again later.",
     "startVerification": "Start verification",
     "manualVerification": "Manual verification",
     "uploadDocuments": "Upload your documents",
@@ -841,6 +908,7 @@
     "docTypePassport": "Passport",
     "docTypeDriverLicense": "Driver's license",
     "documentNumber": "Document number",
+    "documentNumberPlaceholder": "e.g. 123456789",
     "issuingCountry": "Issuing country",
     "frontImage": "Front image",
     "backImage": "Back image",
@@ -862,7 +930,7 @@
     "fileSelected": "File selected",
     "submitForReview": "Submit for review",
     "autoVerificationError": "Could not start automatic verification.",
-    "stripeConnectionError": "Stripe Identity connection failed.",
+    "stripeConnectionError": "We couldn’t connect to the verification service. Try again or use manual upload.",
     "documentSendError": "Could not submit documents.",
     "connectionError": "Connection error."
   },

@@ -16,6 +16,8 @@ export function CardEmailDialog(props: {
   onSuccess: () => void;
 }) {
   const tc = useTranslations('Common');
+  const t = useTranslations('Cards.EmailCard');
+  const tf = useTranslations('Transfers.Create');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ transferId?: string; recipientEmail?: string } | null>(null);
@@ -49,19 +51,19 @@ export function CardEmailDialog(props: {
     setError(null);
     try {
       if (!formData.recipientEmail || !formData.amount) {
-        setError('Preencha email e valor.');
+        setError(t('errors.missingEmailAmount'));
         return;
       }
 
       const amount = Number(formData.amount);
       if (!Number.isFinite(amount) || amount <= 0) {
-        setError('Valor inválido.');
+        setError(t('errors.invalidAmount'));
         return;
       }
 
       const msg = formData.personalMessage.trim();
       if (msg.length > 240) {
-        setError('Mensagem muito longa (máximo 240 caracteres).');
+        setError(t('errors.messageTooLong'));
         return;
       }
 
@@ -82,26 +84,26 @@ export function CardEmailDialog(props: {
       const body = await res.json().catch(() => ({} as any));
       if (!res.ok) {
         if (body?.code === 'PERSONAL_MESSAGE_TOO_LONG') {
-          setError('Mensagem muito longa (máximo 240 caracteres).');
+          setError(t('errors.messageTooLong'));
           return;
         }
         if (res.status === 401) {
-          setError('Sua sessão expirou. Faça login novamente.');
+          setError(t('errors.sessionExpired'));
           return;
         }
         if (res.status === 403 && (body?.code === 'SCA_REQUIRED' || body?.code === 'SENSITIVE_OTP_REQUIRED')) {
           setSca((s) => ({ ...s, required: true }));
-          setError(body?.message || 'Autenticação forte (SCA) necessária para concluir esta operação.');
+          setError(body?.message || t('sca.required'));
           return;
         }
-        setError(body?.error || 'Falha ao enviar o cartão. Tente novamente.');
+        setError(body?.error || t('errors.submitFailed'));
         return;
       }
 
       setSuccess({ transferId: body.transferId, recipientEmail: formData.recipientEmail });
       props.onSuccess();
     } catch {
-      setError('Falha ao enviar o cartão. Tente novamente.');
+      setError(t('errors.submitFailed'));
     } finally {
       setLoading(false);
     }
@@ -115,15 +117,15 @@ export function CardEmailDialog(props: {
             <div className="mx-auto w-12 h-12 bg-cyan-500/10 rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="w-6 h-6 text-cyan-500" />
             </div>
-            <DialogTitle className="text-center text-xl">Cartão enviado</DialogTitle>
+            <DialogTitle className="text-center text-xl">{t('success.title')}</DialogTitle>
             <DialogDescription className="text-center text-slate-400">
-              <>Um cartão virtual foi enviado para <strong className="text-slate-200">{success.recipientEmail}</strong>.</>
+              {t('success.description', { email: success.recipientEmail || '' })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
             <div className="rounded-lg border border-white/10 bg-black/30 p-3">
-              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Transfer ID</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{t('success.transferId')}</div>
               <div className="font-mono text-slate-200">{success.transferId}</div>
             </div>
           </div>
@@ -148,13 +150,13 @@ export function CardEmailDialog(props: {
       });
       const b = await r.json().catch(() => ({} as any));
       if (!r.ok) {
-        setError(b?.error || 'Falha ao solicitar código de verificação.');
+        setError(b?.error || t('sca.requestFailed'));
         return;
       }
       setSca((s) => ({ ...s, otpSent: true }));
-      setError('Enviamos um código de verificação para o seu e-mail.');
+      setError(t('sca.codeSent'));
     } catch {
-      setError('Falha ao solicitar código de verificação.');
+      setError(t('sca.requestFailed'));
     } finally {
       setSca((s) => ({ ...s, sending: false }));
     }
@@ -163,7 +165,7 @@ export function CardEmailDialog(props: {
   const confirmOtpAndRetry = async () => {
     try {
       if (!sca.otp || !/^\d{6}$/.test(sca.otp)) {
-        setError('Informe o código de 6 dígitos.');
+        setError(t('sca.invalidFormat'));
         return;
       }
       setSca((s) => ({ ...s, verifying: true }));
@@ -174,18 +176,23 @@ export function CardEmailDialog(props: {
       });
       const b = await r.json().catch(() => ({} as any));
       if (!r.ok) {
-        setError(b?.error || 'Código inválido ou expirado.');
+        setError(b?.error || t('sca.confirmFailed'));
         return;
       }
       // SCA ok: tentar novamente a submissão
       setSca({ required: false, otpSent: false, otp: '', sending: false, verifying: false });
       await handleSubmit();
     } catch {
-      setError('Falha ao confirmar o código. Tente novamente.');
+      setError(t('sca.confirmFailed'));
     } finally {
       setSca((s) => ({ ...s, verifying: false }));
     }
   };
+
+  const amountNumber = Number(formData.amount);
+  const amountValid = Number.isFinite(amountNumber) && amountNumber > 0;
+  const fee = amountValid ? amountNumber * 0.018 : 0;
+  const totalPay = amountValid ? amountNumber + fee : 0;
 
   return (
     <Dialog open={props.open} onOpenChange={close}>
@@ -193,10 +200,10 @@ export function CardEmailDialog(props: {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-cyan-500" />
-            Cartão por e-mail
+            {t('title')}
           </DialogTitle>
           <DialogDescription className="text-slate-400">
-            Envie um cartão virtual para um destinatário via e-mail.
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -210,14 +217,14 @@ export function CardEmailDialog(props: {
 
           {sca.required && (
             <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
-              <div className="text-sm text-yellow-300">Autenticação forte (SCA) necessária para concluir esta transferência.</div>
+              <div className="text-sm text-yellow-300">{t('sca.required')}</div>
               {!sca.otpSent ? (
                 <Button onClick={requestOtp} disabled={sca.sending} className="bg-yellow-400 text-black hover:bg-yellow-300">
-                  {sca.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enviar código por e-mail'}
+                  {sca.sending ? <Loader2 className="w-4 h-4 animate-spin" /> : t('sca.requestCode')}
                 </Button>
               ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="otp">Código de verificação (6 dígitos)</Label>
+                  <Label htmlFor="otp">{t('sca.codeLabel')}</Label>
                   <Input
                     id="otp"
                     inputMode="numeric"
@@ -229,10 +236,10 @@ export function CardEmailDialog(props: {
                   />
                   <div className="flex gap-2">
                     <Button variant="ghost" onClick={() => setSca({ required: false, otpSent: false, otp: '', sending: false, verifying: false })} className="text-slate-400">
-                      Cancelar
+                      {tc('cancel')}
                     </Button>
                     <Button onClick={confirmOtpAndRetry} disabled={sca.verifying} className="bg-cyan-500 text-black hover:bg-cyan-600">
-                      {sca.verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar e concluir'}
+                      {sca.verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : t('sca.confirm')}
                     </Button>
                   </div>
                 </div>
@@ -242,7 +249,7 @@ export function CardEmailDialog(props: {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="amount">Valor</Label>
+              <Label htmlFor="amount">{t('amount')}</Label>
               <Input
                 id="amount"
                 type="number"
@@ -255,7 +262,7 @@ export function CardEmailDialog(props: {
             </div>
 
             <div className="space-y-2">
-              <Label>Moeda</Label>
+              <Label>{t('currency')}</Label>
               <Select value={formData.currency} onValueChange={(v) => setFormData((s) => ({ ...s, currency: v }))}>
                 <SelectTrigger className="bg-white/5 border-white/10 text-white">
                   <SelectValue />
@@ -270,7 +277,7 @@ export function CardEmailDialog(props: {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recipientEmail">Email do destinatário</Label>
+            <Label htmlFor="recipientEmail">{t('recipientEmail')}</Label>
             <Input
               id="recipientEmail"
               type="email"
@@ -283,10 +290,10 @@ export function CardEmailDialog(props: {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recipientName">Nome do destinatário (opcional)</Label>
+            <Label htmlFor="recipientName">{t('recipientName')}</Label>
             <Input
               id="recipientName"
-              placeholder="Nome"
+              placeholder={t('recipientNamePlaceholder')}
               value={formData.recipientName}
               onChange={(e) => setFormData((s) => ({ ...s, recipientName: e.target.value }))}
               className="bg-white/5 border-white/10 text-white"
@@ -296,7 +303,7 @@ export function CardEmailDialog(props: {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <Label htmlFor="personalMessage">Mensagem para o destinatário (opcional)</Label>
+              <Label htmlFor="personalMessage">{t('message')}</Label>
               <div className="text-xs text-slate-500">{formData.personalMessage.length}/240</div>
             </div>
             <Textarea
@@ -306,9 +313,33 @@ export function CardEmailDialog(props: {
               className="bg-white/5 border-white/10 text-white min-h-24"
               disabled={loading}
               maxLength={240}
-              placeholder="Escreva uma mensagem curta para o destinatário."
+              placeholder={t('messagePlaceholder')}
             />
           </div>
+        </div>
+
+        <div className="bg-cyan-950/10 p-4 rounded-lg border border-cyan-500/10">
+          <div className="flex justify-between items-center text-sm mb-2">
+            <span className="text-slate-400">{t('breakdown.youPay')}</span>
+            <span className="text-slate-300 font-mono">
+              {totalPay.toFixed(2)} {formData.currency}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-sm mb-2">
+            <span className="text-slate-400">{tf('serviceFee', { percent: '1.8' })}</span>
+            <span className="text-slate-300 font-mono">
+              {fee.toFixed(2)} {formData.currency}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-sm font-bold pt-2 border-t border-cyan-500/10">
+            <span className="text-cyan-400">{t('breakdown.cardValue')}</span>
+            <span className="text-white font-mono">
+              {amountValid ? amountNumber.toFixed(2) : '0.00'} {formData.currency}
+            </span>
+          </div>
+        </div>
+        <div className="text-xs text-slate-500">
+          {tc('disclaimer.tax')}
         </div>
 
         <DialogFooter>
@@ -316,7 +347,7 @@ export function CardEmailDialog(props: {
             {tc('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading} className="bg-cyan-500 text-black hover:bg-cyan-600">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enviar'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('send')}
           </Button>
         </DialogFooter>
       </DialogContent>

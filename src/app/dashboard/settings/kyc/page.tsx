@@ -10,6 +10,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 
+type StripeIdentityResponse =
+  | { url: string; clientSecret?: string; id?: string }
+  | { error?: string; code?: string };
+
+function isStripeIdentitySuccess(payload: StripeIdentityResponse): payload is { url: string; clientSecret?: string; id?: string } {
+  const url = (payload as { url?: unknown }).url;
+  return typeof url === 'string' && url.length > 0;
+}
+
 function KYCContent() {
   const t = useTranslations('KYC');
   const tc = useTranslations('Common');
@@ -17,6 +26,9 @@ function KYCContent() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
+  const [showManualFallback, setShowManualFallback] = useState(false);
   const [formData, setFormData] = useState({
     documentType: 'id_card',
     documentNumber: '',
@@ -28,7 +40,11 @@ function KYCContent() {
     if (searchParams.get('session_id')) {
         setStep(5);
     }
-  }, [searchParams]);
+    if (searchParams.get('kyc') === 'cancelled') {
+      setStripeError(t('verificationCancelled'));
+      setShowManualFallback(true);
+    }
+  }, [searchParams, t]);
 
   const handleFileChange = (key: 'front' | 'back' | 'selfie', e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -37,20 +53,28 @@ function KYCContent() {
   };
 
   const handleStripeIdentity = async () => {
-    setLoading(true);
+    setStripeLoading(true);
+    setStripeError(null);
     try {
         const res = await fetch('/api/kyc/stripe-identity', { method: 'POST' });
-        const data = await res.json();
-        if (data.url) {
-            window.location.href = data.url;
-        } else {
-            alert(t('autoVerificationError'));
+        const data: StripeIdentityResponse = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setStripeError(t('stripeConnectionError'));
+          setShowManualFallback(true);
+          return;
         }
+        if (isStripeIdentitySuccess(data)) {
+            setStripeError(t('verificationRedirecting'));
+            window.location.href = data.url;
+            return;
+        }
+        setStripeError(t('autoVerificationError'));
+        setShowManualFallback(true);
     } catch (e) {
-        console.error(e);
-        alert(t('stripeConnectionError'));
+        setStripeError(t('stripeConnectionError'));
+        setShowManualFallback(true);
     } finally {
-        setLoading(false);
+        setStripeLoading(false);
     }
   };
 
@@ -123,12 +147,44 @@ function KYCContent() {
                         <div>
                             <h3 className="font-bold text-lg text-blue-900">{t('automaticVerification')}</h3>
                             <p className="text-blue-700 text-sm">{t('useStripeIdentity')}</p>
+                            <p className="text-blue-700/80 text-xs mt-2">{t('cameraHttpsHint')}</p>
                         </div>
                     </div>
-                    <Button onClick={handleStripeIdentity} disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white">
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('startNow')}
+                    <Button onClick={handleStripeIdentity} disabled={stripeLoading || loading} className="bg-blue-600 hover:bg-blue-700 text-white">
+                        {stripeLoading ? (
+                          <span className="inline-flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            {t('verificationRedirecting')}
+                          </span>
+                        ) : (
+                          t('startNow')
+                        )}
                     </Button>
                 </CardContent>
+                {(stripeError || showManualFallback) && (
+                  <CardContent className="pt-0 pb-6 px-6">
+                    {stripeError && (
+                      <div className="mt-3 px-4 py-3 bg-white/70 border border-blue-200 rounded-lg text-sm text-blue-900 flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 mt-0.5 text-blue-700" />
+                        <span>{stripeError}</span>
+                      </div>
+                    )}
+                    {showManualFallback && (
+                      <div className="mt-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const el = document.getElementById('kyc-manual');
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }}
+                        >
+                          {t('manualVerification')}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                )}
             </Card>
 
             <div className="relative flex py-5 items-center">
@@ -137,7 +193,7 @@ function KYCContent() {
                 <div className="flex-grow border-t border-gray-200"></div>
             </div>
 
-            <Card>
+            <Card id="kyc-manual">
             <CardHeader>
                 <div className="flex items-center gap-4 mb-4">
                 {[0, 1, 2, 3].map((s) => (
@@ -183,7 +239,7 @@ function KYCContent() {
                     <Input 
                         value={formData.documentNumber}
                         onChange={(e) => setFormData({...formData, documentNumber: e.target.value})}
-                        placeholder="Ex: 123456789"
+                        placeholder={t('documentNumberPlaceholder')}
                     />
                     </div>
                     <div>

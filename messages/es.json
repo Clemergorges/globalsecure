@@ -1,0 +1,81 @@
+{
+  "Common": {
+    "disclaimer": {
+      "tax": "Los impuestos y obligaciones fiscales son responsabilidad del usuario. GSS ofrece extractos e informes para facilitar la declaración, pero no sustituye a un contador ni a un asesor fiscal."
+    }
+  },
+  "KYC": {
+    "stripeConnectionError": "No fue posible conectar con el servicio de verificación. Inténtalo de nuevo o usa la carga manual.",
+    "cameraHttpsHint": "En dispositivos móviles, la cámara solo funciona en conexiones seguras (HTTPS).",
+    "verificationRedirecting": "Redirigiendo a la verificación segura...",
+    "verificationCancelled": "Verificación cancelada. Puedes intentarlo de nuevo más tarde.",
+    "documentNumberPlaceholder": "Ej.: 123456789"
+  },
+  "Cards": {
+    "EmailCard": {
+      "title": "Tarjeta por correo",
+      "description": "Envía una tarjeta virtual al destinatario por correo electrónico.",
+      "amount": "Importe",
+      "currency": "Moneda",
+      "recipientEmail": "Correo del destinatario",
+      "recipientName": "Nombre del destinatario (opcional)",
+      "recipientNamePlaceholder": "Nombre",
+      "message": "Mensaje al destinatario (opcional)",
+      "messagePlaceholder": "Escribe un mensaje breve para el destinatario.",
+      "send": "Enviar",
+      "breakdown": {
+        "youPay": "Tú pagas",
+        "cardValue": "Valor de la tarjeta"
+      },
+      "success": {
+        "title": "Tarjeta enviada",
+        "description": "Se envió una tarjeta virtual a {{email}}.",
+        "transferId": "Transfer ID"
+      },
+      "errors": {
+        "missingEmailAmount": "Completa correo e importe.",
+        "invalidAmount": "Importe inválido.",
+        "messageTooLong": "Mensaje demasiado largo (máx. 240 caracteres).",
+        "sessionExpired": "Tu sesión expiró. Inicia sesión de nuevo.",
+        "submitFailed": "No fue posible enviar la tarjeta. Inténtalo de nuevo."
+      },
+      "sca": {
+        "required": "Se requiere autenticación reforzada (SCA) para completar esta transferencia.",
+        "requestCode": "Enviar código por correo",
+        "codeLabel": "Código de verificación (6 dígitos)",
+        "confirm": "Confirmar y completar",
+        "codeSent": "Enviamos un código de verificación a tu correo.",
+        "requestFailed": "No fue posible solicitar el código de verificación.",
+        "confirmFailed": "No fue posible confirmar el código. Inténtalo de nuevo.",
+        "invalidFormat": "Ingresa el código de 6 dígitos."
+      }
+    }
+  },
+  "Settings": {
+    "Security": {
+      "passwordChange": {
+        "requestingOtp": "Enviando código de seguridad a {{email}}...",
+        "enterOtp": "Ingresa el código de 6 dígitos enviado a tu correo",
+        "otpResend": "Reenviar código ({{seconds}}s)",
+        "otpResendReady": "Reenviar código",
+        "otpInvalid": "Código inválido. Inténtalo de nuevo.",
+        "otpExpired": "Código expirado. Solicita uno nuevo.",
+        "otpUsed": "Código ya utilizado. Solicita uno nuevo.",
+        "passwordChanged": "¡Contraseña cambiada con éxito!",
+        "passwordChangeFailed": "No fue posible cambiar la contraseña. Inténtalo de nuevo."
+      },
+      "sessions": {
+        "title": "Sesiones activas",
+        "description": "Gestiona los dispositivos conectados a tu cuenta.",
+        "current": "Sesión actual",
+        "revoke": "Cerrar",
+        "revokeAll": "Cerrar todas las demás",
+        "revokeConfirm": "¿Seguro que quieres cerrar esta sesión?",
+        "revokeAllConfirm": "¿Seguro que quieres cerrar todas las demás sesiones?",
+        "device": "Dispositivo: {{device}}",
+        "location": "Ubicación: {{location}}",
+        "lastActive": "Activo hace: {{time}}"
+      }
+    }
+  }
+}

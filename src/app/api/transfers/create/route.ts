@@ -13,6 +13,7 @@ import { getExchangeRate } from '@/lib/services/exchange';
 import { getKycTierLimits } from '@/lib/services/kyc-limits';
 import { determineUserRiskTier } from '@/lib/services/risk-profile';
 import { z } from 'zod';
+import { UserRiskTier } from '@prisma/client';
 
 const transferSchema = z.object({
   mode: z.enum(['ACCOUNT_CONTROLLED', 'CARD_EMAIL', 'SELF_TRANSFER']), // Add other modes if needed
@@ -159,7 +160,8 @@ export async function POST(req: Request) {
         }
     }
 
-    const riskTier = user.riskTier || determineUserRiskTier(user);
+    const userRiskTier = 'riskTier' in user ? ((user as unknown as { riskTier?: UserRiskTier | null }).riskTier ?? null) : null;
+    const riskTier: UserRiskTier = userRiskTier ?? determineUserRiskTier(user);
     const limits = getKycTierLimits(user.kycLevel, riskTier);
     const amountEurForLimits = amountEur;
 
@@ -237,7 +239,7 @@ export async function POST(req: Request) {
     
     // GSS-MVP-FIX: Align fee economics with exchange.ts (fee is deducted from amountSource; do not debit fee twice).
     // Total to deduct = amountSource (fee is already represented inside amountReceived calculation)
-    const totalDeduction = Number(amountSource);
+    const totalDeduction = Number(calculation.totalToPay);
 
     // 2. Transaction: Debit & Create Transfer
     const result = await prisma.$transaction(async (tx) => {
@@ -254,11 +256,22 @@ export async function POST(req: Request) {
             data: {
                 accountId: user.account!.id,
                 type: 'DEBIT',
-                amount: totalDeduction,
+                amount: calculation.feeModel === 'EXPLICIT' ? amountSource : totalDeduction,
                 currency: currencySource,
                 description: `Transfer to ${receiverEmail || 'External'} (${mode})`
             }
         });
+        if (calculation.feeModel === 'EXPLICIT') {
+          await tx.accountTransaction.create({
+            data: {
+              accountId: user.account!.id,
+              type: 'FEE',
+              amount: calculation.fee,
+              currency: currencySource,
+              description: `GSS fee (${mode})`,
+            },
+          });
+        }
 
         // GSS-MVP-FIX: MVP limits this endpoint to CARD_EMAIL (no internal recipient settlement here).
         const receiverId = null;
@@ -429,7 +442,7 @@ export async function POST(req: Request) {
                    transferId: result.id,
                    reason: 'stripe_card_creation_failed', 
                    originalError: stripeError.message,
-                   amountRefuned: totalDeduction, 
+                   amountRefunded: totalDeduction, 
                    currency: currencySource 
                  } 
                } 
@@ -501,7 +514,21 @@ export async function POST(req: Request) {
       metadata: { transferId: result.id, mode, amount: amountSource, currencySource, currencyTarget },
     });
 
-    return NextResponse.json({ success: true, transferId: result.id });
+    return NextResponse.json({
+      success: true,
+      transferId: result.id,
+      quote: {
+        amountSent: calculation.amountSent,
+        currencySent: calculation.currencySent,
+        fee: calculation.fee,
+        feePercentage: calculation.feePercentage,
+        totalToPay: totalDeduction,
+        rate: calculation.rate,
+        amountReceived: calculation.amountReceived,
+        currencyReceived: calculation.currencyReceived,
+        feeModel: calculation.feeModel,
+      },
+    });
   } catch (error: any) {
     const requestId = req.headers.get('x-request-id') || null;
     console.error('Transfer creation failed:', error);

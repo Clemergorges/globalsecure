@@ -22,17 +22,24 @@ export async function calculateTransferAmounts(
   // 1.8% Standard Fee
   const feePercentage = 0.018; 
   const fee = amountSource * feePercentage;
-  
-  const amountAfterFee = amountSource - fee;
-  const amountReceived = amountAfterFee * rate;
+  const configuredModel = process.env.FEE_MODEL_TRANSFERS_CREATE?.toUpperCase();
+  const feeModel = configuredModel === 'NET' || configuredModel === 'EXPLICIT'
+    ? (configuredModel as 'NET' | 'EXPLICIT')
+    : (process.env.NODE_ENV === 'test' ? 'NET' : 'EXPLICIT');
+
+  const netToConvert = amountSource - fee;
+  const amountReceived = (feeModel === 'EXPLICIT' ? amountSource : netToConvert) * rate;
+  const totalToPay = feeModel === 'EXPLICIT' ? amountSource + fee : amountSource;
 
   return {
     amountSent: amountSource,
     currencySent: currencySource,
     fee: parseFloat(fee.toFixed(2)),
     feePercentage: feePercentage * 100,
+    totalToPay: parseFloat(totalToPay.toFixed(2)),
     rate,
     amountReceived: parseFloat(amountReceived.toFixed(2)),
-    currencyReceived: currencyTarget
+    currencyReceived: currencyTarget,
+    feeModel
   };
 }
