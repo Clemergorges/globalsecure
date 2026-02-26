@@ -249,6 +249,9 @@ model User {
 
   travelModeEnabled Boolean @default(false)
   travelRegion      String?
+
+  cryptoWithdrawVelocityFlag   Boolean  @default(false)
+  cryptoWithdrawVelocityFlagAt DateTime?
   
   // Flattened Address (Deprecated in favor of Address model, but kept for backward compatibility if needed)
   address       String?
@@ -489,6 +492,16 @@ model TreasurySnapshot {
   @@map("treasury_snapshots")
 }
 
+model OperationalFlag {
+  key       String   @id
+  enabled   Boolean  @default(false)
+  reason    String?
+  metadata  Json?
+  updatedAt DateTime @updatedAt
+
+  @@map("operational_flags")
+}
+
 model MarketGuard {
   id              String   @id @default(uuid())
   assetSymbol     String
@@ -504,6 +517,42 @@ model MarketGuard {
 
   @@unique([assetSymbol])
   @@map("market_guards")
+}
+
+enum PartnerName {
+  STRIPE
+  POLYGON
+  ETHERFI
+}
+
+enum PartnerBreakerState {
+  CLOSED
+  OPEN
+  HALF_OPEN
+}
+
+model PartnerCircuitState {
+  partner          PartnerName       @id
+  state            PartnerBreakerState @default(CLOSED)
+  openedAt         DateTime?
+  halfOpenedAt     DateTime?
+  lastProbeAt      DateTime?
+  lastStateChangeAt DateTime?
+  updatedAt        DateTime          @updatedAt
+
+  @@map("partner_circuit_states")
+}
+
+model PartnerCircuitEvent {
+  id        String      @id @default(uuid())
+  partner   PartnerName
+  eventType String      @default("CALL")
+  success   Boolean
+  errorKind String?
+  createdAt DateTime    @default(now())
+
+  @@index([partner, createdAt])
+  @@map("partner_circuit_events")
 }
 
 model RebalanceJob {
@@ -663,6 +712,11 @@ model Transfer {
   type             TransferType
   status           TransferStatus @default(PENDING)
   yieldPositionId  String?        @map("yield_position_id")
+  yieldReconcileStatus String     @default("OK")
+  yieldReconcilePendingAt DateTime?
+  yieldLastReconciledAt DateTime?
+  yieldInternalValueUsd Decimal?  @db.Decimal(18, 2)
+  yieldExternalValueUsd Decimal?  @db.Decimal(18, 2)
   amlCheckPassed   Boolean        @default(false)
   amlCheckAt       DateTime?
   createdAt        DateTime       @default(now())

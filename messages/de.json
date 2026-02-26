@@ -11,6 +11,46 @@
       "tax": "Steuern und steuerliche Pflichten liegen in der Verantwortung des Nutzers. GSS stellt Kontoauszüge und Berichte zur Unterstützung der Erklärung bereit, ersetzt jedoch keinen Steuerberater oder Buchhalter."
     }
   },
+  "CardEmail": {
+    "View": {
+      "title": "Ihre GlobalSecure-Karte",
+      "subtitle": "Saldo und letzte Ausgaben ansehen, ohne ein Konto zu erstellen.",
+      "balanceInitial": "Anfangssaldo",
+      "balanceAvailable": "Verfügbarer Saldo",
+      "transactionsTitle": "Transaktionen",
+      "emptyTransactions": "Noch keine Transaktionen.",
+      "merchantUnknown": "Unbekannter Händler",
+      "note": "Prepaid-Virtuelle Karte. Kein Bankkonto erforderlich.",
+      "error": {
+        "invalidOrExpired": "Ungültiger oder abgelaufener Link.",
+        "generic": "Kartendaten konnten nicht geladen werden. Bitte erneut versuchen."
+      },
+      "otp": {
+        "title": "Zugangscode erforderlich",
+        "description": "Geben Sie den Zugangscode mit 6 Zeichen ein, um fortzufahren.",
+        "label": "Zugangscode",
+        "placeholder": "123456",
+        "submit": "Weiter",
+        "submitting": "Wird geprüft...",
+        "invalid": "Ungültiges Code-Format.",
+        "failed": "Ungültiger Code oder Link abgelaufen."
+      }
+    }
+  },
+  "Incidents": {
+    "treasuryHalt": {
+      "title": "Vorübergehende Serviceeinschränkung",
+      "description": "Ein- und Auszahlungen können vorübergehend nicht verfügbar sein. Bitte später erneut versuchen."
+    },
+    "yieldPaused": {
+      "title": "Yield vorübergehend pausiert",
+      "description": "Neue Yield-Allokationen sind vorübergehend nicht verfügbar. Bestehende Positionen sind nicht betroffen."
+    },
+    "partnerOutage": {
+      "title": "Vorübergehende Service-Störung",
+      "description": "Einige Funktionen können vorübergehend nicht verfügbar sein. Bitte später erneut versuchen."
+    }
+  },
   "Register": {
     "title": "Konto erstellen",
     "subtitle": "Starten Sie noch heute mit weltweiten Überweisungen",
@@ -225,6 +265,12 @@
         "INSUFFICIENT_FUNDS": "Unzureichendes Guthaben",
         "SENDER_NOT_FOUND": "Absenderkonto nicht gefunden",
         "INVALID_AMOUNT": "Bitte gültigen Betrag eingeben",
+        "JURISDICTION_NOT_SUPPORTED": "Dieser Service ist in Ihrem Land nicht verfügbar.",
+        "KYC_LEVEL_2_REQUIRED": "Für diese Überweisung ist eine zusätzliche Verifizierung erforderlich.",
+        "YIELD_KILL_SWITCH": "Yield ist vorübergehend nicht verfügbar.",
+        "YIELD_EXPOSURE_LIMIT": "Yield ist vorübergehend nicht verfügbar.",
+        "PARTNER_TEMPORARILY_UNAVAILABLE": "Service vorübergehend nicht verfügbar. Bitte später erneut versuchen.",
+        "TREASURY_HALT_DEPOSITS_WITHDRAWS": "Service vorübergehend nicht verfügbar. Bitte später erneut versuchen.",
         "INTERNAL_SERVER_ERROR": "Interner Serverfehler",
         "submitFailed": "Überweisung fehlgeschlagen"
       }

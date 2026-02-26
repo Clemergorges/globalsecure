@@ -1,7 +1,54 @@
 {
   "Common": {
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "loading": "Cargando...",
+    "error": "Error",
     "disclaimer": {
       "tax": "Los impuestos y obligaciones fiscales son responsabilidad del usuario. GSS ofrece extractos e informes para facilitar la declaración, pero no sustituye a un contador ni a un asesor fiscal."
+    }
+  },
+  "CardEmail": {
+    "View": {
+      "title": "Tu tarjeta GlobalSecure",
+      "subtitle": "Consulta el saldo y los gastos recientes sin crear una cuenta.",
+      "balanceInitial": "Saldo inicial",
+      "balanceAvailable": "Saldo disponible",
+      "transactionsTitle": "Transacciones",
+      "emptyTransactions": "Aún no hay transacciones.",
+      "merchantUnknown": "Comercio desconocido",
+      "note": "Tarjeta virtual prepago. No se requiere cuenta bancaria.",
+      "error": {
+        "invalidOrExpired": "Enlace inválido o caducado.",
+        "generic": "No se pudieron cargar los datos de la tarjeta. Inténtalo de nuevo."
+      },
+      "otp": {
+        "title": "Se requiere código de acceso",
+        "description": "Introduce el código de acceso de 6 caracteres para continuar.",
+        "label": "Código de acceso",
+        "placeholder": "123456",
+        "submit": "Continuar",
+        "submitting": "Verificando...",
+        "invalid": "Formato de código inválido.",
+        "failed": "Código inválido o enlace caducado."
+      }
+    }
+  },
+  "Incidents": {
+    "treasuryHalt": {
+      "title": "Restricción temporal del servicio",
+      "description": "Los depósitos y retiros pueden estar temporalmente no disponibles. Inténtalo de nuevo más tarde."
+    },
+    "yieldPaused": {
+      "title": "Yield temporalmente pausado",
+      "description": "Las nuevas asignaciones de yield están temporalmente no disponibles. Las posiciones existentes no se ven afectadas."
+    },
+    "partnerOutage": {
+      "title": "Interrupción temporal del servicio",
+      "description": "Algunas funciones pueden estar temporalmente no disponibles. Inténtalo de nuevo más tarde."
     }
   },
   "KYC": {
@@ -75,6 +122,19 @@
         "device": "Dispositivo: {{device}}",
         "location": "Ubicación: {{location}}",
         "lastActive": "Activo hace: {{time}}"
+      }
+    }
+  }
+  ,
+  "Transfers": {
+    "Create": {
+      "errors": {
+        "JURISDICTION_NOT_SUPPORTED": "Este servicio no está disponible en tu país.",
+        "KYC_LEVEL_2_REQUIRED": "Se requiere verificación adicional para completar esta transferencia.",
+        "YIELD_KILL_SWITCH": "Yield no está disponible temporalmente.",
+        "YIELD_EXPOSURE_LIMIT": "Yield no está disponible temporalmente.",
+        "PARTNER_TEMPORARILY_UNAVAILABLE": "Servicio temporalmente no disponible. Inténtalo más tarde.",
+        "TREASURY_HALT_DEPOSITS_WITHDRAWS": "Servicio temporalmente no disponible. Inténtalo más tarde."
       }
     }
   }

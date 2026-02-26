@@ -101,12 +101,14 @@ export const templates = {
     last4: string,
     amount: string,
     currency: string,
-    personalMessage?: string | null
+    personalMessage?: string | null,
+    viewCardUrl?: string | null
   ): string => {
     const safeName = recipientName || 'Customer';
     const safeAmount = amount;
     const safeCurrency = currency;
     const safeLast4 = last4;
+    const safeViewCardUrl = viewCardUrl ? escapeHtml(viewCardUrl) : null;
 
     const safePersonalMessage =
       typeof personalMessage === 'string' && personalMessage.trim().length > 0
@@ -117,6 +119,14 @@ export const templates = {
       ? `
         <p><strong>Message from the sender:</strong></p>
         <p>${safePersonalMessage}</p>
+      `
+      : '';
+
+    const viewBlock = safeViewCardUrl
+      ? `
+        <div style="margin: 18px 0;">
+          <a href="${safeViewCardUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 18px; text-decoration: none; border-radius: 8px; font-weight: 700;">View card balance and transactions</a>
+        </div>
       `
       : '';
 
@@ -138,6 +148,7 @@ export const templates = {
         </div>
 
         ${personalBlock}
+        ${viewBlock}
 
         <p>
           You can use this card for online purchases at merchants that accept the corresponding card brand.

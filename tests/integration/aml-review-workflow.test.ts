@@ -69,6 +69,7 @@ describe('AML review workflow', () => {
         body: JSON.stringify({ action: 'ADD_NOTE', id: created.id, body: 'Reviewed documents, ok.' }),
       }) as any,
     );
+    expect(noteRes.status).toBe(200);
     const noteBody = await noteRes.json();
     expect(noteBody.success).toBe(true);
     expect(noteBody.note.caseId).toBe(created.id);
@@ -80,6 +81,7 @@ describe('AML review workflow', () => {
         body: JSON.stringify({ action: 'DECIDE', id: created.id, decision: 'CLEAR', decisionNote: 'No red flags.' }),
       }) as any,
     );
+    expect(decideRes.status).toBe(200);
     const decideBody = await decideRes.json();
     expect(decideBody.success).toBe(true);
     expect(decideBody.case.status).toBe('CLEARED');

@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import Stripe from 'stripe';
 import { logAudit } from '@/lib/logger';
+import { callPartnerWithBreaker, PartnerTemporarilyUnavailableError } from '@/lib/services/partner-circuit-breaker';
 
 type StripeIdentityErrorCode =
   | 'STRIPE_NOT_CONFIGURED'
@@ -84,21 +85,23 @@ export async function POST(req: Request) {
     });
 
     // 1. Create Verification Session
-    const verificationSession = await stripe.identity.verificationSessions.create({
-      type: 'document',
-      metadata: {
-        userId: userId,
-      },
-      options: {
-        document: {
-          require_id_number: true,
-          require_matching_selfie: true,
-          require_live_capture: true, // Liveness check
+    const verificationSession = await callPartnerWithBreaker('stripe', 'identity.verificationSessions.create', async () =>
+      stripe.identity.verificationSessions.create({
+        type: 'document',
+        metadata: {
+          userId: userId,
         },
-      },
-      // Redirect back to dashboard after completion
-      return_url: resolveReturnUrl(req),
-    });
+        options: {
+          document: {
+            require_id_number: true,
+            require_matching_selfie: true,
+            require_live_capture: true, // Liveness check
+          },
+        },
+        // Redirect back to dashboard after completion
+        return_url: resolveReturnUrl(req),
+      }),
+    );
 
     // 2. Save intent to DB
     // We create a PENDING document linked to this verification
@@ -131,6 +134,19 @@ export async function POST(req: Request) {
     });
 
   } catch (error) {
+    if (error instanceof PartnerTemporarilyUnavailableError) {
+      await logAudit({
+        userId,
+        action: 'KYC_STRIPE_IDENTITY_CREATE',
+        status: 'FAILURE',
+        ipAddress,
+        userAgent,
+        method,
+        path,
+        metadata: { code: error.code },
+      }).catch(() => {});
+      return NextResponse.json({ error: error.code, code: error.code }, { status: 503 });
+    }
     const mapped = mapStripeError(error);
     await logAudit({
       userId,

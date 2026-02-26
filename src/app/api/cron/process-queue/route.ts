@@ -8,6 +8,7 @@ import { runTreasuryReconciliation } from '@/lib/services/treasury-reconciliatio
 import { sendUsdtFromHotWallet } from '@/lib/services/polygon';
 import { logAudit } from '@/lib/logger';
 import { runSettlementSweep } from '@/lib/services/settlement-engine';
+import { runEtherFiReconciliation } from '@/lib/services/yield-reconciliation';
 
 // This endpoint is called by Vercel Cron every minute
 export async function GET(req: Request) {
@@ -80,6 +81,10 @@ export async function GET(req: Request) {
 
           case 'TREASURY_RECONCILE':
             await runTreasuryReconciliation(job.payload as any);
+            break;
+          
+          case 'YIELD_RECONCILE_ETHERFI':
+            await runEtherFiReconciliation(job.payload as any);
             break;
 
           case 'SETTLEMENT_SWEEP':

@@ -137,6 +137,7 @@ async function reconcileWithinTx(
   const currencies = new Set<string>([...internalByCurrency.keys(), ...externalByCurrency.keys()]);
   const rows: TreasuryReconciliationRow[] = [];
   const alerts: Array<{ currency: string; level: 'WARNING' | 'CRITICAL'; divergencePct: number; delta: string }> = [];
+  let shouldHaltDepositsWithdraws = false;
 
   for (const currency of Array.from(currencies).sort()) {
     const internal = internalByCurrency.get(currency) || new Prisma.Decimal(0);
@@ -181,6 +182,7 @@ async function reconcileWithinTx(
         const level: 'WARNING' | 'CRITICAL' = divergencePct >= params.critPct ? 'CRITICAL' : 'WARNING';
         const d = delta!.toFixed(2);
         alerts.push({ currency, level, divergencePct: Number(divergencePct.toFixed(4)), delta: d });
+        if (divergencePct >= 1) shouldHaltDepositsWithdraws = true;
         await tx.auditLog.create({
           data: {
             action: 'TREASURY_RECONCILIATION_DIVERGENCE',
@@ -204,6 +206,45 @@ async function reconcileWithinTx(
   }
 
   if (params.emitAudit) {
+    const existingFlag = await (tx as any).operationalFlag?.findUnique?.({
+      where: { key: 'TREASURY_HALT_DEPOSITS_WITHDRAWS' },
+      select: { enabled: true },
+    });
+    const prevEnabled = existingFlag?.enabled === true;
+    const nextEnabled = shouldHaltDepositsWithdraws;
+
+    if ((tx as any).operationalFlag?.upsert) {
+      await (tx as any).operationalFlag.upsert({
+        where: { key: 'TREASURY_HALT_DEPOSITS_WITHDRAWS' },
+        create: {
+          key: 'TREASURY_HALT_DEPOSITS_WITHDRAWS',
+          enabled: nextEnabled,
+          reason: nextEnabled ? 'TREASURY_DIVERGENCE' : null,
+          metadata: nextEnabled ? { snapshotCutoffIso: params.cutoff.toISOString(), nowIso: params.now.toISOString() } : undefined,
+        },
+        update: {
+          enabled: nextEnabled,
+          reason: nextEnabled ? 'TREASURY_DIVERGENCE' : null,
+          metadata: nextEnabled ? { snapshotCutoffIso: params.cutoff.toISOString(), nowIso: params.now.toISOString() } : undefined,
+        },
+      });
+    }
+
+    if (!prevEnabled && nextEnabled) {
+      await tx.auditLog.create({
+        data: {
+          action: 'TREASURY_HALT_ENABLED',
+          userId: null,
+          status: 'CRITICAL',
+          metadata: {
+            reason: 'TREASURY_DIVERGENCE',
+            snapshotCutoffIso: params.cutoff.toISOString(),
+            nowIso: params.now.toISOString(),
+          },
+        },
+      });
+    }
+
     await tx.auditLog.create({
       data: {
         action: 'TREASURY_RECONCILIATION',
@@ -232,4 +273,3 @@ async function reconcileWithinTx(
     alerts,
   };
 }
-

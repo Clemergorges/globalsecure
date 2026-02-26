@@ -134,6 +134,46 @@
       "tax": "Taxes and fiscal obligations are the user’s responsibility. GSS provides statements and reports to support filing, but does not replace an accountant or tax advisor."
     }
   },
+  "CardEmail": {
+    "View": {
+      "title": "Your GlobalSecure card",
+      "subtitle": "View balance and recent spending without creating an account.",
+      "balanceInitial": "Initial balance",
+      "balanceAvailable": "Available balance",
+      "transactionsTitle": "Transactions",
+      "emptyTransactions": "No transactions yet.",
+      "merchantUnknown": "Unknown merchant",
+      "note": "This is a prepaid virtual card. No bank account required.",
+      "error": {
+        "invalidOrExpired": "Invalid or expired link.",
+        "generic": "Unable to load card data. Please try again."
+      },
+      "otp": {
+        "title": "Access code required",
+        "description": "Enter the 6-character access code to continue.",
+        "label": "Access code",
+        "placeholder": "123456",
+        "submit": "Continue",
+        "submitting": "Verifying...",
+        "invalid": "Invalid code format.",
+        "failed": "Invalid code or link expired."
+      }
+    }
+  },
+  "Incidents": {
+    "treasuryHalt": {
+      "title": "Temporary service restriction",
+      "description": "Deposits and withdrawals may be temporarily unavailable. Please try again later."
+    },
+    "yieldPaused": {
+      "title": "Yield temporarily paused",
+      "description": "New yield allocations are temporarily unavailable. Existing positions are not affected."
+    },
+    "partnerOutage": {
+      "title": "Temporary service disruption",
+      "description": "Some features may be temporarily unavailable. Please try again later."
+    }
+  },
   "Dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome back",
@@ -225,6 +265,12 @@
         "INSUFFICIENT_FUNDS": "Insufficient funds",
         "SENDER_NOT_FOUND": "Sender account not found",
         "INVALID_AMOUNT": "Enter a valid amount",
+        "JURISDICTION_NOT_SUPPORTED": "This service is not available in your country.",
+        "KYC_LEVEL_2_REQUIRED": "Additional verification is required to complete this transfer.",
+        "YIELD_KILL_SWITCH": "Yield is temporarily unavailable.",
+        "YIELD_EXPOSURE_LIMIT": "Yield is temporarily unavailable.",
+        "PARTNER_TEMPORARILY_UNAVAILABLE": "Service temporarily unavailable. Please try again later.",
+        "TREASURY_HALT_DEPOSITS_WITHDRAWS": "Service temporarily unavailable. Please try again later.",
         "INTERNAL_SERVER_ERROR": "Internal server error",
         "submitFailed": "Failed to complete transfer"
       }

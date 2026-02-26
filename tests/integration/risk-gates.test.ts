@@ -22,6 +22,7 @@ describe('Risk gates', () => {
         firstName: 'Test',
         lastName: 'User',
         emailVerified: true,
+        kycStatus: 'APPROVED',
         account: { create: { primaryCurrency: 'EUR' } },
       },
       select: { id: true },
@@ -46,7 +47,6 @@ describe('Risk gates', () => {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          // GSS-MVP-FIX: align test with new MVP scope.
           mode: 'SELF_TRANSFER',
           amountSource: 10,
           currencySource: 'EUR',
@@ -55,9 +55,9 @@ describe('Risk gates', () => {
       }),
     );
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(403);
     const body = await res.json();
-    expect(body.code).toBe('MODE_NOT_SUPPORTED');
+    expect(body.code).toBe('AML_REVIEW_PENDING');
 
     await prisma.amlReviewCase.deleteMany({ where: { userId: user.id } });
     await prisma.account.deleteMany({ where: { userId: user.id } });

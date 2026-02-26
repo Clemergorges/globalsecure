@@ -1,4 +1,5 @@
 import { stripe } from '@/lib/services/stripe';
+import { callPartnerWithBreaker } from '@/lib/services/partner-circuit-breaker';
 
 export type IssuerCardData = {
   cardId: string;
@@ -73,28 +74,32 @@ export function getIssuerConnector(): IssuerConnector {
         const recipientName = params.recipientName || 'Sandbox User';
         const currency = asCurrency(params.currency);
 
-        const cardholder = await stripe.issuing.cardholders.create({
-          type: 'individual',
-          name: recipientName,
-          email: recipientEmail,
-          billing: {
-            address: {
-              line1: '1 Market St',
-              city: 'San Francisco',
-              state: 'CA',
-              postal_code: '94105',
-              country: 'US',
+        const cardholder = await callPartnerWithBreaker('stripe', 'issuing.cardholders.create', async () =>
+          stripe.issuing.cardholders.create({
+            type: 'individual',
+            name: recipientName,
+            email: recipientEmail,
+            billing: {
+              address: {
+                line1: '1 Market St',
+                city: 'San Francisco',
+                state: 'CA',
+                postal_code: '94105',
+                country: 'US',
+              },
             },
-          },
-          status: 'active',
-        });
+            status: 'active',
+          }),
+        );
 
-        const card = await stripe.issuing.cards.create({
-          type: 'virtual',
-          currency,
-          cardholder: cardholder.id,
-          status: 'active',
-        });
+        const card = await callPartnerWithBreaker('stripe', 'issuing.cards.create', async () =>
+          stripe.issuing.cards.create({
+            type: 'virtual',
+            currency,
+            cardholder: cardholder.id,
+            status: 'active',
+          }),
+        );
 
         return {
           cardId: card.id,
@@ -108,12 +113,16 @@ export function getIssuerConnector(): IssuerConnector {
       },
       async updateCardStatus(cardId, status) {
         if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY_MISSING');
-        const updated = await stripe.issuing.cards.update(cardId, { status });
+        const updated = await callPartnerWithBreaker('stripe', 'issuing.cards.updateStatus', async () =>
+          stripe.issuing.cards.update(cardId, { status }),
+        );
         return { status: updated.status || status };
       },
       async updateCardControls(cardId, controls) {
         if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY_MISSING');
-        return stripe.issuing.cards.update(cardId, { spending_controls: controls });
+        return callPartnerWithBreaker('stripe', 'issuing.cards.updateControls', async () =>
+          stripe.issuing.cards.update(cardId, { spending_controls: controls }),
+        );
       },
       async revealCard(cardId, fallback) {
         if (!process.env.STRIPE_SECRET_KEY) {
@@ -125,7 +134,9 @@ export function getIssuerConnector(): IssuerConnector {
           };
         }
         try {
-          const stripeCard = await stripe.issuing.cards.retrieve(cardId, { expand: ['number', 'cvc'] });
+          const stripeCard = await callPartnerWithBreaker('stripe', 'issuing.cards.retrieve', async () =>
+            stripe.issuing.cards.retrieve(cardId, { expand: ['number', 'cvc'] }),
+          );
           const pan = (stripeCard as any).number ? String((stripeCard as any).number) : `**** **** **** ${fallback.last4}`;
           const cvc = (stripeCard as any).cvc ? String((stripeCard as any).cvc) : '***';
           return { pan, cvv: cvc, expMonth: stripeCard.exp_month, expYear: stripeCard.exp_year };
@@ -141,7 +152,7 @@ export function getIssuerConnector(): IssuerConnector {
       async healthCheck() {
         if (!process.env.STRIPE_SECRET_KEY) return { ok: false, details: { error: 'STRIPE_SECRET_KEY_MISSING' } };
         try {
-          await stripe.accounts.retrieve();
+          await callPartnerWithBreaker('stripe', 'accounts.retrieve', async () => stripe.accounts.retrieve());
           return { ok: true };
         } catch (e: any) {
           return { ok: false, details: { error: e?.message || 'STRIPE_SANDBOX_UNREACHABLE' } };

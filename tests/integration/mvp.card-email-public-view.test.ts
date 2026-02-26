@@ -30,17 +30,17 @@ jest.mock('@/lib/services/email', () => ({
 }));
 
 import { POST as transfersCreatePost } from '@/app/api/transfers/create/route';
+import { GET as cardEmailGet } from '@/app/api/card/email/[token]/route';
 
 function uid(prefix: string) {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-describe('MVP Feb/2026: /api/transfers/create (CARD_EMAIL + fees)', () => {
+describe('MVP Feb/2026: public card email view (Scenario B)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSendEmail.mockResolvedValue({ ok: true, messageId: 'm1' });
     mockCardCreatedTemplate.mockReturnValue('<html>cardCreated</html>');
-
     mockCreateVirtualCard.mockResolvedValue({
       cardId: `ic_test_${Date.now()}`,
       cardholderId: `ich_test_${Date.now()}`,
@@ -53,7 +53,7 @@ describe('MVP Feb/2026: /api/transfers/create (CARD_EMAIL + fees)', () => {
 
   afterEach(async () => {
     const users = await prisma.user.findMany({
-      where: { email: { contains: 'mvp_card_email_' } },
+      where: { email: { contains: 'mvp_card_email_view_' } },
       select: { id: true },
     });
     const ids = users.map((u) => u.id);
@@ -71,9 +71,8 @@ describe('MVP Feb/2026: /api/transfers/create (CARD_EMAIL + fees)', () => {
     await prisma.user.deleteMany({ where: { id: { in: ids } } });
   });
 
-  test('creates CARD_EMAIL transfer, records fee (1.8%), and debits only amountSource', async () => {
-    const startedAt = new Date();
-    const email = `${uid('mvp_card_email_')}@test.com`;
+  test('token válido retorna saldos e gastos aprovados (amountAvailable = amountInitial - amountUsed)', async () => {
+    const email = `${uid('mvp_card_email_view_')}@test.com`;
     const user = await prisma.user.create({
       data: {
         email,
@@ -86,7 +85,7 @@ describe('MVP Feb/2026: /api/transfers/create (CARD_EMAIL + fees)', () => {
         riskTier: 'LOW',
         account: { create: { status: 'ACTIVE', primaryCurrency: 'EUR' } },
       },
-      select: { id: true, account: { select: { id: true } } },
+      select: { id: true },
     });
 
     await prisma.fiatBalance.create({
@@ -123,46 +122,70 @@ describe('MVP Feb/2026: /api/transfers/create (CARD_EMAIL + fees)', () => {
 
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.success).toBe(true);
-    expect(json.transferId).toBeTruthy();
+    const transferId = json.transferId as string;
+    expect(transferId).toBeTruthy();
 
-    const transfer = await prisma.transfer.findUnique({ where: { id: json.transferId } });
-    expect(transfer).toBeTruthy();
-    expect(transfer!.type).toBe('CARD');
-    expect(transfer!.amountSent.toFixed(2)).toBe('100.00');
-    expect(transfer!.fee.toFixed(2)).toBe('1.80');
-    expect(transfer!.feePercentage.toFixed(2)).toBe('1.80');
-    expect(transfer!.amountReceived.toFixed(2)).toBe('98.20');
-
-    const eurBalance = await prisma.fiatBalance.findUnique({
-      where: { userId_currency: { userId: user.id, currency: 'EUR' } },
-    });
-    expect(eurBalance?.amount.toFixed(2)).toBe('900.00');
-
-    const lastTx = await prisma.accountTransaction.findFirst({
-      where: { accountId: user.account!.id, type: 'DEBIT' },
-      orderBy: { createdAt: 'desc' },
-    });
-    expect(lastTx).toBeTruthy();
-    expect(lastTx!.amount.toFixed(2)).toBe('100.00');
-
-    const debitTxs = await prisma.accountTransaction.findMany({
-      where: { accountId: user.account!.id, type: 'DEBIT', createdAt: { gte: startedAt } },
-      orderBy: { createdAt: 'asc' },
-    });
-    expect(debitTxs.length).toBe(1);
-
-    const card = await prisma.virtualCard.findUnique({ where: { transferId: json.transferId } });
+    const card = await prisma.virtualCard.findUnique({ where: { transferId } });
     expect(card).toBeTruthy();
 
-    expect(mockCreateVirtualCard).toHaveBeenCalledTimes(1);
-    expect(mockCardCreatedTemplate).toHaveBeenCalledTimes(1);
-    expect(mockSendEmail).toHaveBeenCalledTimes(1);
-    expect(mockSendEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: 'recipient@test.com',
-        subject: 'You received a GlobalSecure virtual card',
-      }),
-    );
+    const link = await prisma.claimLink.findUnique({ where: { virtualCardId: card!.id } });
+    expect(link?.token).toBeTruthy();
+
+    await prisma.spendTransaction.createMany({
+      data: [
+        {
+          cardId: card!.id,
+          stripeAuthId: uid('auth'),
+          amount: new Prisma.Decimal(10),
+          currency: 'EUR',
+          merchantName: 'Coffee Shop',
+          status: 'approved',
+        },
+        {
+          cardId: card!.id,
+          stripeAuthId: uid('auth'),
+          amount: new Prisma.Decimal(5.5),
+          currency: 'EUR',
+          merchantName: 'Book Store',
+          status: 'approved',
+        },
+        {
+          cardId: card!.id,
+          stripeAuthId: uid('auth'),
+          amount: new Prisma.Decimal(3),
+          currency: 'EUR',
+          merchantName: 'Should Not Appear',
+          status: 'declined',
+        },
+      ],
+    });
+
+    await prisma.virtualCard.update({
+      where: { id: card!.id },
+      data: { amountUsed: new Prisma.Decimal(15.5) },
+    });
+
+    const r = await cardEmailGet(new Request('http://localhost/api/card/email/t', { method: 'GET' }), {
+      params: Promise.resolve({ token: link!.token }),
+    });
+    expect(r.status).toBe(200);
+    const body = await r.json();
+    expect(body.ok).toBe(true);
+    expect(body.currency).toBe('EUR');
+    expect(body.amountInitial).toBeCloseTo(98.2, 2);
+    expect(body.amountUsed).toBeCloseTo(15.5, 2);
+    expect(body.amountAvailable).toBeCloseTo(82.7, 2);
+    expect(body.transactions.length).toBe(2);
+    expect(body.transactions.map((x: any) => x.merchant)).toEqual(expect.arrayContaining(['Coffee Shop', 'Book Store']));
+  });
+
+  test('token inválido retorna CARD_LINK_INVALID sem vazar detalhes', async () => {
+    const r = await cardEmailGet(new Request('http://localhost/api/card/email/t', { method: 'GET' }), {
+      params: Promise.resolve({ token: 'does_not_exist' }),
+    });
+    expect(r.status).toBe(404);
+    const body = await r.json();
+    expect(body.ok).toBe(false);
+    expect(body.code).toBe('CARD_LINK_INVALID');
   });
 });

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { createIssuingEphemeralKey } from '@/lib/services/stripe';
 import { z } from 'zod';
+import { PartnerTemporarilyUnavailableError } from '@/lib/services/partner-circuit-breaker';
 
 const schema = z.object({
   cardId: z.string(),
@@ -41,6 +42,9 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Ephemeral Key Error:', error);
+    if (error instanceof PartnerTemporarilyUnavailableError) {
+      return NextResponse.json({ error: error.code, code: error.code }, { status: 503 });
+    }
     return NextResponse.json({ error: error.message || 'Failed to create ephemeral key' }, { status: 500 });
   }
 }

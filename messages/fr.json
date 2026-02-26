@@ -11,6 +11,46 @@
       "tax": "Les impôts et obligations fiscales relèvent de la responsabilité de l’utilisateur. GSS fournit des relevés et rapports pour faciliter la déclaration, mais ne remplace pas un comptable ni un conseiller fiscal."
     }
   },
+  "CardEmail": {
+    "View": {
+      "title": "Votre carte GlobalSecure",
+      "subtitle": "Consultez le solde et les dépenses récentes sans créer de compte.",
+      "balanceInitial": "Solde initial",
+      "balanceAvailable": "Solde disponible",
+      "transactionsTitle": "Transactions",
+      "emptyTransactions": "Aucune transaction pour le moment.",
+      "merchantUnknown": "Commerçant inconnu",
+      "note": "Carte virtuelle prépayée. Aucun compte bancaire requis.",
+      "error": {
+        "invalidOrExpired": "Lien invalide ou expiré.",
+        "generic": "Impossible de charger les données de la carte. Veuillez réessayer."
+      },
+      "otp": {
+        "title": "Code d’accès requis",
+        "description": "Saisissez le code d’accès de 6 caractères pour continuer.",
+        "label": "Code d’accès",
+        "placeholder": "123456",
+        "submit": "Continuer",
+        "submitting": "Vérification…",
+        "invalid": "Format de code invalide.",
+        "failed": "Code invalide ou lien expiré."
+      }
+    }
+  },
+  "Incidents": {
+    "treasuryHalt": {
+      "title": "Restriction temporaire du service",
+      "description": "Les dépôts et retraits peuvent être temporairement indisponibles. Veuillez réessayer plus tard."
+    },
+    "yieldPaused": {
+      "title": "Yield temporairement en pause",
+      "description": "Les nouvelles allocations en yield sont temporairement indisponibles. Les positions existantes ne sont pas affectées."
+    },
+    "partnerOutage": {
+      "title": "Perturbation temporaire du service",
+      "description": "Certaines fonctionnalités peuvent être temporairement indisponibles. Veuillez réessayer plus tard."
+    }
+  },
   "Register": {
     "title": "Créer un compte",
     "subtitle": "Commencez à envoyer de l'argent dans le monde entier dès aujourd'hui",
@@ -225,6 +265,12 @@
         "INSUFFICIENT_FUNDS": "Solde insuffisant",
         "SENDER_NOT_FOUND": "Compte expéditeur introuvable",
         "INVALID_AMOUNT": "Saisissez un montant valide",
+        "JURISDICTION_NOT_SUPPORTED": "Ce service n'est pas disponible dans votre pays.",
+        "KYC_LEVEL_2_REQUIRED": "Une vérification supplémentaire est requise pour effectuer ce virement.",
+        "YIELD_KILL_SWITCH": "Le yield est temporairement indisponible.",
+        "YIELD_EXPOSURE_LIMIT": "Le yield est temporairement indisponible.",
+        "PARTNER_TEMPORARILY_UNAVAILABLE": "Service temporairement indisponible. Veuillez réessayer plus tard.",
+        "TREASURY_HALT_DEPOSITS_WITHDRAWS": "Service temporairement indisponible. Veuillez réessayer plus tard.",
         "INTERNAL_SERVER_ERROR": "Erreur interne du serveur",
         "submitFailed": "Échec du virement"
       }

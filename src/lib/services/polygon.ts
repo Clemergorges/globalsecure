@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import crypto from 'crypto';
 import { prisma } from '@/lib/db';
+import { callPartnerWithBreaker } from '@/lib/services/partner-circuit-breaker';
 
 // Configuration
 // Default to public RPC if not set
@@ -136,22 +137,19 @@ export const sendUsdtFromHotWallet = async (to: string, amountUsdt: string): Pro
   }
 
   try {
-    const provider = getProvider();
-    const account = new ethers.Wallet(PRIVATE_KEY, provider);
-    const contract = getUsdtContract(account);
+    return await callPartnerWithBreaker('polygon', 'usdt.transfer', async () => {
+      const provider = getProvider();
+      const account = new ethers.Wallet(PRIVATE_KEY, provider);
+      const contract = getUsdtContract(account);
 
-    const decimals = await getDecimals(contract);
-    const amountUnits = ethers.parseUnits(amountUsdt, decimals);
+      const decimals = await getDecimals(contract);
+      const amountUnits = ethers.parseUnits(amountUsdt, decimals);
 
-    // Optional: Estimate gas could be done here
-    // const gasLimit = await contract.transfer.estimateGas(to, amountUnits);
-    
-    const tx = await contract.transfer(to, amountUnits);
-    
-    // Wait for at least 1 confirmation to ensure propagation
-    await tx.wait(1);
+      const tx = await contract.transfer(to, amountUnits);
+      await tx.wait(1);
 
-    return tx.hash;
+      return tx.hash;
+    });
   } catch (error) {
     console.error('Error sending USDT:', error);
     throw error;
@@ -175,7 +173,7 @@ export const getUsdtPriceUsd = async (): Promise<number> => {
     // Only attach header if key is present
     const headers: HeadersInit = COINGECKO_API_KEY ? { 'x-cg-demo-api-key': COINGECKO_API_KEY } : {};
     
-    const response = await fetch(url, { headers });
+    const response = await callPartnerWithBreaker('polygon', 'coingecko.usdtPrice', async () => fetch(url, { headers }));
     if (!response.ok) {
         // If 429 (Rate Limit) and we have no key, it's expected.
         console.warn(`CoinGecko API warning: ${response.status} ${response.statusText}`);

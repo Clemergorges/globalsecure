@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { getIssuerConnector } from '@/lib/services/issuer-connector';
 import { z } from 'zod';
+import { PartnerTemporarilyUnavailableError } from '@/lib/services/partner-circuit-breaker';
 
 const schema = z.object({
   spendingLimit: z.object({
@@ -56,6 +57,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   } catch (error: any) {
     console.error('Update controls error:', error);
+    if (error instanceof PartnerTemporarilyUnavailableError) {
+      return NextResponse.json({ error: error.code, code: error.code }, { status: 503 });
+    }
     return NextResponse.json({ error: error.message || 'Failed to update controls' }, { status: 500 });
   }
 }

@@ -134,6 +134,32 @@
       "tax": "Impostos e obrigações fiscais são responsabilidade do usuário. A GSS oferece extratos e relatórios para facilitar a declaração, mas não substitui contador nem consultoria fiscal."
     }
   },
+  "CardEmail": {
+    "View": {
+      "title": "Seu cartão GlobalSecure",
+      "subtitle": "Veja saldo e gastos recentes sem criar conta.",
+      "balanceInitial": "Saldo inicial",
+      "balanceAvailable": "Saldo disponível",
+      "transactionsTitle": "Gastos",
+      "emptyTransactions": "Nenhuma transação ainda.",
+      "merchantUnknown": "Estabelecimento desconhecido",
+      "note": "Cartão virtual pré-pago. Não precisa de conta bancária.",
+      "error": {
+        "invalidOrExpired": "Link inválido ou expirado.",
+        "generic": "Não foi possível carregar os dados. Tente novamente."
+      },
+      "otp": {
+        "title": "Código de acesso obrigatório",
+        "description": "Digite o código de acesso de 6 caracteres para continuar.",
+        "label": "Código de acesso",
+        "placeholder": "123456",
+        "submit": "Continuar",
+        "submitting": "Verificando...",
+        "invalid": "Formato de código inválido.",
+        "failed": "Código inválido ou link expirado."
+      }
+    }
+  },
   "Dashboard": {
     "title": "Visão Geral",
     "welcome": "Bem-vindo de volta",
@@ -184,6 +210,20 @@
       "logout": "Sair"
     }
   },
+  "Incidents": {
+    "treasuryHalt": {
+      "title": "Restrição temporária de serviço",
+      "description": "Depósitos e saques podem ficar temporariamente indisponíveis. Tente novamente mais tarde."
+    },
+    "yieldPaused": {
+      "title": "Yield temporariamente pausado",
+      "description": "Novas alocações em yield estão temporariamente indisponíveis. Posições existentes não são afetadas."
+    },
+    "partnerOutage": {
+      "title": "Interrupção temporária de serviço",
+      "description": "Algumas funcionalidades podem ficar temporariamente indisponíveis. Tente novamente mais tarde."
+    }
+  },
   "Transfers": {
     "Create": {
       "title": "Nova Transferência",
@@ -225,6 +265,12 @@
         "INSUFFICIENT_FUNDS": "Saldo insuficiente",
         "SENDER_NOT_FOUND": "Conta do remetente não encontrada",
         "INVALID_AMOUNT": "Informe um valor válido",
+        "JURISDICTION_NOT_SUPPORTED": "Este serviço não está disponível no seu país.",
+        "KYC_LEVEL_2_REQUIRED": "É necessária verificação adicional para concluir esta transferência.",
+        "YIELD_KILL_SWITCH": "Yield temporariamente indisponível.",
+        "YIELD_EXPOSURE_LIMIT": "Yield temporariamente indisponível.",
+        "PARTNER_TEMPORARILY_UNAVAILABLE": "Serviço temporariamente indisponível. Tente novamente em alguns minutos.",
+        "TREASURY_HALT_DEPOSITS_WITHDRAWS": "Serviço temporariamente indisponível. Tente novamente em alguns minutos.",
         "INTERNAL_SERVER_ERROR": "Erro interno do servidor",
         "submitFailed": "Falha ao realizar transferência"
       }

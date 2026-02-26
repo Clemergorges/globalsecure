@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { callPartnerWithBreaker } from '@/lib/services/partner-circuit-breaker';
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_mock', {
   apiVersion: '2026-01-28.clover' as any,
@@ -56,17 +57,21 @@ export async function issueCard(userId: string, type: 'virtual' | 'physical', cu
 export async function updateCardStatus(cardId: string, status: 'active' | 'inactive') {
   if (!process.env.STRIPE_SECRET_KEY) return { status };
   
-  return await stripe.issuing.cards.update(cardId, {
-    status: status,
-  });
+  return callPartnerWithBreaker('stripe', 'issuing.cards.updateStatus', async () =>
+    stripe.issuing.cards.update(cardId, {
+      status: status,
+    }),
+  );
 }
 
 export async function updateCardControls(cardId: string, controls: any) {
   if (!process.env.STRIPE_SECRET_KEY) return controls;
 
-  return await stripe.issuing.cards.update(cardId, {
-    spending_controls: controls,
-  });
+  return callPartnerWithBreaker('stripe', 'issuing.cards.updateControls', async () =>
+    stripe.issuing.cards.update(cardId, {
+      spending_controls: controls,
+    }),
+  );
 }
 
 export async function createIssuingEphemeralKey(cardId: string, nonce: string) {
@@ -76,8 +81,8 @@ export async function createIssuingEphemeralKey(cardId: string, nonce: string) {
     
     // This is a special endpoint, not always available in standard SDK typings without correct version
     // @ts-ignore
-    return await stripe.ephemeralKeys.create(
-        { issuing_card: cardId, nonce: nonce },
-        { apiVersion: '2022-08-01' } // Issuing often needs specific version
+    return callPartnerWithBreaker('stripe', 'ephemeralKeys.create', async () =>
+      // @ts-ignore
+      stripe.ephemeralKeys.create({ issuing_card: cardId, nonce: nonce }, { apiVersion: '2022-08-01' }),
     );
 }

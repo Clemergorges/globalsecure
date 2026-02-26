@@ -41,6 +41,7 @@ describe('AML/KYC tier limits on transfers', () => {
   });
 
   test('KYC NONE + LOW: permite abaixo do limite e bloqueia acima do limite unitário', async () => {
+    process.env.AML_HIGH_RISK_COUNTRIES = '';
     const email = `${uid('kyc_none_low')}@test.com`;
     const user = await prisma.user.create({
       data: {
@@ -49,6 +50,7 @@ describe('AML/KYC tier limits on transfers', () => {
         emailVerified: true,
         country: 'DE',
         kycLevel: 0,
+        kycStatus: 'PENDING',
         riskTier: 'LOW',
         account: { create: { primaryCurrency: 'EUR' } },
       },
@@ -58,22 +60,19 @@ describe('AML/KYC tier limits on transfers', () => {
     await prisma.fiatBalance.create({ data: { userId: user.id, currency: 'EUR', amount: new Prisma.Decimal(1000) } });
     (getSession as unknown as jest.Mock).mockResolvedValue({ userId: user.id, email, role: 'USER', isAdmin: false });
 
-    // GSS-MVP-FIX: align test with new MVP scope.
     const okBody = { mode: 'SELF_TRANSFER', amountSource: 10, currencySource: 'EUR', currencyTarget: 'EUR' };
     const ok = await transfersCreatePost(
       new Request('http://localhost/api/transfers/create', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(okBody) }),
     );
-    expect(ok.status).toBe(400);
-    const okJson = await ok.json();
-    expect(okJson.code).toBe('MODE_NOT_SUPPORTED');
+    expect(ok.status).toBe(200);
 
     const blockedBody = { mode: 'SELF_TRANSFER', amountSource: 25, currencySource: 'EUR', currencyTarget: 'EUR' };
     const blocked = await transfersCreatePost(
       new Request('http://localhost/api/transfers/create', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(blockedBody) }),
     );
-    expect(blocked.status).toBe(400);
+    expect(blocked.status).toBe(403);
     const body = await blocked.json();
-    expect(body.code).toBe('MODE_NOT_SUPPORTED');
+    expect(body.code).toBe('KYC_LIMIT_TX_EXCEEDED');
 
     const transfers = await prisma.transfer.findMany({ where: { senderId: user.id }, select: { id: true } });
     await prisma.transactionLog.deleteMany({ where: { transferId: { in: transfers.map((t) => t.id) } } });
@@ -88,6 +87,7 @@ describe('AML/KYC tier limits on transfers', () => {
 
   test('KYC BASIC + MEDIUM: permite valores maiores mas respeita limite ajustado por tier', async () => {
     process.env.KYC_BASIC_TX_EUR = '50';
+    process.env.AML_HIGH_RISK_COUNTRIES = '';
     const email = `${uid('kyc_basic_medium')}@test.com`;
     const user = await prisma.user.create({
       data: {
@@ -96,6 +96,7 @@ describe('AML/KYC tier limits on transfers', () => {
         emailVerified: true,
         country: 'DE',
         kycLevel: 1,
+        kycStatus: 'APPROVED',
         riskTier: 'MEDIUM',
         account: { create: { primaryCurrency: 'EUR' } },
       },
@@ -105,22 +106,19 @@ describe('AML/KYC tier limits on transfers', () => {
     await prisma.fiatBalance.create({ data: { userId: user.id, currency: 'EUR', amount: new Prisma.Decimal(1000) } });
     (getSession as unknown as jest.Mock).mockResolvedValue({ userId: user.id, email, role: 'USER', isAdmin: false });
 
-    // GSS-MVP-FIX: align test with new MVP scope.
     const okBody = { mode: 'SELF_TRANSFER', amountSource: 20, currencySource: 'EUR', currencyTarget: 'EUR' };
     const ok = await transfersCreatePost(
       new Request('http://localhost/api/transfers/create', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(okBody) }),
     );
-    expect(ok.status).toBe(400);
-    const okJson = await ok.json();
-    expect(okJson.code).toBe('MODE_NOT_SUPPORTED');
+    expect(ok.status).toBe(200);
 
     const blockedBody = { mode: 'SELF_TRANSFER', amountSource: 26, currencySource: 'EUR', currencyTarget: 'EUR' };
     const blocked = await transfersCreatePost(
       new Request('http://localhost/api/transfers/create', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(blockedBody) }),
     );
-    expect(blocked.status).toBe(400);
+    expect(blocked.status).toBe(403);
     const body = await blocked.json();
-    expect(body.code).toBe('MODE_NOT_SUPPORTED');
+    expect(body.code).toBe('KYC_LIMIT_TX_EXCEEDED');
 
     const transfers = await prisma.transfer.findMany({ where: { senderId: user.id }, select: { id: true } });
     await prisma.transactionLog.deleteMany({ where: { transferId: { in: transfers.map((t) => t.id) } } });
@@ -134,6 +132,7 @@ describe('AML/KYC tier limits on transfers', () => {
   });
 
   test('HIGH risk + KYC BASIC: bloqueia acima do limite e cria AmlReviewCase (severidade pilot)', async () => {
+    process.env.AML_HIGH_RISK_COUNTRIES = '';
     const email = `${uid('kyc_basic_high')}@test.com`;
     const user = await prisma.user.create({
       data: {
@@ -142,6 +141,7 @@ describe('AML/KYC tier limits on transfers', () => {
         emailVerified: true,
         country: 'RU',
         kycLevel: 1,
+        kycStatus: 'APPROVED',
         riskTier: 'HIGH',
         account: { create: { primaryCurrency: 'EUR' } },
       },
@@ -151,17 +151,18 @@ describe('AML/KYC tier limits on transfers', () => {
     await prisma.fiatBalance.create({ data: { userId: user.id, currency: 'EUR', amount: new Prisma.Decimal(1000) } });
     (getSession as unknown as jest.Mock).mockResolvedValue({ userId: user.id, email, role: 'USER', isAdmin: false });
 
-    // GSS-MVP-FIX: align test with new MVP scope.
     const blockedBody = { mode: 'SELF_TRANSFER', amountSource: 25, currencySource: 'EUR', currencyTarget: 'EUR' };
     const blocked = await transfersCreatePost(
       new Request('http://localhost/api/transfers/create', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(blockedBody) }),
     );
-    expect(blocked.status).toBe(400);
+    expect(blocked.status).toBe(403);
     const body = await blocked.json();
-    expect(body.code).toBe('MODE_NOT_SUPPORTED');
+    expect(body.code).toBe('KYC_LIMIT_TX_EXCEEDED');
 
     const aml = await prisma.amlReviewCase.findFirst({ where: { userId: user.id } });
-    expect(aml).toBeNull();
+    expect(aml).toBeTruthy();
+    expect(aml!.reason).toBe('KYC_LIMIT_EXCEEDED');
+    expect(aml!.riskLevel).toBe('HIGH');
 
     await prisma.amlReviewCase.deleteMany({ where: { userId: user.id } });
     await prisma.auditLog.deleteMany({ where: { userId: user.id } });

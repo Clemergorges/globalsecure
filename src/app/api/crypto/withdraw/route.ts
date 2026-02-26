@@ -5,6 +5,7 @@ import { checkAuth } from '@/lib/auth';
 import { ethers } from 'ethers';
 import { applyFiatMovement } from '@/lib/services/fiat-ledger';
 import { logAudit } from '@/lib/logger';
+import { isOperationalFlagEnabled } from '@/lib/services/operational-flags';
 
 // Helper: Validate Polygon Address
 function isValidAddress(address: string) {
@@ -16,6 +17,20 @@ export async function POST(req: Request) {
     const auth = await checkAuth();
     if (!auth) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const isHalted = await isOperationalFlagEnabled('TREASURY_HALT_DEPOSITS_WITHDRAWS');
+    if (isHalted) {
+      await logAudit({
+        userId: (auth as any).userId,
+        action: 'CRYPTO_WITHDRAW_BLOCKED',
+        status: 'BLOCKED',
+        metadata: { code: 'TREASURY_HALT_DEPOSITS_WITHDRAWS' },
+      }).catch(() => {});
+      return NextResponse.json(
+        { error: 'TREASURY_HALT_DEPOSITS_WITHDRAWS', code: 'TREASURY_HALT_DEPOSITS_WITHDRAWS' },
+        { status: 503 },
+      );
     }
 
     const { amount, toAddress } = await req.json();
@@ -33,6 +48,26 @@ export async function POST(req: Request) {
     }
     if (!toAddress || !isValidAddress(toAddress)) {
       return NextResponse.json({ error: 'Invalid Polygon address' }, { status: 400 });
+    }
+
+    const windowMinutes = 10;
+    const maxAttempts = 3;
+    const since = new Date(Date.now() - windowMinutes * 60 * 1000);
+    const recentCount = await prisma.cryptoWithdraw.count({
+      where: { userId: (auth as any).userId, createdAt: { gte: since } },
+    });
+    if (recentCount >= maxAttempts) {
+      await prisma.user.update({
+        where: { id: (auth as any).userId },
+        data: { cryptoWithdrawVelocityFlag: true, cryptoWithdrawVelocityFlagAt: new Date() },
+      });
+      await logAudit({
+        userId: (auth as any).userId,
+        action: 'CRYPTO_WITHDRAW_VELOCITY_BLOCK',
+        status: 'BLOCKED',
+        metadata: { windowMinutes, maxAttempts, recentCount },
+      }).catch(() => {});
+      return NextResponse.json({ error: 'CRYPTO_WITHDRAW_RATE_LIMITED', code: 'CRYPTO_WITHDRAW_RATE_LIMITED' }, { status: 429 });
     }
 
     // Limits (MVP)
