@@ -207,6 +207,7 @@
       "history": "Verlauf",
       "security": "Sicherheit",
       "settings": "Einstellungen",
+      "profile": "Profil",
       "support": "Support",
       "admin": "Admin",
       "logout": "Abmelden"
@@ -572,9 +573,9 @@
       "errorDisconnecting": "Fehler beim Trennen",
       "passwordChangedSuccessfully": "Passwort erfolgreich aktualisiert.",
       "passwordChange": {
-        "requestingOtp": "Sicherheitscode wird an {{email}} gesendet...",
+        "requestingOtp": "Sicherheitscode wird an {email} gesendet...",
         "enterOtp": "Geben Sie den 6-stelligen Code ein, der an Ihre E-Mail gesendet wurde",
-        "otpResend": "Code erneut senden ({{seconds}}s)",
+        "otpResend": "Code erneut senden ({seconds}s)",
         "otpResendReady": "Code erneut senden",
         "otpInvalid": "Ungültiger Code. Bitte erneut versuchen.",
         "otpExpired": "Code abgelaufen. Bitte einen neuen anfordern.",
@@ -590,10 +591,11 @@
         "revokeAll": "Alle anderen beenden",
         "revokeConfirm": "Möchten Sie diese Sitzung wirklich beenden?",
         "revokeAllConfirm": "Möchten Sie wirklich alle anderen Sitzungen beenden?",
-        "device": "Gerät: {{device}}",
-        "location": "Ort: {{location}}",
-        "lastActive": "Aktiv seit: {{time}}"
+        "device": "Gerät: {device}",
+        "location": "Ort: {location}",
+        "lastActive": "Aktiv seit: {time}"
       },
+      "phoneRequiredFor2FA": "Fügen Sie im Profil eine Telefonnummer hinzu, um SMS-2FA zu aktivieren.",
       "connectionError": "Verbindungsfehler."
     },
     "Profile": {
@@ -612,10 +614,16 @@
       "lastName": "Nachname",
       "email": "E-Mail",
       "phone": "Telefon",
+      "address": "Adresse",
+      "city": "Stadt",
+      "postalCode": "Postleitzahl",
       "notProvided": "Nicht angegeben",
       "country": "Land",
       "primaryCurrency": "Hauptwährung",
       "notAvailable": "N/A",
+      "goToSecurity": "Zu Sicherheit",
+      "saveProfile": "Speichern",
+      "profileUpdateFailed": "Ihre Angaben konnten nicht gespeichert werden.",
       "editComingSoon": "Bearbeiten (demnächst)"
     },
     "Notifications": {
@@ -731,7 +739,7 @@
       },
       "success": {
         "title": "Karte gesendet",
-        "description": "Eine virtuelle Karte wurde an {{email}} gesendet.",
+        "description": "Eine virtuelle Karte wurde an {email} gesendet.",
         "transferId": "Transfer ID"
       },
       "errors": {
@@ -949,7 +957,29 @@
     "startVerification": "Verifizierung starten",
     "manualVerification": "Manuelle Verifizierung",
     "uploadDocuments": "Dokumente hochladen",
-    "documentType": "Dokumenttyp",
+    "country": {
+      "label": "Land",
+      "unsupported": "Ihr Land wird für diese Verifizierungsmethode nicht unterstützt."
+    },
+    "countries": {
+      "br": "Brasilien (BR)",
+      "de": "Deutschland (DE)",
+      "fr": "Frankreich (FR)",
+      "lu": "Luxemburg (LU)",
+      "pt": "Portugal (PT)",
+      "us": "Vereinigte Staaten (US)",
+      "unknown": "Unbekannt ({code})"
+    },
+    "lastFour": {
+      "labelUs": "SSN: letzte 4 Ziffern",
+      "labelOther": "Letzte 4 Zeichen des Dokuments",
+      "placeholderUs": "1234",
+      "placeholderOther": "A1B2"
+    },
+    "documentType": {
+      "label": "Dokumenttyp",
+      "lastFourDigits": "Letzte 4 Ziffern"
+    },
     "docTypeIdCard": "Personalausweis",
     "docTypePassport": "Reisepass",
     "docTypeDriverLicense": "Führerschein",
@@ -977,6 +1007,17 @@
     "submitForReview": "Zur Prüfung senden",
     "autoVerificationError": "Automatische Verifizierung konnte nicht gestartet werden.",
     "stripeConnectionError": "Verbindung zum Verifizierungsdienst nicht möglich. Bitte erneut versuchen oder manuell hochladen.",
+    "errors": {
+      "unsupportedCountry": "Ihr Land wird für diese Verifizierungsmethode nicht unterstützt.",
+      "countryLocked": "Das Land wird aus Ihrem Profil übernommen.",
+      "countryMissing": "Bitte legen Sie Ihr Land in Ihrem Profil fest, bevor Sie die Verifizierung starten.",
+      "countryInvalid": "Ihr Land ist ungültig. Aktualisieren Sie Ihr Profil und versuchen Sie es erneut.",
+      "documentTypeNotSupported": "Dieser Dokumenttyp wird für Ihr Land nicht unterstützt.",
+      "lastFourInvalidUs": "Geben Sie die letzten 4 Ziffern Ihrer SSN ein.",
+      "lastFourInvalidOther": "Geben Sie die letzten 4 Zeichen (Buchstaben und Zahlen) Ihres Dokuments ein.",
+      "autoVerificationDisabled": "Die automatische Verifizierung ist vorübergehend nicht verfügbar.",
+      "serviceUnavailable": "Der Verifizierungsdienst ist vorübergehend nicht verfügbar."
+    },
     "documentSendError": "Dokumente konnten nicht gesendet werden.",
     "connectionError": "Verbindungsfehler."
   },

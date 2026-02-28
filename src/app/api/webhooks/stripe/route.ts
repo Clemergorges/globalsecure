@@ -9,7 +9,7 @@ import { checkAmlForYieldSpend } from '@/lib/services/aml-rules';
 import { coverFiatSpend } from '@/lib/services/fiat-pool';
 import { getYieldGuardForAsset } from '@/lib/services/market-guard';
 import { checkUserGeoFraudContext } from '@/lib/services/risk-gates';
-import { logger } from '@/lib/logger';
+import { logger, logAudit } from '@/lib/logger';
 // GSS-MVP-FIX
 import { sendEmail, templates } from '@/lib/services/email';
 
@@ -36,6 +36,15 @@ function getYieldPerUserLimitUsd() {
   const raw = process.env.YIELD_PER_USER_LIMIT_USD;
   const n = raw ? Number(raw) : 0;
   return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function mapStripeDocType(stripeType: string | null | undefined): any {
+  if (!stripeType) return undefined;
+  if (stripeType.includes('passport')) return 'PASSPORT';
+  if (stripeType.includes('driver_license')) return 'DRIVERS_LICENSE';
+  if (stripeType.includes('id_card')) return 'NATIONAL_ID';
+  if (stripeType.includes('residence')) return 'RESIDENCE_PERMIT';
+  return 'NATIONAL_ID'; // Fallback
 }
 
 export async function POST(req: Request) {
@@ -552,6 +561,82 @@ export async function POST(req: Request) {
     }
     
     // Handle other events...
+    if (event.type === 'identity.verification_session.verified') {
+      const session = event.data.object as Stripe.Identity.VerificationSession;
+      logger.info({ stripeVerificationId: session.id, status: session.status }, 'Stripe Identity verified webhook received');
+      const doc = await prisma.kYCDocument.findUnique({
+        where: { stripeVerificationId: session.id },
+        select: { id: true, userId: true, status: true },
+      });
+
+      if (!doc) {
+        logger.warn({ stripeVerificationId: session.id }, 'Stripe Identity verified webhook: document not found');
+      } else if (doc.status !== 'APPROVED') {
+        const issuingCountry = session.verified_outputs?.address?.country;
+        const idNumber = session.verified_outputs?.id_number;
+        const docType = session.verified_outputs?.id_number_type;
+
+        await prisma.kYCDocument.update({
+          where: { id: doc.id },
+          data: {
+            status: 'APPROVED',
+            verifiedAt: new Date(),
+            documentNumber: idNumber || 'HIDDEN',
+            issuingCountry: issuingCountry || 'UNKNOWN',
+          },
+        });
+
+        await prisma.user.update({
+          where: { id: doc.userId },
+          data: {
+            kycStatus: 'APPROVED',
+            kycLevel: 2,
+            kycCompletedAt: new Date(),
+            documentNumber: idNumber || undefined,
+            documentType: mapStripeDocType(docType),
+          },
+        });
+
+        await logAudit({
+          userId: doc.userId,
+          action: 'KYC_STRIPE_IDENTITY_VERIFIED',
+          status: 'SUCCESS',
+          ipAddress: 'stripe-webhook',
+          userAgent: 'stripe-webhook',
+          metadata: { stripeVerificationId: session.id },
+        });
+      }
+    }
+
+    if (event.type === 'identity.verification_session.requires_input') {
+      const session = event.data.object as Stripe.Identity.VerificationSession;
+      const lastError = session.last_error;
+      logger.info({ stripeVerificationId: session.id, code: lastError?.code }, 'Stripe Identity requires_input webhook received');
+
+      const doc = await prisma.kYCDocument.findUnique({
+        where: { stripeVerificationId: session.id },
+        select: { id: true, userId: true },
+      });
+
+      if (doc) {
+        await prisma.kYCDocument.update({
+          where: { id: doc.id },
+          data: {
+            status: 'REVIEW',
+            rejectionReason: lastError?.code || 'REQUIRES_INPUT',
+          },
+        });
+
+        await logAudit({
+          userId: doc.userId,
+          action: 'KYC_STRIPE_IDENTITY_REQUIRES_INPUT',
+          status: 'FAILURE',
+          ipAddress: 'stripe-webhook',
+          userAgent: 'stripe-webhook',
+          metadata: { stripeVerificationId: session.id, error: lastError },
+        });
+      }
+    }
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
   } catch (error: any) {

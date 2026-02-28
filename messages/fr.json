@@ -207,6 +207,7 @@
       "history": "Historique",
       "security": "Sécurité",
       "settings": "Paramètres",
+      "profile": "Profil",
       "support": "Support",
       "admin": "Admin",
       "logout": "Se déconnecter"
@@ -572,9 +573,9 @@
       "errorDisconnecting": "Erreur de déconnexion",
       "passwordChangedSuccessfully": "Mot de passe mis à jour.",
       "passwordChange": {
-        "requestingOtp": "Envoi d’un code de sécurité à {{email}}…",
+        "requestingOtp": "Envoi d’un code de sécurité à {email}…",
         "enterOtp": "Saisissez le code à 6 chiffres envoyé à votre e-mail",
-        "otpResend": "Renvoyer le code ({{seconds}}s)",
+        "otpResend": "Renvoyer le code ({seconds}s)",
         "otpResendReady": "Renvoyer le code",
         "otpInvalid": "Code invalide. Veuillez réessayer.",
         "otpExpired": "Code expiré. Demandez-en un nouveau.",
@@ -590,10 +591,11 @@
         "revokeAll": "Terminer toutes les autres",
         "revokeConfirm": "Êtes-vous sûr de vouloir terminer cette session ?",
         "revokeAllConfirm": "Êtes-vous sûr de vouloir terminer toutes les autres sessions ?",
-        "device": "Appareil : {{device}}",
-        "location": "Localisation : {{location}}",
-        "lastActive": "Actif depuis : {{time}}"
+        "device": "Appareil : {device}",
+        "location": "Localisation : {location}",
+        "lastActive": "Actif depuis : {time}"
       },
+      "phoneRequiredFor2FA": "Ajoutez un numéro dans Profil pour activer le 2FA SMS.",
       "connectionError": "Erreur de connexion."
     },
     "Profile": {
@@ -612,10 +614,16 @@
       "lastName": "Nom",
       "email": "E-mail",
       "phone": "Téléphone",
+      "address": "Adresse",
+      "city": "Ville",
+      "postalCode": "Code postal",
       "notProvided": "Non renseigné",
       "country": "Pays",
       "primaryCurrency": "Devise principale",
       "notAvailable": "N/A",
+      "goToSecurity": "Aller à Sécurité",
+      "saveProfile": "Enregistrer",
+      "profileUpdateFailed": "Impossible d’enregistrer vos informations.",
       "editComingSoon": "Modifier (bientôt)"
     },
     "Notifications": {
@@ -731,7 +739,7 @@
       },
       "success": {
         "title": "Carte envoyée",
-        "description": "Une carte virtuelle a été envoyée à {{email}}.",
+        "description": "Une carte virtuelle a été envoyée à {email}.",
         "transferId": "Transfer ID"
       },
       "errors": {
@@ -949,7 +957,29 @@
     "startVerification": "Démarrer la vérification",
     "manualVerification": "Vérification manuelle",
     "uploadDocuments": "Télécharger vos documents",
-    "documentType": "Type de document",
+    "country": {
+      "label": "Pays",
+      "unsupported": "Votre pays n’est pas pris en charge pour cette méthode de vérification."
+    },
+    "countries": {
+      "br": "Brésil (BR)",
+      "de": "Allemagne (DE)",
+      "fr": "France (FR)",
+      "lu": "Luxembourg (LU)",
+      "pt": "Portugal (PT)",
+      "us": "États-Unis (US)",
+      "unknown": "Inconnu ({code})"
+    },
+    "lastFour": {
+      "labelUs": "SSN : 4 derniers chiffres",
+      "labelOther": "4 derniers caractères du document",
+      "placeholderUs": "1234",
+      "placeholderOther": "A1B2"
+    },
+    "documentType": {
+      "label": "Type de document",
+      "lastFourDigits": "4 derniers chiffres"
+    },
     "docTypeIdCard": "Carte d'identité",
     "docTypePassport": "Passeport",
     "docTypeDriverLicense": "Permis de conduire",
@@ -977,6 +1007,17 @@
     "submitForReview": "Envoyer pour analyse",
     "autoVerificationError": "Impossible de démarrer la vérification automatique.",
     "stripeConnectionError": "Impossible de se connecter au service de vérification. Réessayez ou utilisez l’envoi manuel.",
+    "errors": {
+      "unsupportedCountry": "Votre pays n’est pas pris en charge pour cette méthode de vérification.",
+      "countryLocked": "Le pays est obtenu depuis votre profil.",
+      "countryMissing": "Définissez votre pays dans votre profil avant de démarrer la vérification.",
+      "countryInvalid": "Votre pays est invalide. Mettez à jour votre profil et réessayez.",
+      "documentTypeNotSupported": "Ce type de document n’est pas pris en charge pour votre pays.",
+      "lastFourInvalidUs": "Saisissez les 4 derniers chiffres de votre SSN.",
+      "lastFourInvalidOther": "Saisissez les 4 derniers caractères (lettres et chiffres) de votre document.",
+      "autoVerificationDisabled": "La vérification automatique est temporairement indisponible.",
+      "serviceUnavailable": "Le service de vérification est temporairement indisponible."
+    },
     "documentSendError": "Impossible d'envoyer les documents.",
     "connectionError": "Erreur de connexion."
   },

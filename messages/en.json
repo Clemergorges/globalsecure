@@ -207,6 +207,7 @@
       "history": "History",
       "security": "Security",
       "settings": "Settings",
+      "profile": "Profile",
       "support": "Support",
       "admin": "Admin",
       "logout": "Sign out"
@@ -572,9 +573,9 @@
       "errorDisconnecting": "Error disconnecting",
       "passwordChangedSuccessfully": "Password updated successfully.",
       "passwordChange": {
-        "requestingOtp": "Sending a security code to {{email}}...",
+        "requestingOtp": "Sending a security code to {email}...",
         "enterOtp": "Enter the 6-digit code sent to your email",
-        "otpResend": "Resend code ({{seconds}}s)",
+        "otpResend": "Resend code ({seconds}s)",
         "otpResendReady": "Resend code",
         "otpInvalid": "Invalid code. Please try again.",
         "otpExpired": "Code expired. Request a new one.",
@@ -590,10 +591,11 @@
         "revokeAll": "End all others",
         "revokeConfirm": "Are you sure you want to end this session?",
         "revokeAllConfirm": "Are you sure you want to end all other sessions?",
-        "device": "Device: {{device}}",
-        "location": "Location: {{location}}",
-        "lastActive": "Active: {{time}}"
+        "device": "Device: {device}",
+        "location": "Location: {location}",
+        "lastActive": "Active: {time}"
       },
+      "phoneRequiredFor2FA": "Add a phone number in Profile to enable SMS 2FA.",
       "connectionError": "Connection error."
     },
     "Profile": {
@@ -612,10 +614,16 @@
       "lastName": "Last name",
       "email": "Email",
       "phone": "Phone",
+      "address": "Address",
+      "city": "City",
+      "postalCode": "Postal code",
       "notProvided": "Not provided",
       "country": "Country",
       "primaryCurrency": "Primary currency",
       "notAvailable": "N/A",
+      "goToSecurity": "Go to Security",
+      "saveProfile": "Save",
+      "profileUpdateFailed": "Could not save your details.",
       "editComingSoon": "Edit (Coming soon)"
     },
     "Notifications": {
@@ -731,7 +739,7 @@
       },
       "success": {
         "title": "Card sent",
-        "description": "A virtual card was sent to {{email}}.",
+        "description": "A virtual card was sent to {email}.",
         "transferId": "Transfer ID"
       },
       "errors": {
@@ -949,7 +957,29 @@
     "startVerification": "Start verification",
     "manualVerification": "Manual verification",
     "uploadDocuments": "Upload your documents",
-    "documentType": "Document type",
+    "country": {
+      "label": "Country",
+      "unsupported": "Your country isn’t supported for this verification method."
+    },
+    "countries": {
+      "br": "Brazil (BR)",
+      "de": "Germany (DE)",
+      "fr": "France (FR)",
+      "lu": "Luxembourg (LU)",
+      "pt": "Portugal (PT)",
+      "us": "United States (US)",
+      "unknown": "Unknown ({code})"
+    },
+    "lastFour": {
+      "labelUs": "SSN last 4 digits",
+      "labelOther": "Last 4 characters of the document",
+      "placeholderUs": "1234",
+      "placeholderOther": "A1B2"
+    },
+    "documentType": {
+      "label": "Document type",
+      "lastFourDigits": "Last 4 digits"
+    },
     "docTypeIdCard": "Identity card (ID card)",
     "docTypePassport": "Passport",
     "docTypeDriverLicense": "Driver's license",
@@ -977,6 +1007,17 @@
     "submitForReview": "Submit for review",
     "autoVerificationError": "Could not start automatic verification.",
     "stripeConnectionError": "We couldn’t connect to the verification service. Try again or use manual upload.",
+    "errors": {
+      "unsupportedCountry": "This country isn’t supported for this verification method.",
+      "countryLocked": "Country is taken from your profile.",
+      "countryMissing": "Please set your country in your profile before starting verification.",
+      "countryInvalid": "Your country is invalid. Update your profile and try again.",
+      "documentTypeNotSupported": "This document type isn’t supported for your country.",
+      "lastFourInvalidUs": "Enter the last 4 digits of your SSN.",
+      "lastFourInvalidOther": "Enter the last 4 characters (letters and numbers) of your document.",
+      "autoVerificationDisabled": "Automatic verification is temporarily unavailable.",
+      "serviceUnavailable": "Verification service is temporarily unavailable."
+    },
     "documentSendError": "Could not submit documents.",
     "connectionError": "Connection error."
   },

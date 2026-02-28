@@ -142,7 +142,7 @@ export function setSessionCookie(response: NextResponse, token: string, maxAgeSe
   response.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: maxAgeSeconds,
   });
@@ -156,7 +156,7 @@ export function clearSessionCookie(response: NextResponse) {
   response.cookies.set(COOKIE_NAME, '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: 0,
   });

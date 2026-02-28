@@ -193,6 +193,7 @@
       "history": "Histórico",
       "security": "Segurança",
       "settings": "Configurações",
+      "profile": "Meu Perfil",
       "support": "Suporte",
       "admin": "Painel Admin",
       "logout": "Sair"
@@ -562,9 +563,9 @@
       "errorDisconnecting": "Erro ao desconectar",
       "passwordChangedSuccessfully": "Senha alterada com sucesso!",
       "passwordChange": {
-        "requestingOtp": "Enviando código de segurança para {{email}}...",
+        "requestingOtp": "Enviando código de segurança para {email}...",
         "enterOtp": "Digite o código de 6 dígitos enviado para seu e-mail",
-        "otpResend": "Reenviar código ({{seconds}}s)",
+        "otpResend": "Reenviar código ({seconds}s)",
         "otpResendReady": "Reenviar código",
         "otpInvalid": "Código inválido. Tente novamente.",
         "otpExpired": "Código expirado. Solicite um novo.",
@@ -580,9 +581,9 @@
         "revokeAll": "Encerrar todas as outras",
         "revokeConfirm": "Tem certeza que deseja encerrar esta sessão?",
         "revokeAllConfirm": "Tem certeza que deseja encerrar todas as outras sessões?",
-        "device": "Dispositivo: {{device}}",
-        "location": "Local: {{location}}",
-        "lastActive": "Ativo há: {{time}}"
+        "device": "Dispositivo: {device}",
+        "location": "Local: {location}",
+        "lastActive": "Ativo há: {time}"
       },
       "cardBlockUnavailable": "Funcionalidade de bloquear/desbloquear temporariamente indisponível.",
       "kycSubmitFailed": "Falha ao enviar documentos KYC",
@@ -595,6 +596,8 @@
       "depositSuccess": "Depósito realizado!",
       "depositError": "Erro ao depositar",
       "processingError": "Erro ao processar"
+      ,
+      "phoneRequiredFor2FA": "Cadastre um telefone no Perfil para ativar 2FA por SMS."
     },
     "Profile": {
       "title": "Meu Perfil",
@@ -612,10 +615,16 @@
       "lastName": "Sobrenome",
       "email": "Email",
       "phone": "Telefone",
+      "address": "Endereço",
+      "city": "Cidade",
+      "postalCode": "Código postal",
       "notProvided": "Não cadastrado",
       "country": "País",
       "primaryCurrency": "Moeda Principal",
       "notAvailable": "N/A",
+      "goToSecurity": "Ir para Segurança",
+      "saveProfile": "Salvar",
+      "profileUpdateFailed": "Não foi possível salvar seus dados.",
       "editComingSoon": "Editar (Em breve)"
     },
     "Notifications": {
@@ -731,7 +740,7 @@
       },
       "success": {
         "title": "Cartão enviado",
-        "description": "Um cartão virtual foi enviado para {{email}}.",
+        "description": "Um cartão virtual foi enviado para {email}.",
         "transferId": "Transfer ID"
       },
       "errors": {
@@ -950,7 +959,29 @@
     "startVerification": "Iniciar Verificação",
     "manualVerification": "Verificação Manual",
     "uploadDocuments": "Carregue seus documentos",
-    "documentType": "Tipo de Documento",
+    "country": {
+      "label": "País",
+      "unsupported": "Seu país não é suportado para este método de verificação."
+    },
+    "countries": {
+      "br": "Brasil (BR)",
+      "de": "Alemanha (DE)",
+      "fr": "França (FR)",
+      "lu": "Luxemburgo (LU)",
+      "pt": "Portugal (PT)",
+      "us": "Estados Unidos (US)",
+      "unknown": "Desconhecido ({code})"
+    },
+    "lastFour": {
+      "labelUs": "SSN: últimos 4 dígitos",
+      "labelOther": "Últimos 4 caracteres do documento",
+      "placeholderUs": "1234",
+      "placeholderOther": "A1B2"
+    },
+    "documentType": {
+      "label": "Tipo de documento",
+      "lastFourDigits": "Últimos 4 dígitos"
+    },
     "docTypeIdCard": "Carteira de Identidade (ID Card)",
     "docTypePassport": "Passaporte",
     "docTypeDriverLicense": "Carteira de Motorista",
@@ -975,7 +1006,21 @@
     "uploadSelectOrDrop": "Clique para selecionar ou arraste aqui",
     "uploadFormats": "JPG, PNG ou PDF (Max 5MB)",
     "fileSelected": "Arquivo selecionado",
-    "submitForReview": "Enviar para Análise"
+    "submitForReview": "Enviar para Análise",
+    "autoVerificationError": "Não foi possível iniciar a verificação automática.",
+    "documentSendError": "Não foi possível enviar os documentos.",
+    "connectionError": "Erro de conexão.",
+    "errors": {
+      "unsupportedCountry": "Seu país não é suportado para este método de verificação.",
+      "countryLocked": "O país é obtido do seu perfil.",
+      "countryMissing": "Defina seu país no seu perfil antes de iniciar a verificação.",
+      "countryInvalid": "Seu país é inválido. Atualize seu perfil e tente novamente.",
+      "documentTypeNotSupported": "Este tipo de documento não é suportado para o seu país.",
+      "lastFourInvalidUs": "Informe os últimos 4 dígitos do seu SSN.",
+      "lastFourInvalidOther": "Informe os últimos 4 caracteres (letras e números) do seu documento.",
+      "autoVerificationDisabled": "A verificação automática está temporariamente indisponível.",
+      "serviceUnavailable": "O serviço de verificação está temporariamente indisponível."
+    }
   },
   "Limits": {
     "title": "Seu KYC, risco e limites",

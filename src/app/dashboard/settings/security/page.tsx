@@ -239,7 +239,15 @@ export default function SecuritySettingsPage() {
       try {
         const res = await fetch('/api/security/2fa/enable', { method: 'POST' });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        if (!res.ok) {
+          const msg =
+            typeof data?.error === 'string' && data.error.toLowerCase().includes('phone')
+              ? t('phoneRequiredFor2FA')
+              : typeof data?.error === 'string'
+                ? data.error
+                : t('connectionError');
+          throw new Error(msg);
+        }
         setShowOtpDialog(true);
       } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : 'Unknown error';
