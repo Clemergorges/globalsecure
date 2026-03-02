@@ -13,7 +13,10 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
       DIRECT_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
-      JWT_SECRET: test-secret-key-for-ci
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      OTP_PEPPER: ${{ secrets.OTP_PEPPER }}
+      SENSITIVE_OTP_PEPPER: ${{ secrets.SENSITIVE_OTP_PEPPER }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       STRIPE_SECRET_KEY: sk_test_mock
       STRIPE_WEBHOOK_SECRET: whsec_mock
@@ -54,7 +57,10 @@ jobs:
         run: |
           echo "DATABASE_URL=postgresql://postgres:password@localhost:5432/globalsecure_test" > .env.test
           echo "DIRECT_URL=postgresql://postgres:password@localhost:5432/globalsecure_test" >> .env.test
-          echo "JWT_SECRET=test-secret-key-for-ci" >> .env.test
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env.test
+          echo "OTP_PEPPER=${{ secrets.OTP_PEPPER }}" >> .env.test
+          echo "SENSITIVE_OTP_PEPPER=${{ secrets.SENSITIVE_OTP_PEPPER }}" >> .env.test
+          echo "CRON_SECRET=${{ secrets.CRON_SECRET }}" >> .env.test
           echo "NEXT_PUBLIC_APP_URL=http://localhost:3000" >> .env.test
           echo "STRIPE_SECRET_KEY=sk_test_mock" >> .env.test
           echo "STRIPE_WEBHOOK_SECRET=whsec_mock" >> .env.test
@@ -80,21 +86,27 @@ jobs:
         run: npm run test:unit
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          OTP_PEPPER: ${{ secrets.OTP_PEPPER }}
 
       - name: Run Integration Tests (Fase 2)
         run: npm run test:integration
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          OTP_PEPPER: ${{ secrets.OTP_PEPPER }}
 
       - name: Run E2E Tests (Fase 3)
         run: npm run test:e2e
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
       - name: Run Failure & Resilience Tests (Fase 4)
         run: npm run test:failure
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
       - name: Build & Start Server for Load Testing
         run: |
@@ -105,7 +117,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
           NEXT_PUBLIC_APP_URL: http://localhost:3000
-          # Add other required envs here or reuse from previous steps if context allows
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
       - name: Run Load Test (Smoke Test)
         run: |
