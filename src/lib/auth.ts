@@ -70,6 +70,16 @@ export async function checkAdmin() {
     return session;
 }
 
+export function isAdmin(user: { email?: string | null; role?: string | null; isAdmin?: boolean | null } | null | undefined) {
+  if (!user) return false;
+  if (user.isAdmin) return true;
+  if (user.role && user.role.toUpperCase() === 'ADMIN') return true;
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) return false;
+  const email = user.email ? user.email.toLowerCase() : '';
+  return email === adminEmail.toLowerCase();
+}
+
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10);
 }
