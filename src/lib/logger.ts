@@ -20,6 +20,41 @@ export const logger = pino({
   },
 });
 
+function sanitizeMetadata(value: any): any {
+  const blockedKeys = new Set([
+    'password',
+    'currentPassword',
+    'newPassword',
+    'passwordHash',
+    'otp',
+    'otpCode',
+    'code',
+    'token',
+    'auth_token',
+    'jwt',
+    'authorization',
+    'cookie',
+    'set-cookie',
+    'stack',
+  ]);
+
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
+  if (value instanceof Date) return value;
+  if (Array.isArray(value)) return value.map(sanitizeMetadata);
+
+  if (typeof value === 'object') {
+    const out: Record<string, any> = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (blockedKeys.has(k)) continue;
+      out[k] = sanitizeMetadata(v);
+    }
+    return out;
+  }
+
+  return String(value);
+}
+
 // DB Logger Function
 export async function logAudit(data: {
     userId?: string;
@@ -43,7 +78,7 @@ export async function logAudit(data: {
                 userAgent: data.userAgent,
                 method: data.method,
                 path: data.path,
-                metadata: data.metadata,
+                metadata: sanitizeMetadata(data.metadata),
                 duration: data.duration
             }
         });

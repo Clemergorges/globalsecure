@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 
 const BASE_URL = 'http://localhost:3012';
 const JWT_SECRET = "GlobalSecureSecret2026!";
-const ADMIN_EMAIL = 'clemergorges@hotmail.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
 const TEST_EMAIL = 'stress_test@demo.com';
 
 // Helpers

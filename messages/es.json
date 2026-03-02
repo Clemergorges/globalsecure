@@ -1,0 +1,243 @@
+{
+  "Common": {
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "loading": "Cargando...",
+    "error": "Error",
+    "disclaimer": {
+      "tax": "Los impuestos y obligaciones fiscales son responsabilidad del usuario. GSS ofrece extractos e informes para facilitar la declaración, pero no sustituye a un contador ni a un asesor fiscal."
+    }
+  },
+  "CardEmail": {
+    "View": {
+      "title": "Tu tarjeta GlobalSecure",
+      "subtitle": "Consulta el saldo y los gastos recientes sin crear una cuenta.",
+      "balanceInitial": "Saldo inicial",
+      "balanceAvailable": "Saldo disponible",
+      "transactionsTitle": "Transacciones",
+      "emptyTransactions": "Aún no hay transacciones.",
+      "merchantUnknown": "Comercio desconocido",
+      "note": "Tarjeta virtual prepago. No se requiere cuenta bancaria.",
+      "error": {
+        "invalidOrExpired": "Enlace inválido o caducado.",
+        "generic": "No se pudieron cargar los datos de la tarjeta. Inténtalo de nuevo."
+      },
+      "otp": {
+        "title": "Se requiere código de acceso",
+        "description": "Introduce el código de acceso de 6 caracteres para continuar.",
+        "label": "Código de acceso",
+        "placeholder": "123456",
+        "submit": "Continuar",
+        "submitting": "Verificando...",
+        "invalid": "Formato de código inválido.",
+        "failed": "Código inválido o enlace caducado."
+      }
+    }
+  },
+  "Incidents": {
+    "treasuryHalt": {
+      "title": "Restricción temporal del servicio",
+      "description": "Los depósitos y retiros pueden estar temporalmente no disponibles. Inténtalo de nuevo más tarde."
+    },
+    "yieldPaused": {
+      "title": "Yield temporalmente pausado",
+      "description": "Las nuevas asignaciones de yield están temporalmente no disponibles. Las posiciones existentes no se ven afectadas."
+    },
+    "partnerOutage": {
+      "title": "Interrupción temporal del servicio",
+      "description": "Algunas funciones pueden estar temporalmente no disponibles. Inténtalo de nuevo más tarde."
+    }
+  },
+  "KYC": {
+    "identityVerification": "Verificación de identidad",
+    "verifyIdentityDescription": "Para aumentar tus límites y mantener tu cuenta segura, necesitamos verificar tu identidad.",
+    "documentsSent": "Documentos enviados",
+    "verificationInProgress": "Tu verificación está en curso. Te notificaremos cuando esté aprobada.",
+    "backToDashboard": "Volver al panel",
+    "quickOption": "Opción rápida",
+    "recommended": "Recomendado",
+    "automaticVerification": "Verificación automática",
+    "useStripeIdentity": "Usa Stripe Identity para verificación instantánea",
+    "cameraHttpsHint": "En dispositivos móviles, la cámara solo funciona en conexiones seguras (HTTPS).",
+    "verificationRedirecting": "Redirigiendo a la verificación segura...",
+    "verificationCancelled": "Verificación cancelada. Puedes intentarlo de nuevo más tarde.",
+    "startVerification": "Iniciar verificación",
+    "manualVerification": "Verificación manual",
+    "uploadDocuments": "Sube tus documentos",
+    "country": {
+      "label": "País",
+      "unsupported": "Tu país no está soportado para este método de verificación."
+    },
+    "countries": {
+      "br": "Brasil (BR)",
+      "de": "Alemania (DE)",
+      "fr": "Francia (FR)",
+      "lu": "Luxemburgo (LU)",
+      "pt": "Portugal (PT)",
+      "us": "Estados Unidos (US)",
+      "unknown": "Desconocido ({code})"
+    },
+    "lastFour": {
+      "labelUs": "SSN: últimos 4 dígitos",
+      "labelOther": "Últimos 4 caracteres del documento",
+      "placeholderUs": "1234",
+      "placeholderOther": "A1B2"
+    },
+    "documentType": {
+      "label": "Tipo de documento",
+      "lastFourDigits": "Últimos 4 dígitos"
+    },
+    "docTypeIdCard": "Documento de identidad",
+    "docTypePassport": "Pasaporte",
+    "docTypeDriverLicense": "Licencia de conducir",
+    "documentNumber": "Número de documento",
+    "documentNumberPlaceholder": "Ej.: 123456789",
+    "issuingCountry": "País emisor",
+    "frontImage": "Imagen frontal",
+    "backImage": "Imagen posterior",
+    "selfieImage": "Selfie con documento",
+    "submitDocuments": "Enviar documentos",
+    "uploading": "Subiendo…",
+    "startNow": "Empezar ahora",
+    "manualSeparator": "o envío manual",
+    "stepDocumentDataTitle": "Datos del documento",
+    "stepFrontTitle": "Documento de identidad (frontal)",
+    "stepBackTitle": "Documento de identidad (posterior)",
+    "stepSelfieTitle": "Selfie de verificación",
+    "stepDocumentDataDesc": "Introduce los datos del documento que vas a enviar.",
+    "stepFrontDesc": "Sube una foto clara del lado frontal de tu documento.",
+    "stepBackDesc": "Sube una foto clara del lado posterior de tu documento.",
+    "stepSelfieDesc": "Tómate una selfie sosteniendo el documento para confirmar tu identidad.",
+    "uploadSelectOrDrop": "Haz clic para seleccionar o arrastra y suelta",
+    "uploadFormats": "JPG, PNG o PDF (máx. 5 MB)",
+    "fileSelected": "Archivo seleccionado",
+    "submitForReview": "Enviar para revisión",
+    "autoVerificationError": "No fue posible iniciar la verificación automática.",
+    "stripeConnectionError": "No fue posible conectar con el servicio de verificación. Inténtalo de nuevo o usa la carga manual.",
+    "errors": {
+      "unsupportedCountry": "Tu país no está soportado para este método de verificación.",
+      "countryLocked": "El país se toma de tu perfil.",
+      "countryMissing": "Define tu país en tu perfil antes de iniciar la verificación.",
+      "countryInvalid": "Tu país no es válido. Actualiza tu perfil e inténtalo de nuevo.",
+      "documentTypeNotSupported": "Este tipo de documento no está soportado para tu país.",
+      "lastFourInvalidUs": "Ingresa los últimos 4 dígitos de tu SSN.",
+      "lastFourInvalidOther": "Ingresa los últimos 4 caracteres (letras y números) de tu documento.",
+      "autoVerificationDisabled": "La verificación automática no está disponible temporalmente.",
+      "serviceUnavailable": "El servicio de verificación no está disponible temporalmente."
+    },
+    "documentSendError": "No fue posible enviar los documentos.",
+    "connectionError": "Error de conexión."
+  },
+  "Cards": {
+    "EmailCard": {
+      "title": "Tarjeta por correo",
+      "description": "Envía una tarjeta virtual al destinatario por correo electrónico.",
+      "amount": "Importe",
+      "currency": "Moneda",
+      "recipientEmail": "Correo del destinatario",
+      "recipientName": "Nombre del destinatario (opcional)",
+      "recipientNamePlaceholder": "Nombre",
+      "message": "Mensaje al destinatario (opcional)",
+      "messagePlaceholder": "Escribe un mensaje breve para el destinatario.",
+      "send": "Enviar",
+      "breakdown": {
+        "youPay": "Tú pagas",
+        "cardValue": "Valor de la tarjeta"
+      },
+      "success": {
+        "title": "Tarjeta enviada",
+        "description": "Se envió una tarjeta virtual a {email}.",
+        "transferId": "Transfer ID"
+      },
+      "errors": {
+        "missingEmailAmount": "Completa correo e importe.",
+        "invalidAmount": "Importe inválido.",
+        "messageTooLong": "Mensaje demasiado largo (máx. 240 caracteres).",
+        "sessionExpired": "Tu sesión expiró. Inicia sesión de nuevo.",
+        "submitFailed": "No fue posible enviar la tarjeta. Inténtalo de nuevo."
+      },
+      "sca": {
+        "required": "Se requiere autenticación reforzada (SCA) para completar esta transferencia.",
+        "requestCode": "Enviar código por correo",
+        "codeLabel": "Código de verificación (6 dígitos)",
+        "confirm": "Confirmar y completar",
+        "codeSent": "Enviamos un código de verificación a tu correo.",
+        "requestFailed": "No fue posible solicitar el código de verificación.",
+        "confirmFailed": "No fue posible confirmar el código. Inténtalo de nuevo.",
+        "invalidFormat": "Ingresa el código de 6 dígitos."
+      }
+    }
+  },
+  "Settings": {
+    "Security": {
+      "passwordChange": {
+        "requestingOtp": "Enviando código de seguridad a {email}...",
+        "enterOtp": "Ingresa el código de 6 dígitos enviado a tu correo",
+        "otpResend": "Reenviar código ({seconds}s)",
+        "otpResendReady": "Reenviar código",
+        "otpInvalid": "Código inválido. Inténtalo de nuevo.",
+        "otpExpired": "Código expirado. Solicita uno nuevo.",
+        "otpUsed": "Código ya utilizado. Solicita uno nuevo.",
+        "passwordChanged": "¡Contraseña cambiada con éxito!",
+        "passwordChangeFailed": "No fue posible cambiar la contraseña. Inténtalo de nuevo."
+      },
+      "sessions": {
+        "title": "Sesiones activas",
+        "description": "Gestiona los dispositivos conectados a tu cuenta.",
+        "current": "Sesión actual",
+        "revoke": "Cerrar",
+        "revokeAll": "Cerrar todas las demás",
+        "revokeConfirm": "¿Seguro que quieres cerrar esta sesión?",
+        "revokeAllConfirm": "¿Seguro que quieres cerrar todas las demás sesiones?",
+        "device": "Dispositivo: {device}",
+        "location": "Ubicación: {location}",
+        "lastActive": "Activo hace: {time}"
+      },
+      "phoneRequiredFor2FA": "Agrega un teléfono en Perfil para activar el 2FA por SMS."
+    },
+    "Profile": {
+      "title": "Mi perfil",
+      "loadError": "No se pudo cargar el perfil.",
+      "kycLevelLabel": "Nivel KYC",
+      "kycLevels": {
+        "basic": "Básico",
+        "verified": "Verificado",
+        "premium": "Premium"
+      },
+      "kycPending": "Verificación en revisión",
+      "increaseLimits": "Aumentar límites",
+      "personalDataTitle": "Datos personales",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "email": "Correo",
+      "phone": "Teléfono",
+      "address": "Dirección",
+      "city": "Ciudad",
+      "postalCode": "Código postal",
+      "notProvided": "No proporcionado",
+      "country": "País",
+      "primaryCurrency": "Moneda principal",
+      "notAvailable": "N/D",
+      "goToSecurity": "Ir a Seguridad",
+      "saveProfile": "Guardar",
+      "profileUpdateFailed": "No se pudieron guardar tus datos.",
+      "editComingSoon": "Editar (próximamente)"
+    }
+  }
+  ,
+  "Transfers": {
+    "Create": {
+      "errors": {
+        "JURISDICTION_NOT_SUPPORTED": "Este servicio no está disponible en tu país.",
+        "KYC_LEVEL_2_REQUIRED": "Se requiere verificación adicional para completar esta transferencia.",
+        "YIELD_KILL_SWITCH": "Yield no está disponible temporalmente.",
+        "YIELD_EXPOSURE_LIMIT": "Yield no está disponible temporalmente.",
+        "PARTNER_TEMPORARILY_UNAVAILABLE": "Servicio temporalmente no disponible. Inténtalo más tarde.",
+        "TREASURY_HALT_DEPOSITS_WITHDRAWS": "Servicio temporalmente no disponible. Inténtalo más tarde."
+      }
+    }
+  }
+}

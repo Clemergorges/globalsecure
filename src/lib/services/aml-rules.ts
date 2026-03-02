@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { logger } from '@/lib/logger';
 
 export type YieldSpendContext = {
   amountUsd: number;
@@ -51,11 +52,15 @@ export async function isHighRiskPattern(userId: string, ctx: YieldSpendContext) 
 
 export async function checkAmlForYieldSpend(userId: string, ctx: YieldSpendContext) {
   if (isSanctionedCountry(ctx.merchantCountry)) {
+    logger.warn({ userId, reason: 'SANCTIONED_COUNTRY', merchantCountry: ctx.merchantCountry || null }, 'AML blocked yield spend');
     return { allowed: false as const, reason: 'SANCTIONED_COUNTRY' };
   }
 
   const risk = await isHighRiskPattern(userId, ctx);
-  if (risk.hit) return { allowed: false as const, reason: risk.reason };
+  if (risk.hit) {
+    logger.warn({ userId, reason: risk.reason, amountUsd: ctx.amountUsd, merchantCountry: ctx.merchantCountry || null, merchantCategory: ctx.merchantCategory || null }, 'AML blocked yield spend');
+    return { allowed: false as const, reason: risk.reason };
+  }
 
   return { allowed: true as const };
 }
@@ -162,6 +167,7 @@ export async function checkAndCreateAmlCasesForTransfer(
       },
       now,
     });
+    logger.warn({ userId, reason: 'HIGH_RISK_JURISDICTION', created: created.created, caseId: created.caseId }, 'AML review case created/exists');
     results.push({ reason: 'HIGH_RISK_JURISDICTION', riskLevel: 'CRITICAL', caseId: created.caseId, created: created.created });
   }
 
@@ -190,6 +196,7 @@ export async function checkAndCreateAmlCasesForTransfer(
       },
       now,
     });
+    logger.warn({ userId, reason: 'VELOCITY_TX_COUNT', created: created.created, caseId: created.caseId }, 'AML review case created/exists');
     results.push({ reason: 'VELOCITY_TX_COUNT', riskLevel: 'HIGH', caseId: created.caseId, created: created.created });
   }
 

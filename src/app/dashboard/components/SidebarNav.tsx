@@ -9,7 +9,9 @@ import {
   Settings, 
   LogOut,
   HelpCircle,
-  Shield
+  Shield,
+  SlidersHorizontal,
+  User
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
@@ -29,9 +31,11 @@ export function SidebarNav({ userEmail, userRole }: SidebarNavProps) {
   const navigation = [
     { name: t('overview'), href: '/dashboard', icon: LayoutDashboard },
     { name: t('transactions'), href: '/dashboard/transactions', icon: ArrowRightLeft },
+    { name: t('limits'), href: '/dashboard/limits', icon: SlidersHorizontal },
     { name: t('cards'), href: '/dashboard/cards', icon: CreditCard },
     { name: t('security'), href: '/dashboard/settings/security', icon: Shield },
     { name: t('settings'), href: '/dashboard/settings', icon: Settings },
+    { name: t('profile'), href: '/dashboard/settings/profile', icon: User },
     { name: t('support'), href: '/dashboard/support', icon: HelpCircle },
   ];
 

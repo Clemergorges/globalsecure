@@ -14,6 +14,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { SecureTransferDialog } from './secure-transfer-dialog';
+import { CardEmailDialog } from './card-email-dialog';
 
 interface VirtualCard {
   id: string;
@@ -69,8 +70,13 @@ export function CardsList({ initialCards }: CardsListProps) {
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [cardToCancel, setCardToCancel] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+
   // Secure Transfer State
   const [isTransferOpen, setIsTransferOpen] = useState(false);
+  const [isCardEmailOpen, setIsCardEmailOpen] = useState(false);
 
   useEffect(() => {
     setNowMs(Date.now());
@@ -159,6 +165,38 @@ export function CardsList({ initialCards }: CardsListProps) {
     setDeleteConfirmOpen(true);
   };
 
+  const confirmCancel = (cardId: string) => {
+    setCardToCancel(cardId);
+    setCancelConfirmOpen(true);
+  };
+
+  const handleCancelCard = async () => {
+    if (!cardToCancel) return;
+    setCancelLoading(true);
+    try {
+      const res = await fetch(`/api/cards/${cardToCancel}/cancel`, { method: 'DELETE' });
+      const body = await res.json().catch(() => ({} as any));
+      if (!res.ok) {
+        if (body?.code === 'ALREADY_CANCELLED') {
+          toast({ title: tc('error'), description: 'Este cartão já está cancelado.', variant: 'destructive' });
+          return;
+        }
+        toast({ title: tc('error'), description: 'Falha ao cancelar o cartão. Tente novamente.', variant: 'destructive' });
+        return;
+      }
+
+      setCards(cards.map((c) => (c.id === cardToCancel ? { ...c, status: 'CANCELED', canceledAt: new Date() } : c)));
+      setCancelConfirmOpen(false);
+      setCardToCancel(null);
+      toast({ title: 'Cartão cancelado', description: 'O cartão foi cancelado com sucesso.' });
+      router.refresh();
+    } catch {
+      toast({ title: tc('error'), description: 'Falha ao cancelar o cartão. Tente novamente.', variant: 'destructive' });
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   const handleDeleteCard = async () => {
     if (!cardToDelete) return;
     setDeleteLoading(true);
@@ -211,6 +249,10 @@ export function CardsList({ initialCards }: CardsListProps) {
               <Send className="w-5 h-5 mr-2" />
               {t('globalLink')}
             </Button>
+            <Button onClick={() => setIsCardEmailOpen(true)} variant="outline" className="border-white/10 text-slate-200 hover:bg-white/5 font-bold h-12 px-8 rounded-full transition-transform hover:scale-105">
+              <CreditCard className="w-5 h-5 mr-2" />
+              Cartão por e-mail
+            </Button>
             <Button onClick={() => setIsCreateOpen(true)} className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold h-12 px-8 rounded-full shadow-[0_0_20px_-5px_rgba(6,182,212,0.5)] transition-transform hover:scale-105">
               <Plus className="w-5 h-5 mr-2" />
               {t('createFirstCard')}
@@ -223,6 +265,15 @@ export function CardsList({ initialCards }: CardsListProps) {
           onSuccess={() => {
             router.refresh();
             toast({ title: t('toast.globalLinkStartedTitle'), description: t('toast.globalLinkStartedDescription') });
+          }}
+        />
+
+        <CardEmailDialog
+          open={isCardEmailOpen}
+          onOpenChange={setIsCardEmailOpen}
+          onSuccess={() => {
+            router.refresh();
+            toast({ title: 'Cartão enviado', description: 'O destinatário receberá um e-mail com o cartão virtual.' });
           }}
         />
 
@@ -275,6 +326,10 @@ export function CardsList({ initialCards }: CardsListProps) {
           <Send className="w-4 h-4 mr-2" />
           {t('globalLink')}
         </Button>
+        <Button onClick={() => setIsCardEmailOpen(true)} variant="outline" className="border-white/10 text-slate-200 hover:bg-white/5 font-medium">
+          <CreditCard className="w-4 h-4 mr-2" />
+          Cartão por e-mail
+        </Button>
         <Button onClick={() => setIsCreateOpen(true)} className="bg-cyan-500 hover:bg-cyan-600 text-black font-medium shadow-[0_0_15px_-5px_rgba(6,182,212,0.5)]">
           <Plus className="w-4 h-4 mr-2" />
           {t('newCard')}
@@ -289,6 +344,30 @@ export function CardsList({ initialCards }: CardsListProps) {
           toast({ title: t('toast.globalLinkStartedTitle'), description: t('toast.globalLinkStartedDescription') });
         }}
       />
+
+      <CardEmailDialog
+        open={isCardEmailOpen}
+        onOpenChange={setIsCardEmailOpen}
+        onSuccess={() => {
+          router.refresh();
+          toast({ title: 'Cartão enviado', description: 'O destinatário receberá um e-mail com o cartão virtual.' });
+        }}
+      />
+
+      <Dialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
+        <DialogContent className="bg-[#0A0A0F] border-white/10 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('cancelDialog.title')}</DialogTitle>
+            <DialogDescription className="text-slate-400">{t('cancelDialog.description')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCancelConfirmOpen(false)}>{tc('cancel')}</Button>
+            <Button onClick={handleCancelCard} disabled={cancelLoading} className="bg-red-600 text-white hover:bg-red-700">
+              {cancelLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('cancelDialog.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Create New Card Tile */}
@@ -314,6 +393,7 @@ export function CardsList({ initialCards }: CardsListProps) {
           const claimExpired = isClaim && (claim?.status === 'EXPIRED' || claim?.status === 'CANCELLED' || claimExpiredByTime);
           const claimUnlocked = isClaim && Boolean((card as any).unlockedAt);
           const claimStatusLabel = claimExpired ? t('claimStatus.expired') : claimUnlocked ? t('claimStatus.active') : t('claimStatus.pending');
+          const statusLabel = card.status === 'ACTIVE' ? t('active') : card.status === 'CANCELED' ? 'Cancelado' : t('inactive');
 
           return (
             <Card key={card.id} className="relative overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(6,182,212,0.15)] bg-[#111116] border-white/5 backdrop-blur-md group hover:border-cyan-500/20">
@@ -340,8 +420,13 @@ export function CardsList({ initialCards }: CardsListProps) {
                       "uppercase text-[10px] tracking-wider font-bold",
                       card.status === 'ACTIVE' ? "bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border-cyan-500/20" : "bg-slate-800 text-slate-400"
                   )}>
-                    {card.status === 'ACTIVE' ? t('active') : t('inactive')}
+                    {statusLabel}
                   </Badge>
+                  {card.status !== 'CANCELED' && (
+                    <Button onClick={() => confirmCancel(card.id)} variant="ghost" size="icon" className="text-slate-400 hover:text-red-400 hover:bg-red-950/20 w-7 h-7">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -410,11 +495,22 @@ export function CardsList({ initialCards }: CardsListProps) {
             </CardContent>
 
             <CardFooter className="bg-black/20 p-4 flex gap-2 justify-end border-t border-white/5 relative z-10">
+              {card.status === 'ACTIVE' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => confirmCancel(card.id)}
+                  className="text-slate-400 hover:text-white hover:bg-white/5 mr-auto"
+                >
+                  Cancelar cartão
+                </Button>
+              )}
+
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => confirmDelete(card.id)}
-                className="text-slate-400 hover:text-red-400 hover:bg-red-950/20 mr-auto"
+                className="text-slate-400 hover:text-red-400 hover:bg-red-950/20"
                 aria-label={t('removeCardAria')}
               >
                 <Trash2 className="w-4 h-4" />
@@ -565,6 +661,25 @@ export function CardsList({ initialCards }: CardsListProps) {
                     {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('deleteDialog.confirm')}
                 </Button>
             </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
+        <DialogContent className="bg-[#0A0A0F] border-white/10 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancelar cartão</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Tem certeza que deseja cancelar este cartão? Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCancelConfirmOpen(false)} className="text-slate-400 hover:text-white">
+              {tc('cancel')}
+            </Button>
+            <Button onClick={handleCancelCard} disabled={cancelLoading} className="bg-red-600 text-white hover:bg-red-700">
+              {cancelLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar cancelamento'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

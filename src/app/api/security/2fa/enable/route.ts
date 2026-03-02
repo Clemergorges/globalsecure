@@ -1,47 +1,50 @@
-
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth';
 import { smsService } from '@/lib/services/sms';
-import { randomBytes } from 'crypto';
+import { withRouteContext } from '@/lib/http/route';
+import { OtpChallengeService } from '@/lib/security/otp/OtpChallengeService';
+import { logAudit } from '@/lib/logger';
 
-export async function POST(req: Request) {
-  const session = await getSession();
-  // @ts-ignore
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+const schema = z.object({});
 
-  try {
-    const user = await prisma.user.findUnique({
-      // @ts-ignore
-      where: { id: session.userId }
-    });
-
-    if (!user || !user.phone) {
-      return NextResponse.json({ error: 'Phone number required. Please update profile first.' }, { status: 400 });
-    }
-
-    // Generate 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Store OTP in DB
-    await prisma.oTP.create({
-      data: {
-          userId: user.id,
-          target: user.phone!,
-          type: 'PHONE',
-          channel: 'sms',
-          code: code,
-          expiresAt: new Date(Date.now() + 10 * 60 * 1000) // Expira em 10 minutos
-        }
-    });
-
-    // Send SMS
-    await smsService.sendOTP(user.phone, code);
-
-    return NextResponse.json({ success: true, message: 'OTP sent' });
-
-  } catch (error) {
-    console.error('2FA Enable error:', error);
-    return NextResponse.json({ error: 'Failed to send OTP' }, { status: 500 });
+export const POST = withRouteContext(async (req: NextRequest, ctx) => {
+  const parsed = schema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Validation Error' }, { status: 400 });
   }
-}
+
+  const user = await prisma.user.findUnique({
+    where: { id: ctx.userId! },
+    select: { id: true, phone: true },
+  });
+
+  if (!user || !user.phone) {
+    return NextResponse.json({ error: 'Phone number required. Please update profile first.' }, { status: 400 });
+  }
+
+  const otpService = new OtpChallengeService();
+  const { code, expiresAt, ttlSeconds } = await otpService.create({
+    userId: user.id,
+    purpose: 'MFA_ENROLL',
+    ttlSeconds: 10 * 60,
+    maxAttempts: 5,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+  });
+
+  await smsService.sendOTP(user.phone, code);
+
+  logAudit({
+    userId: user.id,
+    action: 'SECURITY_2FA_OTP_SENT',
+    status: 'SUCCESS',
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    method: ctx.method,
+    path: ctx.path,
+    metadata: { requestId: ctx.requestId, ttlSeconds, expiresAt: expiresAt.toISOString() },
+  }).catch(() => {});
+
+  return NextResponse.json({ success: true, ttlSeconds });
+});

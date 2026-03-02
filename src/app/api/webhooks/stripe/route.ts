@@ -1,12 +1,17 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { stripe } from '@/lib/services/stripe';
+import { getStripe } from '@/lib/services/stripe';
 import { prisma } from '@/lib/db';
 import Stripe from 'stripe';
 import { applyFiatMovement, isYieldSpendingEnabled, recordUserConsent } from '@/lib/services/fiat-ledger';
 import { getFxRate } from '@/lib/services/fx-engine';
 import { checkAmlForYieldSpend } from '@/lib/services/aml-rules';
 import { coverFiatSpend } from '@/lib/services/fiat-pool';
+import { getYieldGuardForAsset } from '@/lib/services/market-guard';
+import { checkUserGeoFraudContext } from '@/lib/services/risk-gates';
+import { logger, logAudit } from '@/lib/logger';
+// GSS-MVP-FIX
+import { sendEmail, templates } from '@/lib/services/email';
 
 function getMinorUnitDivisor(currency: string) {
   const c = currency.toUpperCase();
@@ -33,6 +38,15 @@ function getYieldPerUserLimitUsd() {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
+function mapStripeDocType(stripeType: string | null | undefined): any {
+  if (!stripeType) return undefined;
+  if (stripeType.includes('passport')) return 'PASSPORT';
+  if (stripeType.includes('driver_license')) return 'DRIVERS_LICENSE';
+  if (stripeType.includes('id_card')) return 'NATIONAL_ID';
+  if (stripeType.includes('residence')) return 'RESIDENCE_PERMIT';
+  return 'NATIONAL_ID'; // Fallback
+}
+
 export async function POST(req: Request) {
   const body = await req.text();
   const signature = (await headers()).get('stripe-signature') as string;
@@ -40,7 +54,7 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test' // Fallback for dev/test
@@ -111,6 +125,7 @@ export async function POST(req: Request) {
 
       if (!virtualCard) {
           console.warn(`Card not found for authorization: ${cardId}`);
+          logger.warn({ stripeAuthId: auth.id, stripeCardId: cardId }, 'Issuing authorization: card not found');
           return NextResponse.json({ approved: false, metadata: { reason: 'card_not_found' } });
       }
 
@@ -152,6 +167,7 @@ export async function POST(req: Request) {
       });
 
       if (existing) {
+        logger.info({ stripeAuthId: auth.id, stripeCardId: cardId, approved: existing.status === 'approved' }, 'Issuing authorization: idempotent');
         return NextResponse.json({ approved: existing.status === 'approved' });
       }
 
@@ -281,6 +297,34 @@ export async function POST(req: Request) {
                 return false;
               }
 
+              const geo = await checkUserGeoFraudContext(refreshed.userId, auth.merchant_data?.country || null, {
+                source: 'MERCHANT',
+                mcc: auth.merchant_data?.category || null,
+              });
+              if (!geo.allowed) {
+                await tx.spendTransaction.create({
+                  data: {
+                    cardId: refreshed.id,
+                    stripeAuthId: auth.id,
+                    amount: amountInCardCurrency,
+                    currency: cardCurrency,
+                    merchantName: auth.merchant_data?.name || null,
+                    merchantCategory: auth.merchant_data?.category || null,
+                    merchantCity: auth.merchant_data?.city || null,
+                    merchantCountry: auth.merchant_data?.country || null,
+                    status: 'declined',
+                    metadata: {
+                      spend: { currency: spendCurrency, amount: spendAmount },
+                      fx: fxMeta,
+                      declineReason: 'GEOFRAUD',
+                      geofraud: { code: geo.code, details: geo.details || null },
+                      yield: { missingUsd },
+                    },
+                  },
+                });
+                return false;
+              }
+
               const aml = await checkAmlForYieldSpend(refreshed.userId, {
                 amountUsd: missingUsd,
                 merchantCountry: auth.merchant_data?.country || null,
@@ -339,13 +383,38 @@ export async function POST(req: Request) {
                 return false;
               }
 
-              const ltvMax = getYieldLtvMax();
+              const collateralAsset = 'EETH';
+              const guard = await getYieldGuardForAsset(tx, collateralAsset);
+              if (guard.isYieldPaused) {
+                await tx.spendTransaction.create({
+                  data: {
+                    cardId: refreshed.id,
+                    stripeAuthId: auth.id,
+                    amount: amountInCardCurrency,
+                    currency: cardCurrency,
+                    merchantName: auth.merchant_data?.name || null,
+                    merchantCategory: auth.merchant_data?.category || null,
+                    merchantCity: auth.merchant_data?.city || null,
+                    merchantCountry: auth.merchant_data?.country || null,
+                    status: 'declined',
+                    metadata: {
+                      spend: { currency: spendCurrency, amount: spendAmount },
+                      fx: fxMeta,
+                      declineReason: 'YIELD_PAUSED_BY_MARKET_GUARD',
+                      yield: { missingUsd, marketGuard: guard },
+                    },
+                  },
+                });
+                return false;
+              }
+
+              const ltvMax = Math.min(getYieldLtvMax(), guard.ltvMaxCap.toNumber());
               const creditLine = await tx.userCreditLine.upsert({
                 where: { userId: refreshed.userId },
-                update: { ltvMax },
+                update: { ltvMax, collateralAsset },
                 create: {
                   userId: refreshed.userId,
-                  collateralAsset: 'EETH',
+                  collateralAsset,
                   collateralAmount: 0,
                   collateralValueUsd: 0,
                   ltvMax,
@@ -433,10 +502,141 @@ export async function POST(req: Request) {
         return true;
       });
 
+      if (approved) {
+        logger.info(
+          { stripeAuthId: auth.id, stripeCardId: cardId, userId: virtualCard.userId || null, spendCurrency, spendAmount },
+          'Issuing authorization approved',
+        );
+
+        // GSS-MVP-FIX: Post-approval notifications only (no change to approval/ledger logic).
+        try {
+          const updated = await prisma.virtualCard.findUnique({
+            where: { id: virtualCard.id },
+            include: { transfer: true },
+          });
+          if (updated?.transfer?.recipientEmail) {
+            const to = updated.transfer.recipientEmail;
+            const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to) && to !== 'unknown' && to !== 'claim-placeholder@globalsecuresend.com';
+            if (isValidEmail) {
+              const available = (updated.amount.toNumber() - updated.amountUsed.toNumber()).toFixed(2);
+              const spentInCardCurrency = updated.currency.toUpperCase() === spendCurrency ? spendAmount.toFixed(2) : (amountInCardCurrency as number).toFixed(2);
+
+              await sendEmail({
+                to,
+                // TODO GSS: i18n key 'card.spentEmail.subject'
+                subject: 'Your GlobalSecure card has been used',
+                html: templates.cardSpent({
+                  recipientName: updated.transfer.recipientName || undefined,
+                  currency: updated.currency.toUpperCase(),
+                  spentAmount: spentInCardCurrency,
+                  availableAmount: available,
+                  merchantName: auth.merchant_data?.name || null,
+                }),
+              });
+
+              const recipientUser = await prisma.user.findUnique({
+                where: { email: to },
+                select: { id: true },
+              });
+              if (recipientUser?.id) {
+                await prisma.notification.create({
+                  data: {
+                    userId: recipientUser.id,
+                    title: 'Card spent',
+                    body: `Spent ${updated.currency.toUpperCase()} ${spentInCardCurrency}. Available ${updated.currency.toUpperCase()} ${available}.`,
+                    type: 'CARD_SPENT',
+                  },
+                });
+              }
+            }
+          }
+        } catch {}
+      } else {
+        logger.warn(
+          { stripeAuthId: auth.id, stripeCardId: cardId, userId: virtualCard.userId || null, spendCurrency, spendAmount },
+          'Issuing authorization declined',
+        );
+      }
       return NextResponse.json({ approved });
     }
     
     // Handle other events...
+    if (event.type === 'identity.verification_session.verified') {
+      const session = event.data.object as Stripe.Identity.VerificationSession;
+      logger.info({ stripeVerificationId: session.id, status: session.status }, 'Stripe Identity verified webhook received');
+      const doc = await prisma.kYCDocument.findUnique({
+        where: { stripeVerificationId: session.id },
+        select: { id: true, userId: true, status: true },
+      });
+
+      if (!doc) {
+        logger.warn({ stripeVerificationId: session.id }, 'Stripe Identity verified webhook: document not found');
+      } else if (doc.status !== 'APPROVED') {
+        const issuingCountry = session.verified_outputs?.address?.country;
+        const idNumber = session.verified_outputs?.id_number;
+        const docType = session.verified_outputs?.id_number_type;
+
+        await prisma.kYCDocument.update({
+          where: { id: doc.id },
+          data: {
+            status: 'APPROVED',
+            verifiedAt: new Date(),
+            documentNumber: idNumber || 'HIDDEN',
+            issuingCountry: issuingCountry || 'UNKNOWN',
+          },
+        });
+
+        await prisma.user.update({
+          where: { id: doc.userId },
+          data: {
+            kycStatus: 'APPROVED',
+            kycLevel: 2,
+            kycCompletedAt: new Date(),
+            documentNumber: idNumber || undefined,
+            documentType: mapStripeDocType(docType),
+          },
+        });
+
+        await logAudit({
+          userId: doc.userId,
+          action: 'KYC_STRIPE_IDENTITY_VERIFIED',
+          status: 'SUCCESS',
+          ipAddress: 'stripe-webhook',
+          userAgent: 'stripe-webhook',
+          metadata: { stripeVerificationId: session.id },
+        });
+      }
+    }
+
+    if (event.type === 'identity.verification_session.requires_input') {
+      const session = event.data.object as Stripe.Identity.VerificationSession;
+      const lastError = session.last_error;
+      logger.info({ stripeVerificationId: session.id, code: lastError?.code }, 'Stripe Identity requires_input webhook received');
+
+      const doc = await prisma.kYCDocument.findUnique({
+        where: { stripeVerificationId: session.id },
+        select: { id: true, userId: true },
+      });
+
+      if (doc) {
+        await prisma.kYCDocument.update({
+          where: { id: doc.id },
+          data: {
+            status: 'REVIEW',
+            rejectionReason: lastError?.code || 'REQUIRES_INPUT',
+          },
+        });
+
+        await logAudit({
+          userId: doc.userId,
+          action: 'KYC_STRIPE_IDENTITY_REQUIRES_INPUT',
+          status: 'FAILURE',
+          ipAddress: 'stripe-webhook',
+          userAgent: 'stripe-webhook',
+          metadata: { stripeVerificationId: session.id, error: lastError },
+        });
+      }
+    }
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
   } catch (error: any) {

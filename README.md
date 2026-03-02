@@ -26,6 +26,7 @@ Plataforma financeira híbrida que une serviços bancários tradicionais (Fiat) 
 - **UI:** TailwindCSS + ShadcnUI
 - **Blockchain:** Ethers.js + Polygon Amoy (Testnet)
 - **Infra:** Vercel (Serverless + Cron Jobs)
+- **i18n:** next-intl (mensagens em JSON)
 
 ##  Arquitetura do Sistema
 
@@ -44,9 +45,22 @@ graph TD
         API --> Stripe[Stripe API (Fiat)]
         API --> Polygon[Alchemy RPC (Crypto)]
         API --> Pusher[Pusher (Realtime)]
-        API --> Storage[Supabase Storage (KYC)]
+        API --> Storage[Vercel Blob (KYC)]
     end
 ```
+
+##  i18n (traduções)
+
+Este projeto usa **next-intl** com **App Router** e mensagens em `messages/*.json`.
+
+- **Arquivos de idioma:** `messages/pt.json`, `messages/en.json`, `messages/fr.json`, `messages/de.json`, `messages/es.json`
+- **Fallback:** `pt` é o fallback padrão; chaves ausentes em outros idiomas caem em `pt` (merge em [request.ts](./src/i18n/request.ts)). 
+- **Como adicionar uma string nova:**
+  1) Crie a chave no `messages/pt.json` (fonte-base).
+  2) Adicione a mesma chave nos demais idiomas (ou deixe ausente para cair no fallback).
+  3) Rode `npm run i18n:audit` para validar consistência (pt/en/fr/de).
+- **Uso em componentes client:** `const t = useTranslations('Namespace');` e `t('key')`  
+- **Uso em server components:** `const t = await getTranslations('Namespace');`
 
 ##  Segurança & Compliance
 Implementamos práticas de segurança de nível bancário desde o MVP:

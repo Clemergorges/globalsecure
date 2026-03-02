@@ -8,7 +8,7 @@ import crypto from 'crypto';
 const BASE_URL = 'http://localhost:3012';
 // We use the known secret from .env.local
 const JWT_SECRET = "GlobalSecureSecret2026!"; 
-const ADMIN_EMAIL = 'clemergorges@hotmail.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
 const TEST_EMAIL = 'beta_test_suite@demo.com';
 
 // Helpers

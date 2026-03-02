@@ -1,28 +1,35 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import crypto from 'crypto';
+import { withRouteContext } from '@/lib/http/route';
+import { env } from '@/lib/config/env';
+import { logger } from '@/lib/logger';
 
 const verifySchema = z.object({
   email: z.string().email(),
-  code: z.string().length(6),
+  code: z.string().regex(/^\d{6}$/),
 });
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const parsed = verifySchema.safeParse(body);
+function hashEmailOtp(code: string) {
+  return crypto.createHash('sha256').update(`${code}.${env.otpPepper()}`).digest('hex');
+}
 
+export const POST = withRouteContext(async (req: NextRequest) => {
+  try {
+    const body = await req.json().catch(() => ({}));
+    const parsed = verifySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 });
     }
 
     const { email, code } = parsed.data;
     const normalizedEmail = email.toLowerCase();
+    const codeHash = hashEmailOtp(code);
 
-    // Find the user
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
-      include: { account: true }
+      include: { account: true },
     });
     if (!user) {
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
@@ -36,9 +43,9 @@ export async function POST(req: Request) {
       where: {
         userId: user.id,
         type: 'EMAIL',
-        code: code,
+        code: codeHash,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!otp) {
@@ -56,26 +63,26 @@ export async function POST(req: Request) {
     await prisma.$transaction(async (tx) => {
       await tx.oTP.update({
         where: { id: otp.id },
-        data: { used: true, usedAt: new Date() }
+        data: { used: true, usedAt: new Date() },
       });
 
       await tx.user.update({
         where: { id: user.id },
-        data: { emailVerified: true }
+        data: { emailVerified: true },
       });
 
       if (user.account && user.account.status === 'UNVERIFIED') {
         await tx.account.update({
           where: { userId: user.id },
-          data: { status: 'PENDING' }
+          data: { status: 'PENDING' },
         });
       }
     });
 
     return NextResponse.json({ success: true });
-
-  } catch (error) {
-    console.error('Verification error:', error);
+  } catch (error: any) {
+    logger.error({ err: error?.message || String(error) }, 'verify-email error');
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
-}
+}, { requireAuth: false });
+

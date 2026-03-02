@@ -22,6 +22,7 @@ describe('Risk gates', () => {
         firstName: 'Test',
         lastName: 'User',
         emailVerified: true,
+        kycStatus: 'APPROVED',
         account: { create: { primaryCurrency: 'EUR' } },
       },
       select: { id: true },
@@ -63,4 +64,3 @@ describe('Risk gates', () => {
     await prisma.user.delete({ where: { id: user.id } });
   });
 });
-

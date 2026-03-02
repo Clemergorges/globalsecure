@@ -4,8 +4,8 @@ Este documento descreve o fluxo 1 → 2 → 3 usado no cadastro com confirmaçã
 
 ## 1) Cadastro
 
-- Página: [register/page.tsx](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/auth/register/page.tsx)
-- API: [register/route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/auth/register/route.ts)
+- Página: [register/page.tsx](../src/app/auth/register/page.tsx)
+- API: [register/route.ts](../src/app/api/auth/register/route.ts)
 
 ### Payload obrigatório
 
@@ -32,8 +32,8 @@ Este documento descreve o fluxo 1 → 2 → 3 usado no cadastro com confirmaçã
 
 ## 2) Verificação de Email (OTP)
 
-- Página: [verify/page.tsx](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/verify/page.tsx) (rota `/verify?email=...`)
-- API: [verify-email/route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/auth/verify-email/route.ts)
+- Página: [verify/page.tsx](../src/app/verify/page.tsx) (rota `/verify?email=...`)
+- API: [verify-email/route.ts](../src/app/api/auth/verify-email/route.ts)
 
 ### Payload
 
@@ -57,7 +57,7 @@ Este documento descreve o fluxo 1 → 2 → 3 usado no cadastro com confirmaçã
 
 ## Reenvio de código (recomendado)
 
-- API: [resend-verification/route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/auth/resend-verification/route.ts)
+- API: [resend-verification/route.ts](../src/app/api/auth/resend-verification/route.ts)
 - UI: botão “Reenviar código” na página `/verify`
 
 Regras:
@@ -67,8 +67,8 @@ Regras:
 
 ## 3) Login
 
-- Página: [login/page.tsx](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/auth/login/page.tsx)
-- API: [login-secure/route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/auth/login-secure/route.ts)
+- Página: [login/page.tsx](../src/app/auth/login/page.tsx)
+- API: [login-secure/route.ts](../src/app/api/auth/login-secure/route.ts)
 
 Política atual:
 
@@ -77,11 +77,10 @@ Política atual:
 
 ## Variáveis de ambiente (SMTP)
 
-Serviço: [email.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/lib/services/email.ts)
+Serviço: [email.ts](../src/lib/services/email.ts)
 
 - `SMTP_HOST`
 - `SMTP_PORT`
 - `SMTP_USER`
 - `SMTP_PASS`
 - `EMAIL_FROM` (ex.: `"GlobalSecureSend" <no-reply@globalsecuresend.com>`)
-

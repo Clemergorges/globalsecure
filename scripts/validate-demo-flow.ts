@@ -22,12 +22,9 @@ async function runDemoFlow() {
     // 1. Setup Test Users
     console.log(`${colors.yellow}📦 Using existing users...${colors.reset}`);
     // Assuming test users exist from seed or creating them on fly if needed
-    // For this demo, we'll use 'admin@globalsecuresend.com' (Sender) and 'clemergorges@hotmail.com' (Receiver)
-    // Passwords are known hash defaults.
-    
-    const senderEmail = 'clemergorges@hotmail.com';
-    const receiverEmail = 'admin@globalsecuresend.com';
-    const password = 'Globalsecure2026!'; // The correct admin password
+    const senderEmail = process.env.DEMO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'admin@example.com';
+    const receiverEmail = process.env.DEMO_RECEIVER_EMAIL || 'receiver@example.com';
+    const password = process.env.DEMO_SENDER_PASSWORD || process.env.TEST_PASSWORD || 'CHANGE_ME';
     
     console.log(`${colors.green}✔ Using credentials for ${senderEmail}${colors.reset}`);
 

@@ -67,6 +67,37 @@
       "loginFailed": "Falha ao fazer login"
     }
   },
+  "ForgotPassword": {
+    "title": "Esqueceu sua senha?",
+    "subtitle": "Insira seu email e enviaremos instruções para redefinir sua senha",
+    "email": "Email",
+    "emailPlaceholder": "seu@email.com",
+    "submit": "Enviar instruções",
+    "submitting": "Enviando...",
+    "success": "Se o email existir, enviaremos instruções.",
+    "backToLogin": "Voltar para login",
+    "errors": {
+      "sendFailed": "Erro ao enviar email. Tente novamente."
+    }
+  },
+  "ResetPassword": {
+    "title": "Redefinir senha",
+    "subtitle": "Digite sua nova senha",
+    "newPassword": "Nova senha",
+    "confirmPassword": "Confirmar nova senha",
+    "passwordPlaceholder": "••••••••",
+    "passwordRequirements": "Mínimo 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial",
+    "submit": "Redefinir senha",
+    "submitting": "Redefinindo...",
+    "success": "Senha redefinida com sucesso!",
+    "backToLogin": "Voltar para login",
+    "invalidToken": "Token inválido ou ausente",
+    "passwordMismatch": "As senhas não coincidem",
+    "errors": {
+      "resetFailed": "Erro ao redefinir senha. Tente novamente.",
+      "invalidToken": "Token inválido ou expirado"
+    }
+  },
   "VerifyEmail": {
     "title": "Verificar Email",
     "missingEmail": "Informe seu email para continuar.",
@@ -98,7 +129,36 @@
     "back": "Voltar",
     "next": "Próximo",
     "loading": "Carregando...",
-    "error": "Erro"
+    "error": "Erro",
+    "disclaimer": {
+      "tax": "Impostos e obrigações fiscais são responsabilidade do usuário. A GSS oferece extratos e relatórios para facilitar a declaração, mas não substitui contador nem consultoria fiscal."
+    }
+  },
+  "CardEmail": {
+    "View": {
+      "title": "Seu cartão GlobalSecure",
+      "subtitle": "Veja saldo e gastos recentes sem criar conta.",
+      "balanceInitial": "Saldo inicial",
+      "balanceAvailable": "Saldo disponível",
+      "transactionsTitle": "Gastos",
+      "emptyTransactions": "Nenhuma transação ainda.",
+      "merchantUnknown": "Estabelecimento desconhecido",
+      "note": "Cartão virtual pré-pago. Não precisa de conta bancária.",
+      "error": {
+        "invalidOrExpired": "Link inválido ou expirado.",
+        "generic": "Não foi possível carregar os dados. Tente novamente."
+      },
+      "otp": {
+        "title": "Código de acesso obrigatório",
+        "description": "Digite o código de acesso de 6 caracteres para continuar.",
+        "label": "Código de acesso",
+        "placeholder": "123456",
+        "submit": "Continuar",
+        "submitting": "Verificando...",
+        "invalid": "Formato de código inválido.",
+        "failed": "Código inválido ou link expirado."
+      }
+    }
   },
   "Dashboard": {
     "title": "Visão Geral",
@@ -129,9 +189,11 @@
       "transactions": "Transações",
       "send": "Enviar Dinheiro",
       "cards": "Cartões",
+      "limits": "Limites",
       "history": "Histórico",
       "security": "Segurança",
       "settings": "Configurações",
+      "profile": "Meu Perfil",
       "support": "Suporte",
       "admin": "Painel Admin",
       "logout": "Sair"
@@ -147,6 +209,20 @@
       "settings": "Configurações",
       "help": "Ajuda e Suporte",
       "logout": "Sair"
+    }
+  },
+  "Incidents": {
+    "treasuryHalt": {
+      "title": "Restrição temporária de serviço",
+      "description": "Depósitos e saques podem ficar temporariamente indisponíveis. Tente novamente mais tarde."
+    },
+    "yieldPaused": {
+      "title": "Yield temporariamente pausado",
+      "description": "Novas alocações em yield estão temporariamente indisponíveis. Posições existentes não são afetadas."
+    },
+    "partnerOutage": {
+      "title": "Interrupção temporária de serviço",
+      "description": "Algumas funcionalidades podem ficar temporariamente indisponíveis. Tente novamente mais tarde."
     }
   },
   "Transfers": {
@@ -190,6 +266,12 @@
         "INSUFFICIENT_FUNDS": "Saldo insuficiente",
         "SENDER_NOT_FOUND": "Conta do remetente não encontrada",
         "INVALID_AMOUNT": "Informe um valor válido",
+        "JURISDICTION_NOT_SUPPORTED": "Este serviço não está disponível no seu país.",
+        "KYC_LEVEL_2_REQUIRED": "É necessária verificação adicional para concluir esta transferência.",
+        "YIELD_KILL_SWITCH": "Yield temporariamente indisponível.",
+        "YIELD_EXPOSURE_LIMIT": "Yield temporariamente indisponível.",
+        "PARTNER_TEMPORARILY_UNAVAILABLE": "Serviço temporariamente indisponível. Tente novamente em alguns minutos.",
+        "TREASURY_HALT_DEPOSITS_WITHDRAWS": "Serviço temporariamente indisponível. Tente novamente em alguns minutos.",
         "INTERNAL_SERVER_ERROR": "Erro interno do servidor",
         "submitFailed": "Falha ao realizar transferência"
       }
@@ -480,6 +562,29 @@
       "errorVerifyingCode": "Erro ao verificar código",
       "errorDisconnecting": "Erro ao desconectar",
       "passwordChangedSuccessfully": "Senha alterada com sucesso!",
+      "passwordChange": {
+        "requestingOtp": "Enviando código de segurança para {email}...",
+        "enterOtp": "Digite o código de 6 dígitos enviado para seu e-mail",
+        "otpResend": "Reenviar código ({seconds}s)",
+        "otpResendReady": "Reenviar código",
+        "otpInvalid": "Código inválido. Tente novamente.",
+        "otpExpired": "Código expirado. Solicite um novo.",
+        "otpUsed": "Código já usado. Solicite um novo.",
+        "passwordChanged": "Senha alterada com sucesso!",
+        "passwordChangeFailed": "Não foi possível alterar a senha. Tente novamente."
+      },
+      "sessions": {
+        "title": "Sessões ativas",
+        "description": "Gerencie os dispositivos conectados à sua conta.",
+        "current": "Sessão atual",
+        "revoke": "Encerrar",
+        "revokeAll": "Encerrar todas as outras",
+        "revokeConfirm": "Tem certeza que deseja encerrar esta sessão?",
+        "revokeAllConfirm": "Tem certeza que deseja encerrar todas as outras sessões?",
+        "device": "Dispositivo: {device}",
+        "location": "Local: {location}",
+        "lastActive": "Ativo há: {time}"
+      },
       "cardBlockUnavailable": "Funcionalidade de bloquear/desbloquear temporariamente indisponível.",
       "kycSubmitFailed": "Falha ao enviar documentos KYC",
       "autoVerificationError": "Erro ao iniciar verificação automática.",
@@ -491,6 +596,8 @@
       "depositSuccess": "Depósito realizado!",
       "depositError": "Erro ao depositar",
       "processingError": "Erro ao processar"
+      ,
+      "phoneRequiredFor2FA": "Cadastre um telefone no Perfil para ativar 2FA por SMS."
     },
     "Profile": {
       "title": "Meu Perfil",
@@ -508,10 +615,16 @@
       "lastName": "Sobrenome",
       "email": "Email",
       "phone": "Telefone",
+      "address": "Endereço",
+      "city": "Cidade",
+      "postalCode": "Código postal",
       "notProvided": "Não cadastrado",
       "country": "País",
       "primaryCurrency": "Moeda Principal",
       "notAvailable": "N/A",
+      "goToSecurity": "Ir para Segurança",
+      "saveProfile": "Salvar",
+      "profileUpdateFailed": "Não foi possível salvar seus dados.",
       "editComingSoon": "Editar (Em breve)"
     },
     "Notifications": {
@@ -587,6 +700,11 @@
       "description": "Tem certeza que deseja remover este cartão? Esta ação não pode ser desfeita.",
       "confirm": "Remover Cartão"
     },
+    "cancelDialog": {
+      "title": "Cancelar Cartão",
+      "description": "Tem certeza que deseja cancelar este cartão? Esta ação é irreversível.",
+      "confirm": "Cancelar cartão"
+    },
     "detailsDialog": {
       "title": "Dados do Cartão",
       "description": "Use estes dados para realizar compras online. Nunca compartilhe com terceiros.",
@@ -605,7 +723,46 @@
       "revealFailed": "Falha ao revelar dados",
       "deleteFailed": "Falha ao excluir cartão"
     },
-    "removeCardAria": "Remover cartão"
+    "EmailCard": {
+      "title": "Cartão por e-mail",
+      "description": "Envie um cartão virtual para um destinatário via e-mail.",
+      "amount": "Valor",
+      "currency": "Moeda",
+      "recipientEmail": "Email do destinatário",
+      "recipientName": "Nome do destinatário (opcional)",
+      "recipientNamePlaceholder": "Nome",
+      "message": "Mensagem para o destinatário (opcional)",
+      "messagePlaceholder": "Escreva uma mensagem curta para o destinatário.",
+      "send": "Enviar",
+      "breakdown": {
+        "youPay": "Você paga",
+        "cardValue": "Valor do cartão"
+      },
+      "success": {
+        "title": "Cartão enviado",
+        "description": "Um cartão virtual foi enviado para {email}.",
+        "transferId": "Transfer ID"
+      },
+      "errors": {
+        "missingEmailAmount": "Preencha email e valor.",
+        "invalidAmount": "Valor inválido.",
+        "messageTooLong": "Mensagem muito longa (máximo 240 caracteres).",
+        "sessionExpired": "Sua sessão expirou. Faça login novamente.",
+        "submitFailed": "Falha ao enviar o cartão. Tente novamente."
+      },
+      "sca": {
+        "required": "Autenticação forte (SCA) necessária para concluir esta transferência.",
+        "requestCode": "Enviar código por e-mail",
+        "codeLabel": "Código de verificação (6 dígitos)",
+        "confirm": "Confirmar e concluir",
+        "codeSent": "Enviamos um código de verificação para o seu e-mail.",
+        "requestFailed": "Falha ao solicitar código de verificação.",
+        "confirmFailed": "Falha ao confirmar o código. Tente novamente.",
+        "invalidFormat": "Informe o código de 6 dígitos."
+      }
+    },
+    "removeCardAria": "Remover cartão",
+    "cardBlockUnavailable": "Bloqueio de cartão indisponível no momento."
   },
   "SecureTransfer": {
     "title": "Global Link (Transferência Segura)",
@@ -795,14 +952,41 @@
     "recommended": "Recomendado",
     "automaticVerification": "Verificação Automática",
     "useStripeIdentity": "Use Stripe Identity para verificação instantânea",
+    "stripeConnectionError": "Não foi possível conectar ao serviço de verificação. Tente novamente ou use o upload manual.",
+    "cameraHttpsHint": "Em dispositivos móveis, a câmera só funciona em conexões seguras (HTTPS).",
+    "verificationRedirecting": "Redirecionando para verificação segura...",
+    "verificationCancelled": "Verificação cancelada. Você pode tentar novamente depois.",
     "startVerification": "Iniciar Verificação",
     "manualVerification": "Verificação Manual",
     "uploadDocuments": "Carregue seus documentos",
-    "documentType": "Tipo de Documento",
+    "country": {
+      "label": "País",
+      "unsupported": "Seu país não é suportado para este método de verificação."
+    },
+    "countries": {
+      "br": "Brasil (BR)",
+      "de": "Alemanha (DE)",
+      "fr": "França (FR)",
+      "lu": "Luxemburgo (LU)",
+      "pt": "Portugal (PT)",
+      "us": "Estados Unidos (US)",
+      "unknown": "Desconhecido ({code})"
+    },
+    "lastFour": {
+      "labelUs": "SSN: últimos 4 dígitos",
+      "labelOther": "Últimos 4 caracteres do documento",
+      "placeholderUs": "1234",
+      "placeholderOther": "A1B2"
+    },
+    "documentType": {
+      "label": "Tipo de documento",
+      "lastFourDigits": "Últimos 4 dígitos"
+    },
     "docTypeIdCard": "Carteira de Identidade (ID Card)",
     "docTypePassport": "Passaporte",
     "docTypeDriverLicense": "Carteira de Motorista",
     "documentNumber": "Número do Documento",
+    "documentNumberPlaceholder": "Ex: 123456789",
     "issuingCountry": "País Emissor",
     "frontImage": "Imagem da Frente",
     "backImage": "Imagem do Verso",
@@ -822,7 +1006,65 @@
     "uploadSelectOrDrop": "Clique para selecionar ou arraste aqui",
     "uploadFormats": "JPG, PNG ou PDF (Max 5MB)",
     "fileSelected": "Arquivo selecionado",
-    "submitForReview": "Enviar para Análise"
+    "submitForReview": "Enviar para Análise",
+    "autoVerificationError": "Não foi possível iniciar a verificação automática.",
+    "documentSendError": "Não foi possível enviar os documentos.",
+    "connectionError": "Erro de conexão.",
+    "errors": {
+      "unsupportedCountry": "Seu país não é suportado para este método de verificação.",
+      "countryLocked": "O país é obtido do seu perfil.",
+      "countryMissing": "Defina seu país no seu perfil antes de iniciar a verificação.",
+      "countryInvalid": "Seu país é inválido. Atualize seu perfil e tente novamente.",
+      "documentTypeNotSupported": "Este tipo de documento não é suportado para o seu país.",
+      "lastFourInvalidUs": "Informe os últimos 4 dígitos do seu SSN.",
+      "lastFourInvalidOther": "Informe os últimos 4 caracteres (letras e números) do seu documento.",
+      "autoVerificationDisabled": "A verificação automática está temporariamente indisponível.",
+      "serviceUnavailable": "O serviço de verificação está temporariamente indisponível."
+    }
+  },
+  "Limits": {
+    "title": "Seu KYC, risco e limites",
+    "subtitle": "Entenda o que você pode fazer hoje e como aumentar seus limites.",
+    "backToDashboard": "Voltar para dashboard",
+    "reload": "Recarregar",
+    "loading": "Carregando…",
+    "error": {
+      "loadFailedTitle": "Não foi possível carregar seus limites",
+      "loadFailedDesc": "Tente novamente.",
+      "retryButton": "Tentar novamente"
+    },
+    "completeKyc": "Completar KYC",
+    "kycTitle": "KYC",
+    "level": "Nível",
+    "status": "Status",
+    "country": "País",
+    "kycNextStep": {
+      "none": "Complete seu KYC para liberar limites.",
+      "basic": "Envie comprovante de endereço para aumentar seus limites.",
+      "advanced": "Finalize a verificação adicional para aumentar seus limites.",
+      "premium": "Você já está no nível máximo de KYC.",
+      "generic": "Complete etapas adicionais para aumentar seus limites."
+    },
+    "riskTitle": "Perfil de risco",
+    "riskTierLabel": "Nível de risco",
+    "riskExplanation": {
+      "low": "Perfil conservador: limites típicos e menos revisões.",
+      "medium": "Perfil moderado: limites podem ser ajustados conforme uso e histórico.",
+      "high": "Perfil de alto risco: limites reduzidos e mais verificações.",
+      "generic": "Limites podem variar conforme seu perfil."
+    },
+    "riskNote": "O nível de risco influencia limites, revisões e requisitos adicionais.",
+    "limitsTitle": "Limites de envio",
+    "limitsDesc": "Valores aplicados ao seu perfil atual.",
+    "limitsUnavailable": "Limites ainda não disponíveis para este perfil.",
+    "perTx": "Por transação",
+    "perDay": "Por dia",
+    "perMonth": "Por mês",
+    "amlTitle": "AML & Segurança",
+    "openCases": "Casos em análise",
+    "highestRisk": "Risco mais alto",
+    "amlNote": "Se detectarmos algo suspeito, suas operações podem entrar em revisão AML.",
+    "viewSecurity": "Ver segurança"
   },
   "Admin": {
     "adminPanel": "Painel Admin (Super User)",

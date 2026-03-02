@@ -3,20 +3,23 @@ import { z } from "zod"
 import { createHandler } from "@/lib/api-handler" 
 import { prisma } from "@/lib/db"
 import { comparePassword } from "@/lib/auth"
-import { SignJWT } from "jose"
+import { createSession, setSessionCookie } from "@/lib/session"
+import { logAudit } from "@/lib/logger"
 
 const loginSchema = z.object({ 
   email: z.string().email(), 
   password: z.string().min(6), 
 }) 
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-change-me';
-
 export const POST = createHandler( 
   loginSchema, 
   async (req) => { 
     const { email, password } = req.validatedBody 
-    const normalizedEmail = email.toLowerCase();
+    const normalizedEmail = email.toLowerCase().trim();
+    const ipAddress = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const userAgent = req.headers.get("user-agent") || "unknown";
+    const method = req.method;
+    const path = req.nextUrl.pathname;
 
     // 1. Find User & Account
     const user = await prisma.user.findUnique({
@@ -25,6 +28,18 @@ export const POST = createHandler(
     });
 
     if (!user) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[login-secure] 401: user not found for email:', normalizedEmail);
+        }
+        logAudit({
+          action: 'LOGIN_FAILURE',
+          status: 'FAILURE',
+          ipAddress,
+          userAgent,
+          method,
+          path,
+          metadata: { email: normalizedEmail, reason: 'USER_NOT_FOUND' },
+        });
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
@@ -32,64 +47,70 @@ export const POST = createHandler(
     const isValid = await comparePassword(password, user.passwordHash);
     
     if (!isValid) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[login-secure] 401: wrong password for email:', normalizedEmail);
+        }
+        logAudit({
+          userId: user.id,
+          action: 'LOGIN_FAILURE',
+          status: 'FAILURE',
+          ipAddress,
+          userAgent,
+          method,
+          path,
+          metadata: { email: normalizedEmail, reason: 'INVALID_PASSWORD' },
+        });
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
     if (!user.emailVerified) {
+        logAudit({
+          userId: user.id,
+          action: 'LOGIN_FAILURE',
+          status: 'FAILURE',
+          ipAddress,
+          userAgent,
+          method,
+          path,
+          metadata: { email: normalizedEmail, reason: 'EMAIL_NOT_VERIFIED' },
+        });
         return NextResponse.json(
             { error: "Email não verificado. Verifique seu email para continuar.", code: "EMAIL_NOT_VERIFIED" },
             { status: 403 }
         );
     }
 
-    // 3. Generate Token (JOSE)
-    // Check if user is admin (hardcoded for now based on env or specific email)
-    const isAdmin = normalizedEmail === (process.env.ADMIN_EMAIL || '').toLowerCase() || normalizedEmail === 'clemergorges@hotmail.com';
-    const role = isAdmin ? 'ADMIN' : 'USER';
-    const accountStatus = user.account?.status || 'UNVERIFIED';
+    // 3. Create Database-Backed Session
+    // The user's role from the database is now the source of truth.
+    const role = user.role;
 
-    const token = await new SignJWT({ 
-        userId: user.id, 
-        email: user.email, 
-        role: role,
-        status: accountStatus
-    })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('24h')
-    .sign(new TextEncoder().encode(JWT_SECRET));
+    const { token, maxAgeSeconds } = await createSession({ id: user.id, role }, ipAddress, userAgent);
 
-    // 4. Create Session Record
-    // Skip session creation for now to rule out DB write lock
-    /*
-    try {
-        await prisma.session.create({
-            data: {
-                userId: user.id,
-                token: token,
-                ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-                userAgent: req.headers.get("user-agent") || "unknown",
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
-            }
-        });
-    } catch (sessionError) {
-        console.error("Session creation failed", sessionError);
-    }
-    */
+    // 4. Set Cookie and Respond
+    const response = NextResponse.json({ success: true, user: { id: user.id, email: user.email, role } });
+    setSessionCookie(response, token, maxAgeSeconds);
 
-    // 5. Set Cookie (HttpOnly)
-    const response = NextResponse.json({ success: true, user: { id: user.id, email: user.email } });
-    response.cookies.set('auth_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 // 1 day
+    // 5. Update lastLoginAt asynchronously (fire and forget)
+    prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() }
+    }).catch(console.error);
+
+    logAudit({
+      userId: user.id,
+      action: 'LOGIN_SUCCESS',
+      status: 'SUCCESS',
+      ipAddress,
+      userAgent,
+      method,
+      path,
+      metadata: { role },
     });
 
     return response;
   }, 
   { 
-    rateLimit: { key: "login", limit: 20, window: 60 * 15 }, // Relaxed rate limit for testing
+    rateLimit: { key: "login", limit: 20, window: 60 * 15 },
     requireAuth: false, 
   }, 
 ) 

@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function checkUser() {
   try {
     console.log('Connecting to DB...');
-    const email = 'clemergorges@hotmail.com';
+    const email = process.env.ADMIN_EMAIL || 'admin@example.com';
     const user = await prisma.user.findUnique({
       where: { email }
     });

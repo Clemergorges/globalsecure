@@ -8,10 +8,13 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-    const email = 'clemergorges@hotmail.com';
-    const password = 'GlobalSecure2026!'; // User provided password
+    const email = process.env.ADMIN_EMAIL || 'admin@example.com';
+    const password = process.env.RESET_PASSWORD;
+    if (!password) {
+        throw new Error('RESET_PASSWORD env var required');
+    }
     
-    console.log(`Updating password for ${email} to ${password}...`);
+    console.log(`Updating password for ${email}...`);
     
     const hash = await bcrypt.hash(password, 10);
 
@@ -23,8 +26,8 @@ async function main() {
         },
         create: {
             email,
-            firstName: 'Clemer',
-            lastName: 'Gorges',
+            firstName: 'Admin',
+            lastName: 'User',
             passwordHash: hash,
             emailVerified: true,
             country: 'BR',

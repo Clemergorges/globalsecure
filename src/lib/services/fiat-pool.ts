@@ -3,6 +3,15 @@ import { getFxRate } from '@/lib/services/fx-engine';
 
 type FiatBalanceRow = { currency: string; amount: { toNumber: () => number } };
 
+function getRegionCurrencies(region: string) {
+  const r = region.trim().toUpperCase();
+  if (r === 'EU') return new Set(['EUR', 'GBP', 'CHF', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF']);
+  if (r === 'US') return new Set(['USD', 'CAD']);
+  if (r === 'BR') return new Set(['BRL', 'USD']);
+  if (r === 'APAC') return new Set(['JPY', 'SGD', 'AUD', 'NZD', 'HKD', 'KRW']);
+  return null;
+}
+
 export async function coverFiatSpend(
   tx: any,
   userId: string,
@@ -11,6 +20,12 @@ export async function coverFiatSpend(
   baseCurrency: string,
 ) {
   let remaining = amount;
+  const user = await tx.user.findUnique({
+    where: { id: userId },
+    select: { travelModeEnabled: true, travelRegion: true },
+  });
+  const regionCurrencies =
+    user?.travelModeEnabled && user.travelRegion ? getRegionCurrencies(user.travelRegion) : null;
   const fxSteps: Array<{
     from: string;
     to: string;
@@ -62,12 +77,14 @@ export async function coverFiatSpend(
           fx,
           value,
           baseFirst: b.currency.toUpperCase() === baseCurrency.toUpperCase(),
+          regionFirst: !!regionCurrencies && regionCurrencies.has(b.currency.toUpperCase()),
         };
       })
       .filter(Boolean) as any,
   );
 
   candidates.sort((a: any, b: any) => {
+    if (a.regionFirst !== b.regionFirst) return a.regionFirst ? -1 : 1;
     if (a.baseFirst !== b.baseFirst) return a.baseFirst ? -1 : 1;
     return b.value - a.value;
   });
@@ -104,4 +121,3 @@ export async function coverFiatSpend(
 
   return { remaining, fxSteps };
 }
-

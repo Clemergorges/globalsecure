@@ -1,85 +1,58 @@
-# GlobalSecureSend — Test Report (Validação Pré-Deploy v1.0.0)
+# GlobalSecureSend — Test Report (Validação Pré-Deploy)
 
-## 📌 Visão Geral
-Relatório de validação técnica executado em **2026-02-15** para o Release Candidate 1.0.0.
-A validação cobriu testes unitários, análise de código estática, build de produção e testes de carga preliminares.
+## 1) Visão Geral
+Relatório de validação técnica executado em **2026-02-28** para o commit **7bf8fb8943a1b10ed45bd9137859a88c5f83eb6f**.
 
-**Ambiente de Execução:** Trae IDE Sandbox (Windows)
-**Versão do Código:** v1.0.0 (Release Candidate)
-**Status Geral:** 🟡 **APROVADO COM RESSALVAS** (Testes de Integração/E2E requerem ambiente de Staging com banco de dados dedicado).
+- Ambiente: Windows (Trae IDE Sandbox)
+- Escopo: checks de qualidade (lint/type), consistência de i18n, testes automatizados e build de produção
+- Status geral: APROVADO
 
----
+## 2) Execuções e Resultado
 
-## ✅ 1. Testes Unitários (Core Logic)
-Objetivo: Validar regras de negócio críticas isoladas (sem dependência de banco de dados).
+### 2.1 Checks de código
+- Lint + Typecheck: PASS (`npm run verify:code`)
+- i18n audit: PASS (`npm run i18n:audit`)
 
-| Suíte de Teste | Status | Testes | Duração | Observações |
-|----------------|--------|--------|---------|-------------|
-| KYC Limits | ✔️ PASS | 20/20 | < 1s | Limites por nível (Basic/Adv/Premium) validados |
-| Register Validation | ✔️ PASS | 5/5 | < 1s | Zod schemas e regras de senha |
-| Document Validation | ✔️ PASS | 4/4 | < 1s | Tipos de documentos aceitos |
-| Country Config | ✔️ PASS | Validado | < 1s | Configurações regionais |
+### 2.2 Testes automatizados
+- Suite completa: PASS (`npm run test:all`)
+- Inclui: unit, integration, e2e, failure
 
-**Resultado:** 100% de Aprovação (29 testes executados).
+### 2.3 Build de produção
+- Build: PASS (`npm run build`)
+- Observação Windows: durante a validação local, o `prisma generate` pode falhar com `EPERM rename query_engine` se existir um processo segurando o binário (ex.: dev server). Reexecutar com o dev server parado.
 
----
+## 3) Cobertura focada (mudanças recentes)
 
-## 🏗️ 2. Build & Static Analysis
-Objetivo: Garantir integridade do código e capacidade de compilação.
+### 3.1 Perfil (dados pessoais)
+- Edição de nome/sobrenome, telefone, endereço e CEP/código postal
+- Validação e normalização no backend:
+  - telefone em E.164 e DDI compatível com o país do usuário
+  - CEP/código postal formatado e validado por país (BR/LU/PT/FR/DE/US)
+- Referências:
+  - UI: [profile/page.tsx](../src/app/dashboard/settings/profile/page.tsx)
+  - API: [user/profile route.ts](../src/app/api/user/profile/route.ts)
+  - Testes: [user.profile-phone.test.ts](../tests/integration/user.profile-phone.test.ts), [user.profile-postalcode.test.ts](../tests/integration/user.profile-postalcode.test.ts)
 
-| Verificação | Status | Detalhes |
-|-------------|--------|----------|
-| Linting (ESLint) | ✔️ PASS | Sem erros (após correções de hooks) |
-| Typechecking (TSC) | ✔️ PASS | Sem erros de tipagem |
-| Next.js Build | ✔️ PASS | Compilação otimizada com sucesso (11.6s) |
+### 3.2 Segurança (2FA e OTP ações sensíveis)
+- UI orienta cadastro de telefone quando o usuário tenta habilitar 2FA sem telefone
+- Alteração de senha exige OTP de ação sensível (request + confirmação)
+- Referências:
+  - UI: [security/page.tsx](../src/app/dashboard/settings/security/page.tsx)
+  - API: [change-password route.ts](../src/app/api/security/change-password/route.ts)
 
----
+### 3.3 KYC / Stripe Identity
+- Criação de sessão Stripe Identity usa `user.country` e valida suporte (BR/LU/US/PT/FR/DE)
+- Auto-sync de status com Stripe (endpoint dedicado + sincronização em `/api/kyc/status` quando pendente)
+- Webhook Stripe atualiza documentos e usuário em eventos Identity
+- Referências:
+  - Endpoints: [stripe-identity route.ts](../src/app/api/kyc/stripe-identity/route.ts), [kyc/status route.ts](../src/app/api/kyc/status/route.ts), [stripe-identity sync route.ts](../src/app/api/kyc/stripe-identity/sync/route.ts)
+  - Webhook: [stripe webhook route.ts](../src/app/api/webhooks/stripe/route.ts)
+  - Testes: [kyc.status-autosync.test.ts](../tests/integration/kyc.status-autosync.test.ts), [kyc.stripe-identity-country.test.ts](../tests/integration/kyc.stripe-identity-country.test.ts), [kyc.stripe-identity-sync.test.ts](../tests/integration/kyc.stripe-identity-sync.test.ts)
 
-## � 3. Teste de Carga (Preliminar)
-Objetivo: Validar disponibilidade e latência do endpoint de Health Check.
+### 3.4 i18n
+- Prevenção de placeholders malformados (double braces) em mensagens
+- Referência: [i18n-messages-placeholders.test.ts](../tests/unit/i18n-messages-placeholders.test.ts)
 
-**Configuração:**
-- Endpoint: `/api/health`
-- Carga: 100 requests, 10 concorrentes (Modo Light)
-- Ambiente: Dev Server Local (conectado a banco remoto Supabase)
-
-**Resultados:**
-| Métrica | Valor | Avaliação |
-|---------|-------|-----------|
-| Taxa de Sucesso | 100% | ✅ Excelente |
-| Erros | 0 | ✅ Excelente |
-| Latência Média | 435ms | ⚠️ Atenção |
-| Latência P95 | 3051ms | 🔴 Crítico (Cold Start?) |
-
-**Análise:**
-A latência alta no P95 sugere "Cold Start" da função ou latência de conexão com o banco de dados remoto (Supabase EU) a partir do ambiente local. Espera-se performance superior (<500ms) quando implantado na Vercel (mesma região do banco).
-
----
-
-## 🔄 4. Testes de Integração e E2E (ACID/Ledger)
-**Status:** ⏸️ **SKIPPED (Requer Staging)**
-
-Os testes abaixo requerem um banco de dados PostgreSQL dedicado e isolado (Docker ou Staging), não disponível no ambiente de sandbox atual. Devem ser executados no pipeline CI/CD antes do merge final.
-
-| Cenário | Status Anterior | Requisito |
-|---------|-----------------|-----------|
-| Depósitos Concorrentes | ✔️ Passou (CI) | Banco Isolado |
-| Double Spend Prevention | ✔️ Passou (CI) | Banco Isolado |
-| Fluxo Completo de Transferência | ✔️ Passou (CI) | Banco Isolado + Stripe Mock |
-
----
-
-## � 5. Plano de Ação Pós-Deploy
-
-1.  **Deploy na Vercel:** Proceder com deploy.
-2.  **Verificação de Domínio:** Testar acesso HTTPS e roteamento.
-3.  **Smoke Test em Produção:**
-    - Criar conta de teste.
-    - Realizar depósito simulado.
-    - Verificar logs no Sentry.
-4.  **Monitoramento:** Acompanhar latência real. Se P95 continuar >1s, investigar queries do banco ou conexão pooling.
-
----
-
-**Assinado:** Trae AI Agent
-**Data:** 15 de Fevereiro de 2026
+## 4) Itens fora do escopo desta validação
+- Testes de carga/pen-test em ambiente de produção/staging
+- Validação de comportamento dependente de credenciais reais (SMTP, Stripe live, storage externo)

@@ -1,40 +1,40 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
-import { checkAdmin } from '@/lib/auth';
 import { z } from 'zod';
+import { UserRole } from '@prisma/client';
+import { requireRole } from '@/lib/rbac';
+import { logAudit } from '@/lib/logger';
 
-export async function GET(req: Request) {
-  try {
-    await checkAdmin();
+export async function GET(req: NextRequest) {
+  const actor = await requireRole(req, [UserRole.ADMIN, UserRole.COMPLIANCE]);
+  if (actor instanceof NextResponse) return actor;
 
-    const url = new URL(req.url);
-    const status = url.searchParams.get('status') || 'PENDING';
-    const riskLevel = url.searchParams.get('riskLevel');
-    const assignedToId = url.searchParams.get('assignedToId');
-    const overdue = url.searchParams.get('overdue') === 'true';
-    const take = Math.min(Number(url.searchParams.get('take') || 50), 200);
+  const url = new URL(req.url);
+  const status = url.searchParams.get('status') || 'PENDING';
+  const riskLevel = url.searchParams.get('riskLevel');
+  const assignedToId = url.searchParams.get('assignedToId');
+  const overdue = url.searchParams.get('overdue') === 'true';
+  const take = Math.min(Number(url.searchParams.get('take') || 50), 200);
 
-    const cases = await prisma.amlReviewCase.findMany({
-      where: {
-        status: status as any,
-        riskLevel: riskLevel ? (riskLevel as any) : undefined,
-        assignedToId: assignedToId || undefined,
-        slaDueAt: overdue ? { lt: new Date() } : undefined,
-      },
-      orderBy: { createdAt: 'desc' },
-      take,
-      include: {
-        user: { select: { email: true, yieldEnabled: true } },
-        notes: { orderBy: { createdAt: 'desc' }, take: 5 },
-        assignedTo: { select: { email: true } },
-        decidedBy: { select: { email: true } },
-      },
-    });
+  const cases = await prisma.amlReviewCase.findMany({
+    where: {
+      status: status as any,
+      riskLevel: riskLevel ? (riskLevel as any) : undefined,
+      assignedToId: assignedToId || undefined,
+      slaDueAt: overdue ? { lt: new Date() } : undefined,
+    },
+    orderBy: { createdAt: 'desc' },
+    take,
+    include: {
+      user: { select: { email: true, yieldEnabled: true } },
+      notes: { orderBy: { createdAt: 'desc' }, take: 5 },
+      assignedTo: { select: { email: true } },
+      decidedBy: { select: { email: true } },
+    },
+  });
 
-    return NextResponse.json({ cases });
-  } catch {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  return NextResponse.json({ cases });
 }
 
 const legacyUpdateSchema = z.object({
@@ -66,115 +66,127 @@ const actionSchema = z.discriminatedUnion('action', [
   }),
 ]);
 
-export async function POST(req: Request) {
-  try {
-    const admin = await checkAdmin();
-    const body = await req.json();
-    const actionParsed = actionSchema.safeParse(body);
-    if (actionParsed.success) {
-      const data = actionParsed.data;
+export async function POST(req: NextRequest) {
+  const actor = await requireRole(req, [UserRole.ADMIN, UserRole.COMPLIANCE]);
+  if (actor instanceof NextResponse) return actor;
+  const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+  const userAgent = req.headers.get('user-agent') || 'unknown';
+  const method = req.method;
+  const path = req.nextUrl.pathname;
 
-      if (data.action === 'ASSIGN') {
-        const updated = await prisma.amlReviewCase.update({
-          where: { id: data.id },
-          data: {
-            assignedToId: data.assignedToId,
-            status: data.assignedToId ? 'IN_REVIEW' : undefined,
-          },
-        });
+  const body = await req.json();
+  const actionParsed = actionSchema.safeParse(body);
+  if (actionParsed.success) {
+    const data = actionParsed.data;
 
-        await prisma.auditLog.create({
-          data: {
-            action: 'AML_CASE_ASSIGN',
-            userId: admin.userId,
-            status: 'SUCCESS',
-            metadata: { caseId: updated.id, targetUserId: updated.userId, assignedToId: data.assignedToId },
-          },
-        });
+    if (data.action === 'ASSIGN') {
+      const updated = await prisma.amlReviewCase.update({
+        where: { id: data.id },
+        data: {
+          assignedToId: data.assignedToId,
+          status: data.assignedToId ? 'IN_REVIEW' : undefined,
+        },
+      });
 
-        return NextResponse.json({ success: true, case: updated });
-      }
+      logAudit({
+        action: 'AML_CASE_ASSIGN',
+        userId: actor.userId,
+        status: 'SUCCESS',
+        ipAddress,
+        userAgent,
+        method,
+        path,
+        metadata: { caseId: updated.id, targetUserId: updated.userId, assignedToId: data.assignedToId },
+      });
 
-      if (data.action === 'ADD_NOTE') {
-        const note = await prisma.amlReviewNote.create({
-          data: { caseId: data.id, authorId: admin.userId, body: data.body },
-        });
-
-        await prisma.auditLog.create({
-          data: {
-            action: 'AML_CASE_NOTE',
-            userId: admin.userId,
-            status: 'SUCCESS',
-            metadata: { caseId: data.id, noteId: note.id },
-          },
-        });
-
-        return NextResponse.json({ success: true, note });
-      }
-
-      if (data.action === 'DECIDE') {
-        const mappedStatus = data.decision === 'CLEAR' ? 'CLEARED' : 'BLOCKED';
-        const updated = await prisma.amlReviewCase.update({
-          where: { id: data.id },
-          data: {
-            status: mappedStatus,
-            decision: data.decision,
-            decidedAt: new Date(),
-            decidedById: admin.userId,
-            decisionNote: data.decisionNote || null,
-          },
-        });
-
-        await prisma.auditLog.create({
-          data: {
-            action: 'AML_CASE_DECISION',
-            userId: admin.userId,
-            status: 'SUCCESS',
-            metadata: { caseId: updated.id, targetUserId: updated.userId, decision: data.decision, status: mappedStatus },
-          },
-        });
-
-        return NextResponse.json({ success: true, case: updated });
-      }
-
-      if (data.action === 'SET_STATUS') {
-        const updated = await prisma.amlReviewCase.update({
-          where: { id: data.id },
-          data: { status: data.status },
-        });
-
-        await prisma.auditLog.create({
-          data: {
-            action: 'AML_CASE_STATUS',
-            userId: admin.userId,
-            status: 'SUCCESS',
-            metadata: { caseId: updated.id, targetUserId: updated.userId, status: data.status },
-          },
-        });
-
-        return NextResponse.json({ success: true, case: updated });
-      }
+      return NextResponse.json({ success: true, case: updated });
     }
 
-    const legacyParsed = legacyUpdateSchema.safeParse(body);
-    if (!legacyParsed.success) return NextResponse.json({ error: 'Validation Error' }, { status: 400 });
+    if (data.action === 'ADD_NOTE') {
+      const note = await prisma.amlReviewNote.create({
+        data: { caseId: data.id, authorId: actor.userId, body: data.body },
+      });
 
-    const updated = await prisma.amlReviewCase.update({
-      where: { id: legacyParsed.data.id },
-      data: { status: legacyParsed.data.status },
-    });
-
-    await prisma.auditLog.create({
-      data: {
-        action: 'AML_CASE_STATUS',
-        userId: admin.userId,
+      logAudit({
+        action: 'AML_CASE_NOTE',
+        userId: actor.userId,
         status: 'SUCCESS',
-        metadata: { caseId: updated.id, targetUserId: updated.userId, status: legacyParsed.data.status, legacy: true },
-      },
-    });
+        ipAddress,
+        userAgent,
+        method,
+        path,
+        metadata: { caseId: data.id, noteId: note.id },
+      });
 
-    return NextResponse.json({ success: true, case: updated });
-  } catch {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ success: true, note });
+    }
+
+    if (data.action === 'DECIDE') {
+      const mappedStatus = data.decision === 'CLEAR' ? 'CLEARED' : 'BLOCKED';
+      const updated = await prisma.amlReviewCase.update({
+        where: { id: data.id },
+        data: {
+          status: mappedStatus,
+          decision: data.decision,
+          decidedAt: new Date(),
+          decidedById: actor.userId,
+          decisionNote: data.decisionNote || null,
+        },
+      });
+
+      logAudit({
+        action: 'AML_CASE_DECISION',
+        userId: actor.userId,
+        status: 'SUCCESS',
+        ipAddress,
+        userAgent,
+        method,
+        path,
+        metadata: { caseId: updated.id, targetUserId: updated.userId, decision: data.decision, status: mappedStatus },
+      });
+
+      return NextResponse.json({ success: true, case: updated });
+    }
+
+    if (data.action === 'SET_STATUS') {
+      const updated = await prisma.amlReviewCase.update({
+        where: { id: data.id },
+        data: { status: data.status },
+      });
+
+      logAudit({
+        action: 'AML_CASE_STATUS',
+        userId: actor.userId,
+        status: 'SUCCESS',
+        ipAddress,
+        userAgent,
+        method,
+        path,
+        metadata: { caseId: updated.id, targetUserId: updated.userId, status: data.status },
+      });
+
+      return NextResponse.json({ success: true, case: updated });
+    }
   }
+
+  const legacyParsed = legacyUpdateSchema.safeParse(body);
+  if (!legacyParsed.success) return NextResponse.json({ error: 'Validation Error' }, { status: 400 });
+
+  const updated = await prisma.amlReviewCase.update({
+    where: { id: legacyParsed.data.id },
+    data: { status: legacyParsed.data.status },
+  });
+
+  logAudit({
+    action: 'AML_CASE_STATUS',
+    userId: actor.userId,
+    status: 'SUCCESS',
+    ipAddress,
+    userAgent,
+    method,
+    path,
+    metadata: { caseId: updated.id, targetUserId: updated.userId, status: legacyParsed.data.status, legacy: true },
+  });
+
+  return NextResponse.json({ success: true, case: updated });
 }

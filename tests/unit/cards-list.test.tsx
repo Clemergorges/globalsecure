@@ -13,10 +13,6 @@ jest.mock('next/navigation', () => ({
   }),
 }));
 
-jest.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
-}));
-
 jest.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
     toast: jest.fn(),

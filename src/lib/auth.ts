@@ -1,95 +1,73 @@
 import { NextRequest } from 'next/server';
-import { cookies } from 'next/headers';
-import * as jose from 'jose';
-import { prisma } from '@/lib/db';
+import { headers, cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
+import { validateTokenValue, validateSession } from '@/lib/session';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-change-me';
-
-// --- New Helper for API Handler ---
-export async function extractUserId(req: NextRequest): Promise<string | undefined> {
-  // 1. Try Authorization Header (Bearer)
-  const authHeader = req.headers.get('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.slice(7);
-    try {
-      const { payload } = await jose.jwtVerify(
-        token,
-        new TextEncoder().encode(JWT_SECRET)
-      );
-      return payload.userId as string;
-    } catch {
-      // Invalid token in header, try cookie
-    }
-  }
-
-  // 2. Try Cookie (auth_token)
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token')?.value;
-
-  if (token) {
-    try {
-      const { payload } = await jose.jwtVerify(
-        token,
-        new TextEncoder().encode(JWT_SECRET)
-      );
-      return payload.userId as string;
-    } catch {
-      return undefined;
-    }
-  }
-  
-  return undefined;
-}
-// ----------------------------------
-
+/**
+ * Gets the current user session from the request headers.
+ * The middleware is responsible for validating the session and attaching user data.
+ * This function is a simple, fast reader for that data in Server Components and API Routes.
+ * @returns The session object or null if not authenticated.
+ */
 export async function getSession() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth_token')?.value;
+  const headersList = await headers();
+  const headerUserId = headersList.get('x-user-id');
+  const headerRole = headersList.get('x-user-role');
+  const headerEmail = headersList.get('x-user-email');
+  const headerSessionId = headersList.get('x-session-id');
 
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const { payload } = await jose.jwtVerify(
-      token,
-      new TextEncoder().encode(JWT_SECRET)
-    );
-
-    // Bypass DB session check for now to prevent loop if DB is locked/slow
-    /*
-    // Verify session in DB for extra security (revocation check)
-    const session = await prisma.session.findFirst({
-      where: { token },
-    });
-
-    if (!session) {
-      return null;
-    }
-
-    if (new Date() > session.expiresAt) {
-      return null;
-    }
-    */
-
+  if (headerUserId) {
     return {
-      userId: payload.userId as string,
-      email: payload.email as string,
-      role: payload.role as string,
-      isAdmin: payload.role === 'ADMIN',
+      userId: headerUserId,
+      email: headerEmail || '',
+      role: headerRole || 'END_USER',
+      isAdmin: headerRole === 'ADMIN',
+      sessionId: headerSessionId || undefined,
     };
-  } catch (error) {
+  }
+
+  const cookieStore = await cookies();
+  const tokenValue = cookieStore.get('auth_token')?.value;
+
+  if (!tokenValue) {
     return null;
   }
+
+  const requestUserAgent = headersList.get('user-agent');
+  const session = await validateTokenValue(tokenValue, requestUserAgent);
+  if (!session) return null;
+
+  return {
+    userId: session.userId,
+    email: session.email || '',
+    role: session.role || 'END_USER',
+    isAdmin: session.role === 'ADMIN',
+    sessionId: session.sessionId,
+  };
 }
 
+/**
+ * A utility function to ensure a session exists, throwing an error if not.
+ * Useful for protecting API routes and server-side logic.
+ */
 export async function checkAuth() {
   const session = await getSession();
   if (!session) {
+    // This will be caught by a higher-level error boundary.
     throw new Error('Unauthorized');
   }
   return session;
+}
+
+/**
+ * A utility function to ensure the user has ADMIN role.
+ */
+export async function checkAdmin() {
+    const session = await getSession();
+    if (!session || !session.isAdmin) {
+      throw new Error('Forbidden: Admin access required');
+    }
+    return session;
 }
 
 export async function hashPassword(password: string) {
@@ -100,10 +78,17 @@ export async function comparePassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
-export async function checkAdmin() {
-  const session = await getSession();
-  if (!session || !session.isAdmin) {
-    throw new Error('Forbidden');
-  }
-  return session;
+/**
+ * DEPRECATED - The middleware is the source of truth.
+ * This function might be useful for scenarios outside the middleware flow,
+ * but getSession() should be preferred.
+ * @param req 
+ * @returns 
+ */
+export async function extractUserId(req: NextRequest): Promise<string | undefined> {
+  const headerUserId = req.headers.get('x-user-id');
+  if (headerUserId) return headerUserId;
+
+  const session = await validateSession(req);
+  return session?.userId || undefined;
 }

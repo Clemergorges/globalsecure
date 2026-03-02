@@ -1,5 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../setup/prisma';
+import { createSession } from '@/lib/session';
+import { UserRole } from '@prisma/client';
+import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/auth', () => ({
   getSession: jest.fn(),
@@ -20,11 +23,12 @@ describe('Phase 3 endpoints and jobs', () => {
   const adminId = 'admin';
 
   beforeAll(async () => {
+    await prisma.marketGuard.deleteMany({});
     process.env.YIELD_SPENDING_ENABLED = 'true';
     await prisma.user.upsert({
       where: { id: adminId },
       update: {},
-      create: { id: adminId, email: 'admin@test.com', passwordHash: 'hash', firstName: 'Admin', lastName: 'Test', emailVerified: true },
+      create: { id: adminId, email: 'admin@test.com', passwordHash: 'hash', firstName: 'Admin', lastName: 'Test', emailVerified: true, role: 'ADMIN' },
       select: { id: true },
     });
     await prisma.fxRate.upsert({
@@ -35,6 +39,7 @@ describe('Phase 3 endpoints and jobs', () => {
   });
 
   afterAll(async () => {
+    await prisma.session.deleteMany({ where: { userId: adminId } });
     await prisma.user.deleteMany({ where: { id: adminId } });
   });
 
@@ -130,18 +135,22 @@ describe('Phase 3 endpoints and jobs', () => {
       select: { id: true },
     });
 
-    (checkAdmin as unknown as jest.Mock).mockResolvedValue({ userId: adminId, email: 'admin@test.com', role: 'ADMIN', isAdmin: true });
+    const { token } = await createSession({ id: adminId, role: UserRole.ADMIN }, '127.0.0.1', 'jest-agent');
 
-    const res = await amlQueueGet(new Request('http://localhost/api/admin/aml/review-queue?status=PENDING&take=50'));
+    const res = await amlQueueGet(
+      new NextRequest('http://localhost/api/admin/aml/review-queue?status=PENDING&take=50', {
+        headers: { cookie: `auth_token=${token}`, 'user-agent': 'jest-agent' },
+      }) as any,
+    );
     const body = await res.json();
     expect(body.cases.some((c: any) => c.id === created.id)).toBe(true);
 
     const res2 = await amlQueuePost(
-      new Request('http://localhost/api/admin/aml/review-queue', {
+      new NextRequest('http://localhost/api/admin/aml/review-queue', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', cookie: `auth_token=${token}`, 'user-agent': 'jest-agent' },
         body: JSON.stringify({ id: created.id, status: 'CLEARED' }),
-      }),
+      }) as any,
     );
     const body2 = await res2.json();
     expect(body2.success).toBe(true);

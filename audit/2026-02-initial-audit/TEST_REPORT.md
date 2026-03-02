@@ -25,9 +25,9 @@ Objetivo: garantir atomicidade, consistência, isolamento e durabilidade em oper
 | Double Spend Prevention | ✔️ Passou |
 
 Referências:
-- [double-spend.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/ledger/double-spend.test.ts)
-- [acid-consistency.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/ledger/acid-consistency.test.ts)
-- [transactions route](file:///c:/GlobalSecure2026!/globalsecuresend/app/api/transactions/route.ts)
+- [double-spend.test.ts](../../tests/ledger/double-spend.test.ts)
+- [acid-consistency.test.ts](../../tests/ledger/acid-consistency.test.ts)
+- [transactions route](../../src/app/api/transactions/route.ts)
 
 Conclusão: o ledger mantém integridade mesmo sob carga concorrente.
 
@@ -43,9 +43,9 @@ Conclusão: o ledger mantém integridade mesmo sob carga concorrente.
 | Session expiration | ✔️ Passou |
 
 Referências:
-- [kyc-guards.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/compliance/kyc-guards.test.ts)
-- [security routes](file:///c:/GlobalSecure2026!/globalsecuresend/app/api/security/sessions/route.ts)
-- [kyc-limits service](file:///c:/GlobalSecure2026!/globalsecuresend/lib/services/kyc-limits.ts)
+- [kyc-guards.test.ts](../../tests/compliance/kyc-guards.test.ts)
+- [security routes](../../src/app/api/security/sessions/route.ts)
+- [kyc-limits service](../../src/lib/services/kyc-limits.ts)
 
 ---
 
@@ -59,9 +59,9 @@ Referências:
 | Ledger final consistente | ✔️ Passou |
 
 Referências:
-- [deposits.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/e2e/deposits.test.ts)
-- [transfers.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/e2e/transfers.test.ts)
-- [audit.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/e2e/audit.test.ts)
+- [deposits.test.ts](../../tests/e2e/deposits.test.ts)
+- [transfers.test.ts](../../tests/e2e/transfers.test.ts)
+- [audit.test.ts](../../tests/e2e/audit.test.ts)
 
 ---
 
@@ -78,11 +78,11 @@ Referências:
 | KYC acima do limite | ✔️ Bloqueado |
 
 Referências:
-- [resilience.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/failure/resilience.test.ts)
-- [webhook-failure.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/failure/webhook-failure.test.ts)
-- [network-failure.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/failure/network-failure.test.ts)
-- [Stripe webhook](file:///c:/GlobalSecure2026!/globalsecuresend/app/api/webhooks/stripe/route.ts)
-- [Crypto webhook USDT](file:///c:/GlobalSecure2026!/globalsecuresend/app/api/webhooks/crypto/usdt/route.ts)
+- [resilience.test.ts](../../tests/failure/resilience.test.ts)
+- [webhook-failure.test.ts](../../tests/failure/webhook-failure.test.ts)
+- [network-failure.test.ts](../../tests/failure/network-failure.test.ts)
+- [Stripe webhook](../../src/app/api/webhooks/stripe/route.ts)
+- [Crypto webhook USDT](../../src/app/api/webhooks/crypto/usdt/route.ts)
 
 ---
 
@@ -93,7 +93,7 @@ Referências:
 - Logs exportáveis para auditoria
 
 Referência:
-- Workflow CI: [ci.yml](file:///c:/GlobalSecure2026!/globalsecuresend/.github/workflows/ci.yml)
+- Workflow CI: [ci.yml](../../.github/workflows/ci.yml)
 
 Screenshots do CI:
 - Acessar GitHub Actions → Workflow “CI - GlobalSecureSend” → Run logs

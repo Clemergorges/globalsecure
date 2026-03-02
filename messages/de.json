@@ -6,7 +6,50 @@
     "back": "Zurück",
     "next": "Weiter",
     "loading": "Laden...",
-    "error": "Fehler"
+    "error": "Fehler",
+    "disclaimer": {
+      "tax": "Steuern und steuerliche Pflichten liegen in der Verantwortung des Nutzers. GSS stellt Kontoauszüge und Berichte zur Unterstützung der Erklärung bereit, ersetzt jedoch keinen Steuerberater oder Buchhalter."
+    }
+  },
+  "CardEmail": {
+    "View": {
+      "title": "Ihre GlobalSecure-Karte",
+      "subtitle": "Saldo und letzte Ausgaben ansehen, ohne ein Konto zu erstellen.",
+      "balanceInitial": "Anfangssaldo",
+      "balanceAvailable": "Verfügbarer Saldo",
+      "transactionsTitle": "Transaktionen",
+      "emptyTransactions": "Noch keine Transaktionen.",
+      "merchantUnknown": "Unbekannter Händler",
+      "note": "Prepaid-Virtuelle Karte. Kein Bankkonto erforderlich.",
+      "error": {
+        "invalidOrExpired": "Ungültiger oder abgelaufener Link.",
+        "generic": "Kartendaten konnten nicht geladen werden. Bitte erneut versuchen."
+      },
+      "otp": {
+        "title": "Zugangscode erforderlich",
+        "description": "Geben Sie den Zugangscode mit 6 Zeichen ein, um fortzufahren.",
+        "label": "Zugangscode",
+        "placeholder": "123456",
+        "submit": "Weiter",
+        "submitting": "Wird geprüft...",
+        "invalid": "Ungültiges Code-Format.",
+        "failed": "Ungültiger Code oder Link abgelaufen."
+      }
+    }
+  },
+  "Incidents": {
+    "treasuryHalt": {
+      "title": "Vorübergehende Serviceeinschränkung",
+      "description": "Ein- und Auszahlungen können vorübergehend nicht verfügbar sein. Bitte später erneut versuchen."
+    },
+    "yieldPaused": {
+      "title": "Yield vorübergehend pausiert",
+      "description": "Neue Yield-Allokationen sind vorübergehend nicht verfügbar. Bestehende Positionen sind nicht betroffen."
+    },
+    "partnerOutage": {
+      "title": "Vorübergehende Service-Störung",
+      "description": "Einige Funktionen können vorübergehend nicht verfügbar sein. Bitte später erneut versuchen."
+    }
   },
   "Register": {
     "title": "Konto erstellen",
@@ -76,6 +119,37 @@
       "loginFailed": "Anmeldung fehlgeschlagen"
     }
   },
+  "ForgotPassword": {
+    "title": "Passwort vergessen?",
+    "subtitle": "Geben Sie Ihre E-Mail ein, wir senden Anweisungen zum Zurücksetzen",
+    "email": "E-Mail",
+    "emailPlaceholder": "name@beispiel.de",
+    "submit": "Anweisungen senden",
+    "submitting": "Senden...",
+    "success": "Falls die E-Mail existiert, senden wir Anweisungen.",
+    "backToLogin": "Zurück zur Anmeldung",
+    "errors": {
+      "sendFailed": "E-Mail konnte nicht gesendet werden. Bitte erneut versuchen."
+    }
+  },
+  "ResetPassword": {
+    "title": "Passwort zurücksetzen",
+    "subtitle": "Geben Sie Ihr neues Passwort ein",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Neues Passwort bestätigen",
+    "passwordPlaceholder": "••••••••",
+    "passwordRequirements": "Mindestens 8 Zeichen, einschließlich Groß-/Kleinbuchstaben, Zahl und Sonderzeichen",
+    "submit": "Passwort zurücksetzen",
+    "submitting": "Wird zurückgesetzt...",
+    "success": "Passwort erfolgreich zurückgesetzt!",
+    "backToLogin": "Zurück zur Anmeldung",
+    "invalidToken": "Ungültiger oder fehlender Token",
+    "passwordMismatch": "Passwörter stimmen nicht überein",
+    "errors": {
+      "resetFailed": "Passwort konnte nicht zurückgesetzt werden. Bitte erneut versuchen.",
+      "invalidToken": "Ungültiger oder abgelaufener Token"
+    }
+  },
   "VerifyEmail": {
     "title": "E-Mail bestätigen",
     "missingEmail": "Bitte E-Mail eingeben, um fortzufahren.",
@@ -129,9 +203,11 @@
       "transactions": "Transaktionen",
       "send": "Geld senden",
       "cards": "Karten",
+      "limits": "Limits",
       "history": "Verlauf",
       "security": "Sicherheit",
       "settings": "Einstellungen",
+      "profile": "Profil",
       "support": "Support",
       "admin": "Admin",
       "logout": "Abmelden"
@@ -190,6 +266,12 @@
         "INSUFFICIENT_FUNDS": "Unzureichendes Guthaben",
         "SENDER_NOT_FOUND": "Absenderkonto nicht gefunden",
         "INVALID_AMOUNT": "Bitte gültigen Betrag eingeben",
+        "JURISDICTION_NOT_SUPPORTED": "Dieser Service ist in Ihrem Land nicht verfügbar.",
+        "KYC_LEVEL_2_REQUIRED": "Für diese Überweisung ist eine zusätzliche Verifizierung erforderlich.",
+        "YIELD_KILL_SWITCH": "Yield ist vorübergehend nicht verfügbar.",
+        "YIELD_EXPOSURE_LIMIT": "Yield ist vorübergehend nicht verfügbar.",
+        "PARTNER_TEMPORARILY_UNAVAILABLE": "Service vorübergehend nicht verfügbar. Bitte später erneut versuchen.",
+        "TREASURY_HALT_DEPOSITS_WITHDRAWS": "Service vorübergehend nicht verfügbar. Bitte später erneut versuchen.",
         "INTERNAL_SERVER_ERROR": "Interner Serverfehler",
         "submitFailed": "Überweisung fehlgeschlagen"
       }
@@ -490,6 +572,30 @@
       "errorVerifyingCode": "Ungültiger Code",
       "errorDisconnecting": "Fehler beim Trennen",
       "passwordChangedSuccessfully": "Passwort erfolgreich aktualisiert.",
+      "passwordChange": {
+        "requestingOtp": "Sicherheitscode wird an {email} gesendet...",
+        "enterOtp": "Geben Sie den 6-stelligen Code ein, der an Ihre E-Mail gesendet wurde",
+        "otpResend": "Code erneut senden ({seconds}s)",
+        "otpResendReady": "Code erneut senden",
+        "otpInvalid": "Ungültiger Code. Bitte erneut versuchen.",
+        "otpExpired": "Code abgelaufen. Bitte einen neuen anfordern.",
+        "otpUsed": "Code bereits verwendet. Bitte einen neuen anfordern.",
+        "passwordChanged": "Passwort erfolgreich geändert!",
+        "passwordChangeFailed": "Passwort konnte nicht geändert werden. Bitte erneut versuchen."
+      },
+      "sessions": {
+        "title": "Aktive Sitzungen",
+        "description": "Verwalten Sie die mit Ihrem Konto verbundenen Geräte.",
+        "current": "Aktuelle Sitzung",
+        "revoke": "Beenden",
+        "revokeAll": "Alle anderen beenden",
+        "revokeConfirm": "Möchten Sie diese Sitzung wirklich beenden?",
+        "revokeAllConfirm": "Möchten Sie wirklich alle anderen Sitzungen beenden?",
+        "device": "Gerät: {device}",
+        "location": "Ort: {location}",
+        "lastActive": "Aktiv seit: {time}"
+      },
+      "phoneRequiredFor2FA": "Fügen Sie im Profil eine Telefonnummer hinzu, um SMS-2FA zu aktivieren.",
       "connectionError": "Verbindungsfehler."
     },
     "Profile": {
@@ -508,10 +614,16 @@
       "lastName": "Nachname",
       "email": "E-Mail",
       "phone": "Telefon",
+      "address": "Adresse",
+      "city": "Stadt",
+      "postalCode": "Postleitzahl",
       "notProvided": "Nicht angegeben",
       "country": "Land",
       "primaryCurrency": "Hauptwährung",
       "notAvailable": "N/A",
+      "goToSecurity": "Zu Sicherheit",
+      "saveProfile": "Speichern",
+      "profileUpdateFailed": "Ihre Angaben konnten nicht gespeichert werden.",
       "editComingSoon": "Bearbeiten (demnächst)"
     },
     "Notifications": {
@@ -587,6 +699,11 @@
       "description": "Möchten Sie diese Karte wirklich entfernen? Diese Aktion kann nicht rückgängig gemacht werden.",
       "confirm": "Karte entfernen"
     },
+    "cancelDialog": {
+      "title": "Karte stornieren",
+      "description": "Sind Sie sicher, dass Sie diese Karte stornieren möchten? Diese Aktion ist unwiderruflich.",
+      "confirm": "Karte stornieren"
+    },
     "detailsDialog": {
       "title": "Kartendaten",
       "description": "Nutzen Sie diese Daten für Online-Zahlungen. Teilen Sie sie niemals.",
@@ -605,7 +722,46 @@
       "revealFailed": "Kartendaten konnten nicht angezeigt werden",
       "deleteFailed": "Karte konnte nicht gelöscht werden"
     },
-    "removeCardAria": "Karte entfernen"
+    "EmailCard": {
+      "title": "Karte per E-Mail",
+      "description": "Senden Sie eine virtuelle Karte per E-Mail an einen Empfänger.",
+      "amount": "Betrag",
+      "currency": "Währung",
+      "recipientEmail": "E-Mail des Empfängers",
+      "recipientName": "Name des Empfängers (optional)",
+      "recipientNamePlaceholder": "Name",
+      "message": "Nachricht an den Empfänger (optional)",
+      "messagePlaceholder": "Schreiben Sie eine kurze Nachricht an den Empfänger.",
+      "send": "Senden",
+      "breakdown": {
+        "youPay": "Sie zahlen",
+        "cardValue": "Kartenwert"
+      },
+      "success": {
+        "title": "Karte gesendet",
+        "description": "Eine virtuelle Karte wurde an {email} gesendet.",
+        "transferId": "Transfer ID"
+      },
+      "errors": {
+        "missingEmailAmount": "E-Mail und Betrag sind erforderlich.",
+        "invalidAmount": "Ungültiger Betrag.",
+        "messageTooLong": "Nachricht zu lang (max. 240 Zeichen).",
+        "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+        "submitFailed": "Karte konnte nicht gesendet werden. Bitte erneut versuchen."
+      },
+      "sca": {
+        "required": "Starke Kundenauthentifizierung (SCA) ist erforderlich, um diese Überweisung abzuschließen.",
+        "requestCode": "Code per E-Mail senden",
+        "codeLabel": "Bestätigungscode (6 Ziffern)",
+        "confirm": "Bestätigen und abschließen",
+        "codeSent": "Wir haben einen Bestätigungscode an Ihre E-Mail gesendet.",
+        "requestFailed": "Bestätigungscode konnte nicht angefordert werden.",
+        "confirmFailed": "Code konnte nicht bestätigt werden. Bitte erneut versuchen.",
+        "invalidFormat": "Geben Sie den 6-stelligen Code ein."
+      }
+    },
+    "removeCardAria": "Karte entfernen",
+    "cardBlockUnavailable": "Kartenblockierung derzeit nicht verfügbar."
   },
   "SecureTransfer": {
     "title": "Global Link (sichere Überweisung)",
@@ -795,14 +951,40 @@
     "recommended": "Empfohlen",
     "automaticVerification": "Automatische Verifizierung",
     "useStripeIdentity": "Stripe Identity für eine sofortige Verifizierung verwenden",
+    "cameraHttpsHint": "Auf Mobilgeräten funktioniert die Kamera nur über sichere Verbindungen (HTTPS).",
+    "verificationRedirecting": "Weiterleitung zur sicheren Verifizierung...",
+    "verificationCancelled": "Verifizierung abgebrochen. Sie können es später erneut versuchen.",
     "startVerification": "Verifizierung starten",
     "manualVerification": "Manuelle Verifizierung",
     "uploadDocuments": "Dokumente hochladen",
-    "documentType": "Dokumenttyp",
+    "country": {
+      "label": "Land",
+      "unsupported": "Ihr Land wird für diese Verifizierungsmethode nicht unterstützt."
+    },
+    "countries": {
+      "br": "Brasilien (BR)",
+      "de": "Deutschland (DE)",
+      "fr": "Frankreich (FR)",
+      "lu": "Luxemburg (LU)",
+      "pt": "Portugal (PT)",
+      "us": "Vereinigte Staaten (US)",
+      "unknown": "Unbekannt ({code})"
+    },
+    "lastFour": {
+      "labelUs": "SSN: letzte 4 Ziffern",
+      "labelOther": "Letzte 4 Zeichen des Dokuments",
+      "placeholderUs": "1234",
+      "placeholderOther": "A1B2"
+    },
+    "documentType": {
+      "label": "Dokumenttyp",
+      "lastFourDigits": "Letzte 4 Ziffern"
+    },
     "docTypeIdCard": "Personalausweis",
     "docTypePassport": "Reisepass",
     "docTypeDriverLicense": "Führerschein",
     "documentNumber": "Dokumentnummer",
+    "documentNumberPlaceholder": "z. B. 123456789",
     "issuingCountry": "Ausstellungsland",
     "frontImage": "Vorderseite",
     "backImage": "Rückseite",
@@ -824,9 +1006,64 @@
     "fileSelected": "Datei ausgewählt",
     "submitForReview": "Zur Prüfung senden",
     "autoVerificationError": "Automatische Verifizierung konnte nicht gestartet werden.",
-    "stripeConnectionError": "Verbindung zu Stripe Identity fehlgeschlagen.",
+    "stripeConnectionError": "Verbindung zum Verifizierungsdienst nicht möglich. Bitte erneut versuchen oder manuell hochladen.",
+    "errors": {
+      "unsupportedCountry": "Ihr Land wird für diese Verifizierungsmethode nicht unterstützt.",
+      "countryLocked": "Das Land wird aus Ihrem Profil übernommen.",
+      "countryMissing": "Bitte legen Sie Ihr Land in Ihrem Profil fest, bevor Sie die Verifizierung starten.",
+      "countryInvalid": "Ihr Land ist ungültig. Aktualisieren Sie Ihr Profil und versuchen Sie es erneut.",
+      "documentTypeNotSupported": "Dieser Dokumenttyp wird für Ihr Land nicht unterstützt.",
+      "lastFourInvalidUs": "Geben Sie die letzten 4 Ziffern Ihrer SSN ein.",
+      "lastFourInvalidOther": "Geben Sie die letzten 4 Zeichen (Buchstaben und Zahlen) Ihres Dokuments ein.",
+      "autoVerificationDisabled": "Die automatische Verifizierung ist vorübergehend nicht verfügbar.",
+      "serviceUnavailable": "Der Verifizierungsdienst ist vorübergehend nicht verfügbar."
+    },
     "documentSendError": "Dokumente konnten nicht gesendet werden.",
     "connectionError": "Verbindungsfehler."
+  },
+  "Limits": {
+    "title": "Ihr KYC, Risiko und Limits",
+    "subtitle": "Verstehen Sie, was Sie heute tun können und wie Sie Ihre Limits erhöhen.",
+    "backToDashboard": "Zurück zum Dashboard",
+    "reload": "Neu laden",
+    "loading": "Wird geladen…",
+    "error": {
+      "loadFailedTitle": "Ihre Limits konnten nicht geladen werden",
+      "loadFailedDesc": "Bitte erneut versuchen.",
+      "retryButton": "Erneut versuchen"
+    },
+    "completeKyc": "KYC abschließen",
+    "kycTitle": "KYC",
+    "level": "Level",
+    "status": "Status",
+    "country": "Land",
+    "kycNextStep": {
+      "none": "Schließen Sie Ihr KYC ab, um Limits freizuschalten.",
+      "basic": "Senden Sie einen Adressnachweis, um Ihre Limits zu erhöhen.",
+      "advanced": "Schließen Sie die zusätzliche Verifizierung ab, um Ihre Limits zu erhöhen.",
+      "premium": "Sie sind bereits auf dem höchsten KYC-Level.",
+      "generic": "Schließen Sie zusätzliche Schritte ab, um Ihre Limits zu erhöhen."
+    },
+    "riskTitle": "Risikoprofil",
+    "riskTierLabel": "Risikostufe",
+    "riskExplanation": {
+      "low": "Konservatives Profil: typische Limits und weniger Prüfungen.",
+      "medium": "Moderates Profil: Limits können je nach Nutzung und Historie angepasst werden.",
+      "high": "Hochrisikoprofil: reduzierte Limits und mehr Prüfungen.",
+      "generic": "Limits können je nach Profil variieren."
+    },
+    "riskNote": "Die Risikostufe beeinflusst Limits, Prüfungen und zusätzliche Anforderungen.",
+    "limitsTitle": "Sendelimits",
+    "limitsDesc": "Werte für Ihr aktuelles Profil.",
+    "limitsUnavailable": "Für dieses Profil sind noch keine Limits verfügbar.",
+    "perTx": "Pro Transaktion",
+    "perDay": "Pro Tag",
+    "perMonth": "Pro Monat",
+    "amlTitle": "AML & Sicherheit",
+    "openCases": "Offene Fälle",
+    "highestRisk": "Höchstes Risiko",
+    "amlNote": "Wenn wir etwas Verdächtiges erkennen, können Ihre Vorgänge einer AML-Prüfung unterzogen werden.",
+    "viewSecurity": "Sicherheit ansehen"
   },
   "Admin": {
     "adminPanel": "Admin-Bereich",

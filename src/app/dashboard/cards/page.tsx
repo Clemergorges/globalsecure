@@ -55,17 +55,33 @@ export default async function CardsPage() {
   });
 
   // Serialize Decimal/Date for Client Component
-  const serializedCards = cards.map(card => ({
-    ...card,
-    amount: card.amount.toNumber(),
-    amountUsed: card.amountUsed.toNumber(),
-    // Dates are automatically handled by Next.js in recent versions for Server->Client props 
-    // but safer to keep as is or convert if needed. 
-    // Prisma Date objects are usually fine to pass to Client Components in Next.js App Router 
-    // (they get serialized to string automatically, but we might need to new Date() them on client).
-    // Let's pass them as is, but if we get a warning, we'll convert to ISO string.
-    // Actually, `decimal` types often cause issues. I already converted them to number above.
-  }));
+  const serializedCards = cards.map(card => {
+    const transfer = card.transfer
+      ? {
+          ...card.transfer,
+          amountSent: Number(card.transfer.amountSent),
+          fee: Number(card.transfer.fee),
+          feePercentage: Number(card.transfer.feePercentage),
+          exchangeRate: Number(card.transfer.exchangeRate),
+          amountReceived: Number(card.transfer.amountReceived),
+        }
+      : null;
+
+    const claimLink = card.claimLink
+      ? {
+          ...card.claimLink,
+          amount: Number(card.claimLink.amount),
+        }
+      : null;
+
+    return {
+      ...card,
+      amount: Number(card.amount),
+      amountUsed: Number(card.amountUsed),
+      transfer,
+      claimLink,
+    };
+  });
 
   return (
     <div className="p-6 md:p-8 space-y-8">

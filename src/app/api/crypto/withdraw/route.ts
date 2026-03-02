@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db';
 import { checkAuth } from '@/lib/auth';
 import { ethers } from 'ethers';
 import { applyFiatMovement } from '@/lib/services/fiat-ledger';
+import { logAudit } from '@/lib/logger';
+import { isOperationalFlagEnabled } from '@/lib/services/operational-flags';
 
 // Helper: Validate Polygon Address
 function isValidAddress(address: string) {
@@ -17,7 +19,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const isHalted = await isOperationalFlagEnabled('TREASURY_HALT_DEPOSITS_WITHDRAWS');
+    if (isHalted) {
+      await logAudit({
+        userId: (auth as any).userId,
+        action: 'CRYPTO_WITHDRAW_BLOCKED',
+        status: 'BLOCKED',
+        metadata: { code: 'TREASURY_HALT_DEPOSITS_WITHDRAWS' },
+      }).catch(() => {});
+      return NextResponse.json(
+        { error: 'TREASURY_HALT_DEPOSITS_WITHDRAWS', code: 'TREASURY_HALT_DEPOSITS_WITHDRAWS' },
+        { status: 503 },
+      );
+    }
+
     const { amount, toAddress } = await req.json();
+    // GSS-MVP-FIX: Audit crypto withdraw request (MVP baseline observability).
+    await logAudit({
+      userId: (auth as any).userId,
+      action: 'CRYPTO_WITHDRAW_REQUESTED',
+      status: 'PENDING',
+      metadata: { amount, toAddress: typeof toAddress === 'string' ? `${toAddress.slice(0, 10)}...` : null },
+    }).catch(() => {});
 
     // 1. Validation
     if (!amount || amount <= 0) {
@@ -25,6 +48,26 @@ export async function POST(req: Request) {
     }
     if (!toAddress || !isValidAddress(toAddress)) {
       return NextResponse.json({ error: 'Invalid Polygon address' }, { status: 400 });
+    }
+
+    const windowMinutes = 10;
+    const maxAttempts = 3;
+    const since = new Date(Date.now() - windowMinutes * 60 * 1000);
+    const recentCount = await prisma.cryptoWithdraw.count({
+      where: { userId: (auth as any).userId, createdAt: { gte: since } },
+    });
+    if (recentCount >= maxAttempts) {
+      await prisma.user.update({
+        where: { id: (auth as any).userId },
+        data: { cryptoWithdrawVelocityFlag: true, cryptoWithdrawVelocityFlagAt: new Date() },
+      });
+      await logAudit({
+        userId: (auth as any).userId,
+        action: 'CRYPTO_WITHDRAW_VELOCITY_BLOCK',
+        status: 'BLOCKED',
+        metadata: { windowMinutes, maxAttempts, recentCount },
+      }).catch(() => {});
+      return NextResponse.json({ error: 'CRYPTO_WITHDRAW_RATE_LIMITED', code: 'CRYPTO_WITHDRAW_RATE_LIMITED' }, { status: 429 });
     }
 
     // Limits (MVP)
@@ -100,6 +143,18 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Withdraw error:', error);
+    // GSS-MVP-FIX: Audit withdraw failures (best-effort).
+    try {
+      const auth = await checkAuth();
+      if (auth) {
+        await logAudit({
+          userId: (auth as any).userId,
+          action: 'CRYPTO_WITHDRAW_REQUESTED',
+          status: 'ERROR',
+          metadata: { error: String(error?.message || error) },
+        });
+      }
+    } catch {}
     if (error?.message === 'INSUFFICIENT_FUNDS') {
       return NextResponse.json({ error: 'Insufficient USDT/USD balance' }, { status: 409 });
     }

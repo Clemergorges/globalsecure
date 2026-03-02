@@ -67,6 +67,37 @@
       "loginFailed": "Sign-in failed"
     }
   },
+  "ForgotPassword": {
+    "title": "Forgot your password?",
+    "subtitle": "Enter your email and we'll send reset instructions",
+    "email": "Email",
+    "emailPlaceholder": "name@example.com",
+    "submit": "Send instructions",
+    "submitting": "Sending...",
+    "success": "If the email exists, we'll send instructions.",
+    "backToLogin": "Back to login",
+    "errors": {
+      "sendFailed": "Failed to send email. Try again."
+    }
+  },
+  "ResetPassword": {
+    "title": "Reset password",
+    "subtitle": "Enter your new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordPlaceholder": "••••••••",
+    "passwordRequirements": "Minimum 8 characters, including uppercase, lowercase, number and special character",
+    "submit": "Reset password",
+    "submitting": "Resetting...",
+    "success": "Password reset successfully!",
+    "backToLogin": "Back to login",
+    "invalidToken": "Invalid or missing token",
+    "passwordMismatch": "Passwords do not match",
+    "errors": {
+      "resetFailed": "Could not reset password. Try again.",
+      "invalidToken": "Invalid or expired token"
+    }
+  },
   "VerifyEmail": {
     "title": "Verify email",
     "missingEmail": "Enter your email to continue.",
@@ -98,7 +129,50 @@
     "back": "Back",
     "next": "Next",
     "loading": "Loading...",
-    "error": "Error"
+    "error": "Error",
+    "disclaimer": {
+      "tax": "Taxes and fiscal obligations are the user’s responsibility. GSS provides statements and reports to support filing, but does not replace an accountant or tax advisor."
+    }
+  },
+  "CardEmail": {
+    "View": {
+      "title": "Your GlobalSecure card",
+      "subtitle": "View balance and recent spending without creating an account.",
+      "balanceInitial": "Initial balance",
+      "balanceAvailable": "Available balance",
+      "transactionsTitle": "Transactions",
+      "emptyTransactions": "No transactions yet.",
+      "merchantUnknown": "Unknown merchant",
+      "note": "This is a prepaid virtual card. No bank account required.",
+      "error": {
+        "invalidOrExpired": "Invalid or expired link.",
+        "generic": "Unable to load card data. Please try again."
+      },
+      "otp": {
+        "title": "Access code required",
+        "description": "Enter the 6-character access code to continue.",
+        "label": "Access code",
+        "placeholder": "123456",
+        "submit": "Continue",
+        "submitting": "Verifying...",
+        "invalid": "Invalid code format.",
+        "failed": "Invalid code or link expired."
+      }
+    }
+  },
+  "Incidents": {
+    "treasuryHalt": {
+      "title": "Temporary service restriction",
+      "description": "Deposits and withdrawals may be temporarily unavailable. Please try again later."
+    },
+    "yieldPaused": {
+      "title": "Yield temporarily paused",
+      "description": "New yield allocations are temporarily unavailable. Existing positions are not affected."
+    },
+    "partnerOutage": {
+      "title": "Temporary service disruption",
+      "description": "Some features may be temporarily unavailable. Please try again later."
+    }
   },
   "Dashboard": {
     "title": "Dashboard",
@@ -129,9 +203,11 @@
       "transactions": "Transactions",
       "send": "Send Money",
       "cards": "Cards",
+      "limits": "Limits",
       "history": "History",
       "security": "Security",
       "settings": "Settings",
+      "profile": "Profile",
       "support": "Support",
       "admin": "Admin",
       "logout": "Sign out"
@@ -190,6 +266,12 @@
         "INSUFFICIENT_FUNDS": "Insufficient funds",
         "SENDER_NOT_FOUND": "Sender account not found",
         "INVALID_AMOUNT": "Enter a valid amount",
+        "JURISDICTION_NOT_SUPPORTED": "This service is not available in your country.",
+        "KYC_LEVEL_2_REQUIRED": "Additional verification is required to complete this transfer.",
+        "YIELD_KILL_SWITCH": "Yield is temporarily unavailable.",
+        "YIELD_EXPOSURE_LIMIT": "Yield is temporarily unavailable.",
+        "PARTNER_TEMPORARILY_UNAVAILABLE": "Service temporarily unavailable. Please try again later.",
+        "TREASURY_HALT_DEPOSITS_WITHDRAWS": "Service temporarily unavailable. Please try again later.",
         "INTERNAL_SERVER_ERROR": "Internal server error",
         "submitFailed": "Failed to complete transfer"
       }
@@ -490,6 +572,30 @@
       "errorVerifyingCode": "Invalid code",
       "errorDisconnecting": "Error disconnecting",
       "passwordChangedSuccessfully": "Password updated successfully.",
+      "passwordChange": {
+        "requestingOtp": "Sending a security code to {email}...",
+        "enterOtp": "Enter the 6-digit code sent to your email",
+        "otpResend": "Resend code ({seconds}s)",
+        "otpResendReady": "Resend code",
+        "otpInvalid": "Invalid code. Please try again.",
+        "otpExpired": "Code expired. Request a new one.",
+        "otpUsed": "Code already used. Request a new one.",
+        "passwordChanged": "Password changed successfully!",
+        "passwordChangeFailed": "Could not change your password. Please try again."
+      },
+      "sessions": {
+        "title": "Active sessions",
+        "description": "Manage the devices connected to your account.",
+        "current": "Current session",
+        "revoke": "End",
+        "revokeAll": "End all others",
+        "revokeConfirm": "Are you sure you want to end this session?",
+        "revokeAllConfirm": "Are you sure you want to end all other sessions?",
+        "device": "Device: {device}",
+        "location": "Location: {location}",
+        "lastActive": "Active: {time}"
+      },
+      "phoneRequiredFor2FA": "Add a phone number in Profile to enable SMS 2FA.",
       "connectionError": "Connection error."
     },
     "Profile": {
@@ -508,10 +614,16 @@
       "lastName": "Last name",
       "email": "Email",
       "phone": "Phone",
+      "address": "Address",
+      "city": "City",
+      "postalCode": "Postal code",
       "notProvided": "Not provided",
       "country": "Country",
       "primaryCurrency": "Primary currency",
       "notAvailable": "N/A",
+      "goToSecurity": "Go to Security",
+      "saveProfile": "Save",
+      "profileUpdateFailed": "Could not save your details.",
       "editComingSoon": "Edit (Coming soon)"
     },
     "Notifications": {
@@ -587,6 +699,11 @@
       "description": "Are you sure you want to remove this card? This action cannot be undone.",
       "confirm": "Remove card"
     },
+    "cancelDialog": {
+      "title": "Cancel card",
+      "description": "Are you sure you want to cancel this card? This action is irreversible.",
+      "confirm": "Cancel card"
+    },
     "detailsDialog": {
       "title": "Card details",
       "description": "Use these details for online purchases. Never share them with others.",
@@ -605,7 +722,46 @@
       "revealFailed": "Failed to reveal card details",
       "deleteFailed": "Failed to delete card"
     },
-    "removeCardAria": "Remove card"
+    "EmailCard": {
+      "title": "Email card",
+      "description": "Send a virtual card to a recipient by email.",
+      "amount": "Amount",
+      "currency": "Currency",
+      "recipientEmail": "Recipient email",
+      "recipientName": "Recipient name (optional)",
+      "recipientNamePlaceholder": "Name",
+      "message": "Message to recipient (optional)",
+      "messagePlaceholder": "Write a short message for the recipient.",
+      "send": "Send",
+      "breakdown": {
+        "youPay": "You pay",
+        "cardValue": "Card value"
+      },
+      "success": {
+        "title": "Card sent",
+        "description": "A virtual card was sent to {email}.",
+        "transferId": "Transfer ID"
+      },
+      "errors": {
+        "missingEmailAmount": "Enter email and amount.",
+        "invalidAmount": "Invalid amount.",
+        "messageTooLong": "Message is too long (max 240 characters).",
+        "sessionExpired": "Your session expired. Please sign in again.",
+        "submitFailed": "Could not send the card. Please try again."
+      },
+      "sca": {
+        "required": "Strong customer authentication (SCA) is required to complete this transfer.",
+        "requestCode": "Send code by email",
+        "codeLabel": "Verification code (6 digits)",
+        "confirm": "Confirm and complete",
+        "codeSent": "We sent a verification code to your email.",
+        "requestFailed": "Could not request a verification code.",
+        "confirmFailed": "Could not confirm the code. Please try again.",
+        "invalidFormat": "Enter the 6-digit code."
+      }
+    },
+    "removeCardAria": "Remove card",
+    "cardBlockUnavailable": "Card blocking is currently unavailable."
   },
   "SecureTransfer": {
     "title": "Global Link (Secure transfer)",
@@ -795,14 +951,40 @@
     "recommended": "Recommended",
     "automaticVerification": "Automatic verification",
     "useStripeIdentity": "Use Stripe Identity for instant verification",
+    "cameraHttpsHint": "On mobile devices, the camera only works on secure connections (HTTPS).",
+    "verificationRedirecting": "Redirecting to secure verification...",
+    "verificationCancelled": "Verification cancelled. You can try again later.",
     "startVerification": "Start verification",
     "manualVerification": "Manual verification",
     "uploadDocuments": "Upload your documents",
-    "documentType": "Document type",
+    "country": {
+      "label": "Country",
+      "unsupported": "Your country isn’t supported for this verification method."
+    },
+    "countries": {
+      "br": "Brazil (BR)",
+      "de": "Germany (DE)",
+      "fr": "France (FR)",
+      "lu": "Luxembourg (LU)",
+      "pt": "Portugal (PT)",
+      "us": "United States (US)",
+      "unknown": "Unknown ({code})"
+    },
+    "lastFour": {
+      "labelUs": "SSN last 4 digits",
+      "labelOther": "Last 4 characters of the document",
+      "placeholderUs": "1234",
+      "placeholderOther": "A1B2"
+    },
+    "documentType": {
+      "label": "Document type",
+      "lastFourDigits": "Last 4 digits"
+    },
     "docTypeIdCard": "Identity card (ID card)",
     "docTypePassport": "Passport",
     "docTypeDriverLicense": "Driver's license",
     "documentNumber": "Document number",
+    "documentNumberPlaceholder": "e.g. 123456789",
     "issuingCountry": "Issuing country",
     "frontImage": "Front image",
     "backImage": "Back image",
@@ -824,9 +1006,64 @@
     "fileSelected": "File selected",
     "submitForReview": "Submit for review",
     "autoVerificationError": "Could not start automatic verification.",
-    "stripeConnectionError": "Stripe Identity connection failed.",
+    "stripeConnectionError": "We couldn’t connect to the verification service. Try again or use manual upload.",
+    "errors": {
+      "unsupportedCountry": "This country isn’t supported for this verification method.",
+      "countryLocked": "Country is taken from your profile.",
+      "countryMissing": "Please set your country in your profile before starting verification.",
+      "countryInvalid": "Your country is invalid. Update your profile and try again.",
+      "documentTypeNotSupported": "This document type isn’t supported for your country.",
+      "lastFourInvalidUs": "Enter the last 4 digits of your SSN.",
+      "lastFourInvalidOther": "Enter the last 4 characters (letters and numbers) of your document.",
+      "autoVerificationDisabled": "Automatic verification is temporarily unavailable.",
+      "serviceUnavailable": "Verification service is temporarily unavailable."
+    },
     "documentSendError": "Could not submit documents.",
     "connectionError": "Connection error."
+  },
+  "Limits": {
+    "title": "Your KYC, risk and limits",
+    "subtitle": "Understand what you can do today and how to increase your limits.",
+    "backToDashboard": "Back to dashboard",
+    "reload": "Reload",
+    "loading": "Loading…",
+    "error": {
+      "loadFailedTitle": "Could not load your limits",
+      "loadFailedDesc": "Please try again.",
+      "retryButton": "Try again"
+    },
+    "completeKyc": "Complete KYC",
+    "kycTitle": "KYC",
+    "level": "Level",
+    "status": "Status",
+    "country": "Country",
+    "kycNextStep": {
+      "none": "Complete your KYC to unlock limits.",
+      "basic": "Submit proof of address to increase your limits.",
+      "advanced": "Finish additional verification to increase your limits.",
+      "premium": "You're already at the maximum KYC level.",
+      "generic": "Complete additional steps to increase your limits."
+    },
+    "riskTitle": "Risk profile",
+    "riskTierLabel": "Risk tier",
+    "riskExplanation": {
+      "low": "Conservative profile: typical limits and fewer reviews.",
+      "medium": "Moderate profile: limits may be adjusted based on usage and history.",
+      "high": "High-risk profile: reduced limits and more checks.",
+      "generic": "Limits may vary based on your profile."
+    },
+    "riskNote": "Risk tier influences limits, reviews and additional requirements.",
+    "limitsTitle": "Sending limits",
+    "limitsDesc": "Values applied to your current profile.",
+    "limitsUnavailable": "Limits are not available for this profile yet.",
+    "perTx": "Per transaction",
+    "perDay": "Per day",
+    "perMonth": "Per month",
+    "amlTitle": "AML & Security",
+    "openCases": "Open cases",
+    "highestRisk": "Highest risk",
+    "amlNote": "If we detect something suspicious, your operations may undergo AML review.",
+    "viewSecurity": "View security"
   },
   "Admin": {
     "adminPanel": "Admin panel",

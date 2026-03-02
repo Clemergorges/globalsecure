@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { updateCardStatus } from '@/lib/services/stripe';
+import { getIssuerConnector } from '@/lib/services/issuer-connector';
+import { PartnerTemporarilyUnavailableError } from '@/lib/services/partner-circuit-breaker';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -29,8 +30,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         return NextResponse.json({ error: 'Card already active' }, { status: 400 });
     }
 
-    // Call Stripe to activate
-    await updateCardStatus(card.stripeCardId, 'active');
+    const issuer = getIssuerConnector();
+    await issuer.updateCardStatus(card.stripeCardId, 'active');
 
     // Update DB
     const updatedCard = await prisma.virtualCard.update({
@@ -45,6 +46,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   } catch (error: any) {
     console.error('Card activation error:', error);
+    if (error instanceof PartnerTemporarilyUnavailableError) {
+      return NextResponse.json({ error: error.code, code: error.code }, { status: 503 });
+    }
     return NextResponse.json({ error: error.message || 'Failed to activate card' }, { status: 500 });
   }
 }
