@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { logAudit, logger } from '@/lib/logger';
 import { callPartnerWithBreaker, PartnerTemporarilyUnavailableError } from '@/lib/services/partner-circuit-breaker';
 import { isSupportedKycCountry, normalizeCountryCode } from '@/lib/kyc/supported-countries';
+import { env } from '@/lib/config/env';
 
 type StripeIdentityErrorCode =
   | 'STRIPE_NOT_CONFIGURED'
@@ -149,7 +150,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
+    const stripeSecretKey = env.stripeSecretKey();
     if (!stripeSecretKey) {
       await logAudit({
         userId,

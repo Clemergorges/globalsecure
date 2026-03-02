@@ -13,17 +13,17 @@ Ambiente: Windows (Trae IDE Sandbox)
 ## 2) Evidências por área (arquivos de teste)
 
 ### 2.1 i18n
-- Placeholder ICU (evita `{{var}}`): [i18n-messages-placeholders.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/unit/i18n-messages-placeholders.test.ts)
+- Placeholder ICU (evita `{{var}}`): [i18n-messages-placeholders.test.ts](../tests/unit/i18n-messages-placeholders.test.ts)
 
 ### 2.2 Perfil (PII e consistência por país)
-- Telefone E.164 + DDI por país: [user.profile-phone.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/integration/user.profile-phone.test.ts)
-- CEP/código postal por país: [user.profile-postalcode.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/integration/user.profile-postalcode.test.ts)
+- Telefone E.164 + DDI por país: [user.profile-phone.test.ts](../tests/integration/user.profile-phone.test.ts)
+- CEP/código postal por país: [user.profile-postalcode.test.ts](../tests/integration/user.profile-postalcode.test.ts)
 
 ### 2.3 KYC / Stripe Identity
-- Criação de sessão por país, validação e códigos de erro: [kyc.stripe-identity-country.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/integration/kyc.stripe-identity-country.test.ts)
-- Sincronização explícita (sync endpoint): [kyc.stripe-identity-sync.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/integration/kyc.stripe-identity-sync.test.ts)
-- Auto-sync ao consultar status: [kyc.status-autosync.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/integration/kyc.status-autosync.test.ts)
-- Validação “últimos 4” do documento (regra por país): [kyc-document-last-four.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/unit/kyc-document-last-four.test.ts)
+- Criação de sessão por país, validação e códigos de erro: [kyc.stripe-identity-country.test.ts](../tests/integration/kyc.stripe-identity-country.test.ts)
+- Sincronização explícita (sync endpoint): [kyc.stripe-identity-sync.test.ts](../tests/integration/kyc.stripe-identity-sync.test.ts)
+- Auto-sync ao consultar status: [kyc.status-autosync.test.ts](../tests/integration/kyc.status-autosync.test.ts)
+- Validação “últimos 4” do documento (regra por país): [kyc-document-last-four.test.ts](../tests/unit/kyc-document-last-four.test.ts)
 
 ## 3) Observações de rastreabilidade
-- Para endpoints e fluxos citados, use as referências no [TEST_REPORT](file:///c:/GlobalSecure2026!/globalsecuresend/docs/TEST_REPORT.md) e no [SECURITY_TEST_REPORT](file:///c:/GlobalSecure2026!/globalsecuresend/docs/SECURITY_TEST_REPORT.md).
+- Para endpoints e fluxos citados, use as referências no [TEST_REPORT](./TEST_REPORT.md) e no [SECURITY_TEST_REPORT](./SECURITY_TEST_REPORT.md).

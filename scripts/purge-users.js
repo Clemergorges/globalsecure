@@ -7,7 +7,7 @@ if (!process.env.DATABASE_URL && process.env.DIRECT_URL) {
 
 const { PrismaClient } = require('@prisma/client');
 
-const emails = ['clemergorges@globalsecuresend.com', 'clemergorges@gmail.com']
+const emails = [process.env.PURGE_EMAIL_1, process.env.PURGE_EMAIL_2]
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 

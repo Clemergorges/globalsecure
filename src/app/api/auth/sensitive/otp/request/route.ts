@@ -4,8 +4,8 @@ type SensitiveActionType =
   | 'SENSITIVE_CHANGE_PASSWORD'
   | 'SENSITIVE_UPDATE_CONTACT'
   | 'SENSITIVE_HIGH_VALUE_TRANSFER';
-import { validateSession } from '@/lib/session';
-import { createSensitiveActionOtp } from '@/lib/sensitive-otp';
+import { withRouteContext } from '@/lib/http/route';
+import { OtpChallengeService } from '@/lib/security/otp/OtpChallengeService';
 import { sendEmail, templates } from '@/lib/services/email';
 import { logAudit } from '@/lib/logger';
 
@@ -24,46 +24,49 @@ function label(actionType: SensitiveActionType) {
   return 'Ação sensível';
 }
 
-export async function POST(req: NextRequest) {
-  const session = await validateSession(req);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+function mapPurpose(actionType: SensitiveActionType) {
+  if (actionType === 'SENSITIVE_CHANGE_PASSWORD') return 'PASSWORD_CHANGE' as const;
+  if (actionType === 'SENSITIVE_UPDATE_CONTACT') return 'CONTACT_CHANGE' as const;
+  return 'HIGH_VALUE_TRANSFER' as const;
+}
 
+export const POST = withRouteContext(async (req: NextRequest, ctx) => {
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json({ error: 'Validation Error', details: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
-  const userAgent = req.headers.get('user-agent');
-  const method = req.method;
-  const path = req.nextUrl.pathname;
+  if (!ctx.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-  const { code, ttlMinutes } = await createSensitiveActionOtp({
-    userId: session.userId,
-    actionType: parsed.data.actionType,
-    ipAddress,
-    userAgent,
+  const otpService = new OtpChallengeService();
+  const ttlSeconds = 10 * 60;
+  const { code } = await otpService.create({
+    userId: ctx.userId!,
+    purpose: mapPurpose(parsed.data.actionType),
+    ttlSeconds,
+    maxAttempts: 5,
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
   });
 
   const emailResult = await sendEmail({
-    to: session.email,
+    to: ctx.email,
     subject: `Confirmação de Segurança - ${label(parsed.data.actionType)}`,
-    html: templates.sensitiveActionCode(code, label(parsed.data.actionType), ttlMinutes),
+    html: templates.sensitiveActionCode(code, label(parsed.data.actionType), Math.ceil(ttlSeconds / 60)),
   });
 
   logAudit({
-    userId: session.userId,
+    userId: ctx.userId!,
     action: 'SENSITIVE_OTP_REQUEST',
     status: emailResult?.ok ? 'SUCCESS' : 'FAILURE',
-    ipAddress: ipAddress || undefined,
-    userAgent: userAgent || undefined,
-    method,
-    path,
-    metadata: { actionType: parsed.data.actionType, emailSent: !!emailResult?.ok },
-  });
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    method: ctx.method,
+    path: ctx.path,
+    metadata: { requestId: ctx.requestId, actionType: parsed.data.actionType, emailSent: !!emailResult?.ok },
+  }).catch(() => {});
 
-  return NextResponse.json({
-    success: true,
-    emailSent: !!emailResult?.ok,
-  });
-}
+  return NextResponse.json({ success: true, emailSent: !!emailResult?.ok });
+});

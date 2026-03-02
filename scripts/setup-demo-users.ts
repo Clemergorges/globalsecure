@@ -8,19 +8,19 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-    const password = 'Globalsecure2026!';
+    const password = process.env.DEMO_PASSWORD || 'CHANGE_ME';
     const hash = await bcrypt.hash(password, 10);
 
     const users = [
         {
-            email: 'clemergorges@hotmail.com',
-            firstName: 'Clemer',
-            lastName: 'Gorges'
+            email: process.env.DEMO_RECEIVER_EMAIL || 'receiver@example.com',
+            firstName: 'Demo',
+            lastName: 'Receiver'
         },
         {
-            email: 'admin@globalsecuresend.com',
-            firstName: 'Admin',
-            lastName: 'Global'
+            email: process.env.DEMO_SENDER_EMAIL || process.env.ADMIN_EMAIL || 'admin@example.com',
+            firstName: 'Demo',
+            lastName: 'Sender'
         }
     ];
 

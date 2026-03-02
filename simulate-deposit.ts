@@ -13,7 +13,7 @@ const USDT_CONTRACT =
   '0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582';
 
 async function simulate() {
-  const email = process.argv[2] || 'clemergorges@hotmail.com';
+  const email = process.argv[2] || process.env.ADMIN_EMAIL || 'admin@example.com';
   const amount = Number(process.argv[3] || '50'); // CLI: node simulate 50
   const decimals = 6;
 

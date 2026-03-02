@@ -7,8 +7,11 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = 'clemergorges@hotmail.com';
-  const targetPassword = 'Clemer091@';
+  const email = process.env.ADMIN_EMAIL || 'admin@example.com';
+  const targetPassword = process.env.RESET_PASSWORD;
+  if (!targetPassword) {
+    throw new Error('RESET_PASSWORD env var required');
+  }
 
   console.log(`Checking user: ${email}...`);
 
@@ -27,14 +30,14 @@ async function main() {
         emailVerified: true // Garantir que está verificado
       },
     });
-    console.log(`Password updated to: ${targetPassword}`);
+    console.log('Password updated.');
   } else {
     console.log('User not found. Creating user...');
     await prisma.user.create({
       data: {
         email,
-        firstName: 'Clemer',
-        lastName: 'Gorges',
+        firstName: 'Admin',
+        lastName: 'User',
         passwordHash,
         emailVerified: true,
         phoneVerified: true,
@@ -49,7 +52,7 @@ async function main() {
         }
       },
     });
-    console.log(`User created with password: ${targetPassword}`);
+    console.log('User created.');
   }
 }
 

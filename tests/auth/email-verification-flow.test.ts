@@ -112,10 +112,10 @@ jest.mock('@/lib/redis', () => ({
   }
 }));
 
-import { POST as registerPOST } from '@/app/api/auth/register/route';
-import { POST as verifyPOST } from '@/app/api/auth/verify-email/route';
-import { POST as resendPOST } from '@/app/api/auth/resend-verification/route';
-import { POST as loginPOST } from '@/app/api/auth/login-secure/route';
+import { POST as registerPOST } from '../../src/app/api/auth/register/route';
+import { POST as verifyPOST } from '../../src/app/api/auth/verify-email/route';
+import { POST as resendPOST } from '../../src/app/api/auth/resend-verification/route';
+import { POST as loginPOST } from '../../src/app/api/auth/login-secure/route';
 
 describe('Auth: Email verification flow', () => {
   beforeEach(() => {
@@ -160,7 +160,7 @@ describe('Auth: Email verification flow', () => {
     });
     mockTx.oTP.create.mockResolvedValue({ id: 'otp1' });
 
-    const req = new Request('http://localhost/api/auth/register', {
+    const req = new NextRequest('http://localhost/api/auth/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4' },
       body: JSON.stringify({ email: 'User@Test.com', password: 'Password1', country: 'BR', gdprConsent: true, marketingConsent: false }),
@@ -186,7 +186,7 @@ describe('Auth: Email verification flow', () => {
   test('register: existing email returns 409', async () => {
     mockPrisma.user.findUnique.mockResolvedValue({ id: 'u1' });
 
-    const req = new Request('http://localhost/api/auth/register', {
+    const req = new NextRequest('http://localhost/api/auth/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'user@test.com', password: 'Password1', country: 'BR', gdprConsent: true }),
@@ -210,7 +210,7 @@ describe('Auth: Email verification flow', () => {
 
     mockSendEmail.mockResolvedValue({ ok: false, error: 'SMTP_SEND_FAILED' });
 
-    const req = new Request('http://localhost/api/auth/register', {
+    const req = new NextRequest('http://localhost/api/auth/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'user@test.com', password: 'Password1', country: 'BR', gdprConsent: true }),
@@ -246,7 +246,7 @@ describe('Auth: Email verification flow', () => {
       createdAt: new Date(),
     });
 
-    const req = new Request('http://localhost/api/auth/verify-email', {
+    const req = new NextRequest('http://localhost/api/auth/verify-email', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'USER@test.com', code: '123456' }),
@@ -279,7 +279,7 @@ describe('Auth: Email verification flow', () => {
       createdAt: new Date(),
     });
 
-    const req = new Request('http://localhost/api/auth/verify-email', {
+    const req = new NextRequest('http://localhost/api/auth/verify-email', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'user@test.com', code: '123456' }),
@@ -294,7 +294,7 @@ describe('Auth: Email verification flow', () => {
   test('resend-verification: when user not found returns generic success', async () => {
     mockPrisma.user.findUnique.mockResolvedValue(null);
 
-    const req = new Request('http://localhost/api/auth/resend-verification', {
+    const req = new NextRequest('http://localhost/api/auth/resend-verification', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'missing@test.com' }),

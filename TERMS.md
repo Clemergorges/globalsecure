@@ -65,4 +65,4 @@ Disputas relacionadas ao uso do BETA serão resolvidas nos tribunais competentes
 
 10. 	Contato
 Para dúvidas ou suporte técnico do BETA, entre em contato:
-clemergorges@globalsecuresend.com
+privacy@globalsecuresend.com

@@ -1,11 +1,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { validateSession } from '@/lib/session';
 import { comparePassword, hashPassword } from '@/lib/auth';
 import { z } from 'zod';
-import { consumeSensitiveActionOtp } from '@/lib/sensitive-otp';
 import { logAudit } from '@/lib/logger';
+import { withRouteContext } from '@/lib/http/route';
+import { OtpChallengeService } from '@/lib/security/otp/OtpChallengeService';
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
@@ -16,31 +16,24 @@ const changePasswordSchema = z.object({
 type PasswordChangeErrorCode =
   | 'OTP_INVALID'
   | 'OTP_EXPIRED'
-  | 'OTP_USED'
+  | 'OTP_LOCKED'
   | 'INVALID_CURRENT_PASSWORD'
   | 'VALIDATION_ERROR'
   | 'UNKNOWN_ERROR';
 
 function mapOtpReason(reason: string): PasswordChangeErrorCode {
   if (reason === 'EXPIRED') return 'OTP_EXPIRED';
-  if (reason === 'ALREADY_USED') return 'OTP_USED';
+  if (reason === 'LOCKED') return 'OTP_LOCKED';
   return 'OTP_INVALID';
 }
 
-export async function POST(req: NextRequest) {
-  const session = await validateSession(req);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-  const userAgent = req.headers.get('user-agent') || 'unknown';
-  const method = req.method;
-  const path = req.nextUrl.pathname;
-
+export const POST = withRouteContext(async (req: NextRequest, ctx) => {
   try {
     const body = await req.json();
     const { currentPassword, newPassword, otpCode } = changePasswordSchema.parse(body);
 
     const user = await prisma.user.findUnique({
-      where: { id: session.userId }
+      where: { id: ctx.userId! }
     });
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -50,22 +43,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Incorrect current password', code: 'INVALID_CURRENT_PASSWORD' satisfies PasswordChangeErrorCode }, { status: 400 });
     }
 
-    const consumed = await consumeSensitiveActionOtp({
-      userId: session.userId,
-      actionType: 'SENSITIVE_CHANGE_PASSWORD',
+    const otpService = new OtpChallengeService();
+    const consumed = await otpService.consume({
+      userId: ctx.userId!,
+      purpose: 'PASSWORD_CHANGE',
       code: otpCode,
     });
     if (!consumed.ok) {
       const code = mapOtpReason(consumed.reason);
       logAudit({
-        userId: session.userId,
+        userId: ctx.userId!,
         action: 'SENSITIVE_OTP_FAILURE',
         status: 'FAILURE',
-        ipAddress,
-        userAgent,
-        method,
-        path,
-        metadata: { actionType: 'SENSITIVE_CHANGE_PASSWORD', reason: consumed.reason },
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        method: ctx.method,
+        path: ctx.path,
+        metadata: { requestId: ctx.requestId, actionType: 'SENSITIVE_CHANGE_PASSWORD', reason: consumed.reason },
       });
       return NextResponse.json({ error: 'Invalid or expired OTP', code }, { status: 400 });
     }
@@ -78,14 +72,14 @@ export async function POST(req: NextRequest) {
     });
 
     logAudit({
-      userId: session.userId,
+      userId: ctx.userId!,
       action: 'SENSITIVE_CHANGE_PASSWORD_SUCCESS',
       status: 'SUCCESS',
-      ipAddress,
-      userAgent,
-      method,
-      path,
-      metadata: {},
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      method: ctx.method,
+      path: ctx.path,
+      metadata: { requestId: ctx.requestId },
     });
 
     return NextResponse.json({ success: true });
@@ -96,4 +90,4 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ error: 'Failed to update password', code: 'UNKNOWN_ERROR' satisfies PasswordChangeErrorCode }, { status: 500 });
   }
-}
+});

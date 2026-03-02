@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { stripe } from '@/lib/services/stripe';
+import { getStripe } from '@/lib/services/stripe';
 import { prisma } from '@/lib/db';
 import Stripe from 'stripe';
 import { applyFiatMovement, isYieldSpendingEnabled, recordUserConsent } from '@/lib/services/fiat-ledger';
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test' // Fallback for dev/test

@@ -1,5 +1,6 @@
-import { stripe } from '@/lib/services/stripe';
+import { getStripe } from '@/lib/services/stripe';
 import { callPartnerWithBreaker } from '@/lib/services/partner-circuit-breaker';
+import { env } from '@/lib/config/env';
 
 export type IssuerCardData = {
   cardId: string;
@@ -66,7 +67,7 @@ export function getIssuerConnector(): IssuerConnector {
     return {
       kind,
       async createVirtualCard(params) {
-        if (!process.env.STRIPE_SECRET_KEY) {
+        if (!env.stripeSecretKey()) {
           throw new Error('STRIPE_SECRET_KEY_MISSING');
         }
 
@@ -75,7 +76,7 @@ export function getIssuerConnector(): IssuerConnector {
         const currency = asCurrency(params.currency);
 
         const cardholder = await callPartnerWithBreaker('stripe', 'issuing.cardholders.create', async () =>
-          stripe.issuing.cardholders.create({
+          getStripe().issuing.cardholders.create({
             type: 'individual',
             name: recipientName,
             email: recipientEmail,
@@ -93,7 +94,7 @@ export function getIssuerConnector(): IssuerConnector {
         );
 
         const card = await callPartnerWithBreaker('stripe', 'issuing.cards.create', async () =>
-          stripe.issuing.cards.create({
+          getStripe().issuing.cards.create({
             type: 'virtual',
             currency,
             cardholder: cardholder.id,
@@ -112,20 +113,20 @@ export function getIssuerConnector(): IssuerConnector {
         };
       },
       async updateCardStatus(cardId, status) {
-        if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY_MISSING');
+        if (!env.stripeSecretKey()) throw new Error('STRIPE_SECRET_KEY_MISSING');
         const updated = await callPartnerWithBreaker('stripe', 'issuing.cards.updateStatus', async () =>
-          stripe.issuing.cards.update(cardId, { status }),
+          getStripe().issuing.cards.update(cardId, { status }),
         );
         return { status: updated.status || status };
       },
       async updateCardControls(cardId, controls) {
-        if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY_MISSING');
+        if (!env.stripeSecretKey()) throw new Error('STRIPE_SECRET_KEY_MISSING');
         return callPartnerWithBreaker('stripe', 'issuing.cards.updateControls', async () =>
-          stripe.issuing.cards.update(cardId, { spending_controls: controls }),
+          getStripe().issuing.cards.update(cardId, { spending_controls: controls }),
         );
       },
       async revealCard(cardId, fallback) {
-        if (!process.env.STRIPE_SECRET_KEY) {
+        if (!env.stripeSecretKey()) {
           return {
             pan: `4242 4242 4242 ${fallback.last4}`,
             cvv: '123',
@@ -135,7 +136,7 @@ export function getIssuerConnector(): IssuerConnector {
         }
         try {
           const stripeCard = await callPartnerWithBreaker('stripe', 'issuing.cards.retrieve', async () =>
-            stripe.issuing.cards.retrieve(cardId, { expand: ['number', 'cvc'] }),
+            getStripe().issuing.cards.retrieve(cardId, { expand: ['number', 'cvc'] }),
           );
           const pan = (stripeCard as any).number ? String((stripeCard as any).number) : `**** **** **** ${fallback.last4}`;
           const cvc = (stripeCard as any).cvc ? String((stripeCard as any).cvc) : '***';
@@ -150,9 +151,9 @@ export function getIssuerConnector(): IssuerConnector {
         }
       },
       async healthCheck() {
-        if (!process.env.STRIPE_SECRET_KEY) return { ok: false, details: { error: 'STRIPE_SECRET_KEY_MISSING' } };
+        if (!env.stripeSecretKey()) return { ok: false, details: { error: 'STRIPE_SECRET_KEY_MISSING' } };
         try {
-          await callPartnerWithBreaker('stripe', 'accounts.retrieve', async () => stripe.accounts.retrieve());
+          await callPartnerWithBreaker('stripe', 'accounts.retrieve', async () => getStripe().accounts.retrieve());
           return { ok: true };
         } catch (e: any) {
           return { ok: false, details: { error: e?.message || 'STRIPE_SANDBOX_UNREACHABLE' } };

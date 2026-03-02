@@ -2,9 +2,9 @@ import Pusher from 'pusher';
 
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID || 'mock_app_id',
-  key: process.env.NEXT_PUBLIC_PUSHER_KEY || 'mock_key',
+  key: process.env.PUSHER_KEY || process.env.NEXT_PUBLIC_PUSHER_KEY || 'mock_key',
   secret: process.env.PUSHER_SECRET || 'mock_secret',
-  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'eu',
+  cluster: process.env.PUSHER_CLUSTER || process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'eu',
   useTLS: true,
 });
 

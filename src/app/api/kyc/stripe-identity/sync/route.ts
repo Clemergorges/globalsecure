@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { stripe } from '@/lib/services/stripe';
+import { getStripe } from '@/lib/services/stripe';
 
 function mapStripeDocType(stripeType: string | null | undefined): 'PASSPORT' | 'NATIONAL_ID' | 'RESIDENCE_PERMIT' | 'DRIVERS_LICENSE' | undefined {
   if (!stripeType) return undefined;
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const s = await stripe.identity.verificationSessions.retrieve(sessionId);
+  const s = await getStripe().identity.verificationSessions.retrieve(sessionId);
   const stripeStatus = s.status;
 
   if (stripeStatus === 'verified') {

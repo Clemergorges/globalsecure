@@ -22,7 +22,7 @@ function getTransporter() {
   const port = Number(process.env.SMTP_PORT || 465);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const from = process.env.EMAIL_FROM || process.env.FROM_EMAIL;
+  const from = process.env.EMAIL_FROM || process.env.FROM_EMAIL || process.env.SMTP_FROM;
 
   if (!host || !user || !pass || !from) return null;
 
@@ -47,7 +47,7 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
   }
 
   try {
-    const from = (process.env.EMAIL_FROM || process.env.FROM_EMAIL) as string;
+    const from = (process.env.EMAIL_FROM || process.env.FROM_EMAIL || process.env.SMTP_FROM) as string;
 
     const info = await transporter.sendMail({
       from,

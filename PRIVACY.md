@@ -60,7 +60,7 @@ Você tem direito a:
 - Restringir ou opor-se ao processamento.
 - Portabilidade dos dados.
 
-Para exercer seus direitos, entre em contato com nosso Encarregado de Proteção de Dados (DPO) em: clemergorges@globalsecuresend.com
+Para exercer seus direitos, entre em contato com nosso Encarregado de Proteção de Dados (DPO) em: privacy@globalsecuresend.com
 
 8. Cookies
 Utilizamos cookies para melhorar a funcionalidade do site e analisar o tráfego. Você pode gerenciar suas preferências de cookies nas configurações do seu navegador.

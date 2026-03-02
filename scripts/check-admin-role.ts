@@ -7,7 +7,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-    const email = 'clemergorges@hotmail.com';
+    const email = process.env.ADMIN_EMAIL || 'admin@example.com';
     console.log(`Checking role for ${email}...`);
     
     const user = await prisma.user.findUnique({ where: { email } });

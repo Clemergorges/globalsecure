@@ -3,32 +3,31 @@ import { prisma } from '@/lib/db';
 import { hashPassword, getSession } from '@/lib/auth';
 
 export async function POST(req: Request) {
-  const timestamp = new Date().toISOString();
-  const ip = req.headers.get('x-forwarded-for') || 'unknown';
-  const userAgent = req.headers.get('user-agent') || 'unknown';
-
-  console.log(`[ADMIN_RESET_ATTEMPT] IP: ${ip}, UA: ${userAgent}, Time: ${timestamp}`);
-
-  // 1. Protection by Environment
   if (process.env.NODE_ENV === 'production') {
-    console.warn(`[ADMIN_RESET_BLOCKED] Attempted in production environment. IP: ${ip}`);
-    return NextResponse.json({ error: 'Disabled in production' }, { status: 403 });
+    return NextResponse.json({ error: 'Endpoint disabled' }, { status: 410 });
+  }
+
+  if (process.env.ENABLE_EMERGENCY_RESET !== 'true') {
+    return NextResponse.json({ error: 'Endpoint disabled' }, { status: 410 });
   }
 
   try {
-    // 2. Protection by Admin Authentication
     const session = await getSession();
     const userEmail = (session as any)?.email;
 
-    if (!userEmail || userEmail !== process.env.ADMIN_EMAIL) {
-      console.warn(`[ADMIN_RESET_UNAUTHORIZED] User: ${userEmail || 'Guest'}, IP: ${ip}`);
+    const email = process.env.ADMIN_EMAIL;
+    if (!email) {
+      return NextResponse.json({ error: 'ADMIN_EMAIL not configured' }, { status: 500 });
+    }
+
+    if (!userEmail || userEmail !== email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    console.log(`[ADMIN_RESET_AUTHORIZED] Admin: ${userEmail} initiated reset.`);
-
-    const email = process.env.ADMIN_EMAIL || 'clemergorges@hotmail.com';
-    const password = 'admin123';
+    const password = process.env.EMERGENCY_RESET_PASSWORD;
+    if (!password) {
+      return NextResponse.json({ error: 'EMERGENCY_RESET_PASSWORD not configured' }, { status: 500 });
+    }
     const passwordHash = await hashPassword(password);
 
     await prisma.user.upsert({
@@ -51,16 +50,12 @@ export async function POST(req: Request) {
       }
     });
 
-    console.log(`[ADMIN_RESET_SUCCESS] Admin password reset successfully.`);
-
     return NextResponse.json({ 
       success: true, 
-      message: 'Senha resetada para: admin123',
-      user: email 
+      user: email,
     });
 
   } catch (error) {
-    console.error(`[ADMIN_RESET_ERROR] ${error}`);
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }

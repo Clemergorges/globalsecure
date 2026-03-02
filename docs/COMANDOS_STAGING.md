@@ -62,7 +62,7 @@ Credenciais geradas (fixas):
 
 - `demo.sender@gss.local`
 - `demo.recipient@gss.local`
-- senha: `Globalsecure2026!`
+- senha: `DEMO_PASSWORD` (defina em env; não versionar senha real)
 - `card.external@gss.local` (email “sem conta” para testar fluxo de cartão)
 
 ## Toggle de flags operacionais (incident comms / kill switches)
@@ -136,4 +136,3 @@ git merge <seu-branch>
 git tag v1.0.0-regulated
 git push origin main --tags
 ```
-

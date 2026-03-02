@@ -42,13 +42,14 @@
    - `GET /api/cron/process-queue` processa fila e conclui withdraw (MVP).
 
 **Referências de implementação**
-- Topup (Stripe): [wallet/topup/route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/wallet/topup/route.ts)
-- Webhook Stripe: [webhooks/stripe/route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/webhooks/stripe/route.ts)
-- Endereço cripto: [crypto/address/route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/crypto/address/route.ts)
-- Webhook USDT: [webhooks/crypto/usdt/route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/webhooks/crypto/usdt/route.ts)
-- Withdraw: [crypto/withdraw/route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/crypto/withdraw/route.ts)
-- Fila/cron: [cron/process-queue/route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/cron/process-queue/route.ts)
-- Módulo Polygon/USDT: [polygon.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/lib/services/polygon.ts)
+- Topup (Stripe): [wallet/topup/route.ts](../src/app/api/wallet/topup/route.ts)
+- Webhook Stripe: [webhooks/stripe/route.ts](../src/app/api/webhooks/stripe/route.ts)
+- Endereço cripto: [crypto/address/route.ts](../src/app/api/crypto/address/route.ts)
+- Webhook USDT: [webhooks/crypto/usdt/route.ts](../src/app/api/webhooks/crypto/usdt/route.ts)
+- Withdraw: [crypto/withdraw/route.ts](../src/app/api/crypto/withdraw/route.ts)
+- Fila/cron: [cron/process-queue/route.ts](../src/app/api/cron/process-queue/route.ts)
+- Módulo Polygon/USDT: [polygon.ts](../src/lib/services/polygon.ts)
+
 
 ## 3) Governança de Segurança
 
@@ -119,13 +120,13 @@
 - Rate-limit no backend com Redis (janela e limite por identificador).
 - Uso recomendado: headers de rate limit para clientes se comportarem melhor.
 
-Referência: [rate-limit.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/lib/rate-limit.ts)
+Referência: [rate-limit.ts](../src/lib/rate-limit.ts)
 
 ### 7.2 Ledger: integridade transacional
 - Débito com guarda atômica (evita saldo negativo).
 - Crédito com `upsert` e idempotência em webhooks.
 
-Referência: [ledger.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/lib/services/ledger.ts)
+Referência: [ledger.ts](../src/lib/services/ledger.ts)
 
 ### 7.3 Gestão de segredos
 - Nunca logar segredos.
@@ -187,4 +188,3 @@ Referência: [ledger.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/lib/s
 ## 12) Apêndices
 - Relatório de testes automatizados: `docs/SECURITY_TEST_REPORT.md`
 - Plano de simulações e métricas: `docs/SECURITY_SIMULATIONS.md`
-

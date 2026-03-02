@@ -1,54 +1,73 @@
-
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getSession, checkAdmin } from '@/lib/auth';
-import { supabase, KYC_BUCKET } from '@/lib/supabase';
+import { withRouteContext } from '@/lib/http/route';
+import { logAudit } from '@/lib/logger';
+import { getSupabase, KYC_BUCKET } from '@/lib/supabase';
+import { SupabasePrivateKycStorage } from '@/lib/kyc/storage/providers/SupabasePrivateKycStorage';
 
-// Helper function to get signed URL
-async function getSignedUrl(path: string | null) {
-  if (!path) return null;
-  // If the stored value is already a full URL (legacy/vercel blob), return it as is
-  if (path.startsWith('http')) return path;
-
-  const { data, error } = await supabase.storage
-    .from(KYC_BUCKET)
-    .createSignedUrl(path, 60 * 15); // Valid for 15 minutes
-
-  if (error) {
-    console.error('Error creating signed URL:', error);
-    return null;
-  }
-  return data.signedUrl;
+let cachedKycStorage: SupabasePrivateKycStorage | null = null;
+function kycStorage() {
+  if (cachedKycStorage) return cachedKycStorage;
+  cachedKycStorage = new SupabasePrivateKycStorage(getSupabase() as any, KYC_BUCKET);
+  return cachedKycStorage;
 }
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+async function getSignedUrl(key: string | null) {
+  if (!key) return null;
+  if (key.startsWith('http://') || key.startsWith('https://')) {
+    return null;
+  }
+  return kycStorage().getSignedReadUrl({ key, expiresInSeconds: 60 * 15 });
+}
 
-  const { id: documentId } = await params;
-  const isAdmin = await checkAdmin();
-  const userId = (session as any).userId;
+function isPrivilegedRole(role: string | null) {
+  return role === 'ADMIN' || role === 'COMPLIANCE' || role === 'TREASURY';
+}
 
-  // Fetch document
+export const GET = withRouteContext(async (req: NextRequest, ctx) => {
+  const documentId = req.nextUrl.pathname.split('/').pop() || '';
+  if (!documentId) return NextResponse.json({ error: 'Validation Error' }, { status: 400 });
+
+  const isAdmin = isPrivilegedRole(ctx.role);
+
   const doc = await prisma.kYCDocument.findUnique({
-    where: { id: documentId }
+    where: { id: documentId },
   });
 
   if (!doc) {
     return NextResponse.json({ error: 'Document not found' }, { status: 404 });
   }
 
-  // Security Check: Only the owner OR admin can access
-  if (doc.userId !== userId && !isAdmin) {
+  if (doc.userId !== ctx.userId && !isAdmin) {
+    logAudit({
+      userId: ctx.userId!,
+      action: 'KYC_DOCUMENT_FORBIDDEN',
+      status: '403',
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      method: ctx.method,
+      path: ctx.path,
+      metadata: { requestId: ctx.requestId, documentId },
+    }).catch(() => {});
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Generate Signed URLs for all images
   const [frontUrl, backUrl, selfieUrl] = await Promise.all([
     getSignedUrl(doc.frontImageUrl),
     getSignedUrl(doc.backImageUrl),
-    getSignedUrl(doc.selfieUrl)
+    getSignedUrl(doc.selfieUrl),
   ]);
+
+  logAudit({
+    userId: ctx.userId!,
+    action: 'KYC_DOCUMENT_READ',
+    status: '200',
+    ipAddress: ctx.ipAddress,
+    userAgent: ctx.userAgent,
+    method: ctx.method,
+    path: ctx.path,
+    metadata: { requestId: ctx.requestId, documentId, asAdmin: isAdmin },
+  }).catch(() => {});
 
   return NextResponse.json({
     success: true,
@@ -56,7 +75,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       ...doc,
       frontImageUrl: frontUrl,
       backImageUrl: backUrl,
-      selfieUrl: selfieUrl
-    }
+      selfieUrl,
+    },
   });
-}
+});

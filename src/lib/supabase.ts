@@ -1,10 +1,16 @@
 
 import { createClient } from '@supabase/supabase-js';
+import { env } from '@/lib/config/env';
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key';
+let cachedSupabase: ReturnType<typeof createClient> | null = null;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export function getSupabase() {
+  if (cachedSupabase) return cachedSupabase;
+  const supabaseUrl = env.supabaseUrl() || 'https://example.supabase.co';
+  const supabaseKey = env.supabaseServiceRoleKey() || 'example-service-role-key';
+  cachedSupabase = createClient(supabaseUrl, supabaseKey);
+  return cachedSupabase;
+}
 
 // Nome do bucket privado para KYC
 export const KYC_BUCKET = 'kyc-documents';

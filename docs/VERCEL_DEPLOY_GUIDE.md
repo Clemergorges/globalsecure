@@ -9,10 +9,10 @@
 # Variáveis necessárias:
 DATABASE_URL=postgresql://usuario:senha@host:5432/globalsecuresend
 DIRECT_URL=postgresql://usuario:senha@host:5432/globalsecuresend
-JWT_SECRET=sua-chave-secreta-jwt
-STRIPE_SECRET_KEY=sk_live_sua_chave_stripe
+JWT_SECRET=GERAR_UM_SEGREDO_FORTE
+STRIPE_SECRET_KEY=YOUR_STRIPE_SECRET_KEY
 NEXTAUTH_URL=https://seudominio.com
-REDIS_URL=redis://default:senha@redis-host:6379
+REDIS_URL=redis://default:YOUR_REDIS_PASSWORD@redis-host:6379
 ```
 
 ## 2. Configuração do Vercel

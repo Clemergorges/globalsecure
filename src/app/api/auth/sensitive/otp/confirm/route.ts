@@ -5,11 +5,11 @@ type SensitiveActionType =
   | 'SENSITIVE_CHANGE_PASSWORD'
   | 'SENSITIVE_UPDATE_CONTACT'
   | 'SENSITIVE_HIGH_VALUE_TRANSFER';
-import { validateSession } from '@/lib/session';
 import { prisma } from '@/lib/db';
 import { comparePassword, hashPassword } from '@/lib/auth';
-import { consumeSensitiveActionOtp } from '@/lib/sensitive-otp';
 import { logAudit } from '@/lib/logger';
+import { withRouteContext } from '@/lib/http/route';
+import { OtpChallengeService } from '@/lib/security/otp/OtpChallengeService';
 
 const schema = z.discriminatedUnion('actionType', [
   z.object({
@@ -30,60 +30,60 @@ const schema = z.discriminatedUnion('actionType', [
   }),
 ]);
 
-export async function POST(req: NextRequest) {
-  const session = await validateSession(req);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-  const userAgent = req.headers.get('user-agent') || 'unknown';
-  const method = req.method;
-  const path = req.nextUrl.pathname;
+function mapPurpose(actionType: SensitiveActionType) {
+  if (actionType === 'SENSITIVE_CHANGE_PASSWORD') return 'PASSWORD_CHANGE' as const;
+  if (actionType === 'SENSITIVE_UPDATE_CONTACT') return 'CONTACT_CHANGE' as const;
+  return 'HIGH_VALUE_TRANSFER' as const;
+}
 
+export const POST = withRouteContext(async (req: NextRequest, ctx) => {
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json({ error: 'Validation Error', details: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const consume = await consumeSensitiveActionOtp({
-    userId: session.userId,
-    actionType: parsed.data.actionType,
+  const otpService = new OtpChallengeService();
+  const consume = await otpService.consume({
+    userId: ctx.userId!,
+    purpose: mapPurpose(parsed.data.actionType),
     code: parsed.data.otpCode,
   });
 
   if (!consume.ok) {
     logAudit({
-      userId: session.userId,
+      userId: ctx.userId!,
       action: 'SENSITIVE_OTP_FAILURE',
       status: 'FAILURE',
-      ipAddress,
-      userAgent,
-      method,
-      path,
-      metadata: { actionType: parsed.data.actionType, reason: consume.reason },
-    });
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      method: ctx.method,
+      path: ctx.path,
+      metadata: { requestId: ctx.requestId, actionType: parsed.data.actionType, reason: consume.reason },
+    }).catch(() => {});
     return NextResponse.json({ error: 'Invalid or expired OTP', code: consume.reason }, { status: 400 });
   }
 
   if (parsed.data.actionType === 'SENSITIVE_HIGH_VALUE_TRANSFER') {
-    if (!session.sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!ctx.sessionId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     await prisma.session.update({
-      where: { id: session.sessionId },
+      where: { id: ctx.sessionId },
       data: { lastScaAt: new Date() },
     });
     logAudit({
-      userId: session.userId,
+      userId: ctx.userId!,
       action: 'SENSITIVE_SCA_HIGH_VALUE_TRANSFER_SUCCESS',
       status: 'SUCCESS',
-      ipAddress,
-      userAgent,
-      method,
-      path,
-      metadata: { sessionId: session.sessionId },
-    });
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      method: ctx.method,
+      path: ctx.path,
+      metadata: { requestId: ctx.requestId, sessionId: ctx.sessionId },
+    }).catch(() => {});
     return NextResponse.json({ success: true });
   }
 
   if (parsed.data.actionType === 'SENSITIVE_CHANGE_PASSWORD') {
-    const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { id: true, passwordHash: true } });
+    const user = await prisma.user.findUnique({ where: { id: ctx.userId! }, select: { id: true, passwordHash: true } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     const ok = await comparePassword(parsed.data.currentPassword, user.passwordHash);
@@ -91,16 +91,18 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(parsed.data.newPassword);
     await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+
     logAudit({
-      userId: session.userId,
+      userId: ctx.userId!,
       action: 'SENSITIVE_CHANGE_PASSWORD_SUCCESS',
       status: 'SUCCESS',
-      ipAddress,
-      userAgent,
-      method,
-      path,
-      metadata: {},
-    });
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      method: ctx.method,
+      path: ctx.path,
+      metadata: { requestId: ctx.requestId },
+    }).catch(() => {});
+
     return NextResponse.json({ success: true });
   }
 
@@ -114,19 +116,19 @@ export async function POST(req: NextRequest) {
   if (newPhone) update.phone = newPhone;
 
   try {
-    await prisma.user.update({ where: { id: session.userId }, data: update });
+    await prisma.user.update({ where: { id: ctx.userId! }, data: update });
     logAudit({
-      userId: session.userId,
+      userId: ctx.userId!,
       action: 'SENSITIVE_UPDATE_CONTACT_SUCCESS',
       status: 'SUCCESS',
-      ipAddress,
-      userAgent,
-      method,
-      path,
-      metadata: { updated: { email: !!newEmail, phone: !!newPhone } },
-    });
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      method: ctx.method,
+      path: ctx.path,
+      metadata: { requestId: ctx.requestId, updated: { email: !!newEmail, phone: !!newPhone } },
+    }).catch(() => {});
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Failed to update contact' }, { status: 409 });
   }
-}
+});

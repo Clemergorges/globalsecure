@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import crypto from "crypto"
 import { prisma } from "@/lib/db"
 import { sendEmail, templates } from "@/lib/services/email"
 import { logAudit, logger } from "@/lib/logger"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { env } from "@/lib/config/env"
+import { withRouteContext } from "@/lib/http/route"
 
 const schema = z.object({
   email: z.string().email(),
@@ -17,10 +19,13 @@ function maskEmail(email: string) {
   return `${safeLocal}***@${domain}`
 }
 
-export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for") || "unknown"
-  const userAgent = req.headers.get("user-agent") || "unknown"
+function hashResetToken(token: string) {
+  // TODO: se preferir, use um pepper dedicado (ex.: PASSWORD_RESET_PEPPER).
+  // Para hardening v1, usamos o JWT secret como secret de hashing.
+  return crypto.createHash("sha256").update(`${token}.${env.jwtSecret()}`).digest("hex")
+}
 
+export const POST = withRouteContext(async (req: NextRequest, ctx) => {
   let normalizedEmail = ""
 
   try {
@@ -36,14 +41,14 @@ export async function POST(req: Request) {
     normalizedEmail = parsed.data.email.trim().toLowerCase()
 
     // Rate limit por IP e por email, resposta genérica
-    const rlIp = await checkRateLimit(`forgot_password:ip:${ip}`, 10, 15 * 60)
+    const rlIp = await checkRateLimit(`forgot_password:ip:${ctx.ipAddress}`, 10, 15 * 60)
     if (!rlIp.success) {
       await logAudit({
         action: "FORGOT_PASSWORD_BLOCKED",
         status: "429",
-        ipAddress: ip,
-        userAgent,
-        path: "/api/auth/forgot-password",
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        path: ctx.path,
         metadata: { scope: "IP", remaining: rlIp.remaining },
       })
       return NextResponse.json(
@@ -56,9 +61,9 @@ export async function POST(req: Request) {
       await logAudit({
         action: "FORGOT_PASSWORD_BLOCKED",
         status: "429",
-        ipAddress: ip,
-        userAgent,
-        path: "/api/auth/forgot-password",
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        path: ctx.path,
         metadata: { scope: "EMAIL", remaining: rlEmail.remaining },
       })
       return NextResponse.json(
@@ -76,9 +81,9 @@ export async function POST(req: Request) {
       userId: user?.id,
       action: "FORGOT_PASSWORD_REQUESTED",
       status: "200",
-      ipAddress: ip,
-      userAgent,
-      path: "/api/auth/forgot-password",
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      path: ctx.path,
       metadata: { email: maskEmail(normalizedEmail) },
     })
 
@@ -101,9 +106,9 @@ export async function POST(req: Request) {
         userId: user.id,
         action: "FORGOT_PASSWORD_EMAIL_SENT",
         status: "500",
-        ipAddress: ip,
-        userAgent,
-        path: "/api/auth/forgot-password",
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        path: ctx.path,
         metadata: { email: maskEmail(normalizedEmail), reason: "SMTP_NOT_CONFIGURED" },
       })
       return NextResponse.json(
@@ -113,12 +118,13 @@ export async function POST(req: Request) {
     }
 
     const token = crypto.randomBytes(32).toString("hex")
+    const tokenHash = hashResetToken(token)
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
 
     await prisma.passwordResetToken.create({
       data: {
         userId: user.id,
-        token,
+        token: tokenHash,
         expiresAt,
       },
     })
@@ -137,9 +143,9 @@ export async function POST(req: Request) {
         userId: user.id,
         action: "FORGOT_PASSWORD_EMAIL_SENT",
         status: "500",
-        ipAddress: ip,
-        userAgent,
-        path: "/api/auth/forgot-password",
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        path: ctx.path,
         metadata: { email: maskEmail(normalizedEmail), error: emailResult.error },
       })
       return NextResponse.json(
@@ -152,9 +158,9 @@ export async function POST(req: Request) {
       userId: user.id,
       action: "FORGOT_PASSWORD_EMAIL_SENT",
       status: "200",
-      ipAddress: ip,
-      userAgent,
-      path: "/api/auth/forgot-password",
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      path: ctx.path,
       metadata: { email: maskEmail(normalizedEmail) },
     })
 
@@ -169,4 +175,4 @@ export async function POST(req: Request) {
       { status: 500 },
     )
   }
-}
+}, { requireAuth: false })

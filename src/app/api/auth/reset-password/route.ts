@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import bcrypt from "bcryptjs"
+import crypto from "crypto"
 import { prisma } from "@/lib/db"
 import { logAudit, logger } from "@/lib/logger"
+import { env } from "@/lib/config/env"
+import { withRouteContext } from "@/lib/http/route"
 
 const schema = z.object({
   token: z.string().min(1),
@@ -12,10 +15,13 @@ const schema = z.object({
   ),
 })
 
-export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for") || "unknown"
-  const userAgent = req.headers.get("user-agent") || "unknown"
+function hashResetToken(token: string) {
+  // TODO: se preferir, use um pepper dedicado (ex.: PASSWORD_RESET_PEPPER).
+  // Para hardening v1, usamos o JWT secret como secret de hashing.
+  return crypto.createHash("sha256").update(`${token}.${env.jwtSecret()}`).digest("hex")
+}
 
+export const POST = withRouteContext(async (req: NextRequest, ctx) => {
   try {
     const body = await req.json()
     const parsed = schema.safeParse(body)
@@ -28,11 +34,12 @@ export async function POST(req: Request) {
     }
 
     const { token, password } = parsed.data
+    const tokenHash = hashResetToken(token)
 
     // Buscar token válido
     const resetToken = await prisma.passwordResetToken.findFirst({
       where: {
-        token,
+        token: tokenHash,
         expiresAt: { gt: new Date() },
         usedAt: null,
       },
@@ -43,10 +50,10 @@ export async function POST(req: Request) {
       await logAudit({
         action: "PASSWORD_RESET_INVALID_TOKEN",
         status: "400",
-        ipAddress: ip,
-        userAgent,
-        path: "/api/auth/reset-password",
-        metadata: { token: token.substring(0, 8) + "..." },
+        ipAddress: ctx.ipAddress,
+        userAgent: ctx.userAgent,
+        path: ctx.path,
+        metadata: {},
       })
       
       return NextResponse.json(
@@ -74,9 +81,9 @@ export async function POST(req: Request) {
       userId: resetToken.userId,
       action: "PASSWORD_RESET_SUCCESS",
       status: "200",
-      ipAddress: ip,
-      userAgent,
-      path: "/api/auth/reset-password",
+      ipAddress: ctx.ipAddress,
+      userAgent: ctx.userAgent,
+      path: ctx.path,
     })
 
     return NextResponse.json(
@@ -90,4 +97,4 @@ export async function POST(req: Request) {
       { status: 500 }
     )
   }
-}
+}, { requireAuth: false })

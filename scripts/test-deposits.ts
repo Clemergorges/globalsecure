@@ -38,8 +38,8 @@ async function login(email: string, password: string) {
 }
 
 async function main() {
-  const email = process.env.TEST_EMAIL || process.env.ADMIN_EMAIL || 'clemergorges@hotmail.com';
-  const password = process.env.TEST_PASSWORD || 'admin123';
+  const email = process.env.TEST_EMAIL || process.env.ADMIN_EMAIL || 'admin@example.com';
+  const password = process.env.TEST_PASSWORD || 'CHANGE_ME';
 
   console.log('Login');
   const loginRes = await login(email, password);

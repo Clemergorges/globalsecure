@@ -5,11 +5,8 @@ import Stripe from 'stripe';
 import { z } from 'zod';
 import { callPartnerWithBreaker, PartnerTemporarilyUnavailableError } from '@/lib/services/partner-circuit-breaker';
 import { isOperationalFlagEnabled } from '@/lib/services/operational-flags';
-
-const stripe = new Stripe((process.env.STRIPE_SECRET_KEY || 'sk_test_dummy').trim(), {
-  // @ts-expect-error Stripe version mismatch
-  apiVersion: '2024-12-18.acacia',
-});
+import { env } from '@/lib/config/env';
+import { logger } from '@/lib/logger';
 
 const topUpSchema = z.object({
   amount: z.number().positive().min(5),
@@ -43,6 +40,17 @@ export async function POST(req: Request) {
     
     // Total charge = Amount + Fees
     // But we credit only 'amount' to the account.
+
+    const stripeSecretKey = env.stripeSecretKey();
+    if (!stripeSecretKey) {
+      return NextResponse.json({ error: 'STRIPE_NOT_CONFIGURED', code: 'STRIPE_NOT_CONFIGURED' }, { status: 503 });
+    }
+
+    const stripe = new Stripe(stripeSecretKey.trim(), {
+      // TODO: ajuste apiVersion conforme seu contrato/SDK real.
+      // @ts-expect-error Stripe version mismatch
+      apiVersion: '2024-12-18.acacia',
+    });
 
     // Criar Sessão do Checkout
     const checkoutSession = await callPartnerWithBreaker('stripe', 'checkout.sessions.create', async () =>
@@ -96,8 +104,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ url: checkoutSession.url });
-  } catch (error) {
-    console.error('Stripe Checkout Error:', error);
+  } catch (error: any) {
+    logger.error({ err: error?.message || String(error) }, 'wallet.topup error');
     if (error instanceof PartnerTemporarilyUnavailableError) {
       return NextResponse.json({ error: error.code, code: error.code }, { status: 503 });
     }

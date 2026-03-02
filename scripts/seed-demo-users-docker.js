@@ -50,7 +50,7 @@ async function ensureAccountAndBalances(userId, primaryCurrency, balances) {
 }
 
 async function main() {
-  const password = 'Globalsecure2026!';
+  const password = process.env.DEMO_PASSWORD || 'CHANGE_ME';
 
   const sender = await upsertUser({
     email: 'demo.sender@gss.local',
@@ -90,7 +90,7 @@ async function main() {
 
   console.log('DEMO_SENDER_EMAIL=demo.sender@gss.local');
   console.log('DEMO_RECIPIENT_EMAIL=demo.recipient@gss.local');
-  console.log('DEMO_PASSWORD=Globalsecure2026!');
+  console.log('DEMO_PASSWORD=CHANGE_ME');
   console.log('CARD_EMAIL_NO_ACCOUNT=card.external@gss.local');
 }
 
@@ -102,4 +102,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

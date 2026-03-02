@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { stripe } from '@/lib/services/stripe';
+import { getStripe } from '@/lib/services/stripe';
 
 function mapStripeDocType(stripeType: string | null | undefined): 'PASSPORT' | 'NATIONAL_ID' | 'RESIDENCE_PERMIT' | 'DRIVERS_LICENSE' | undefined {
   if (!stripeType) return undefined;
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
       (user.kycStatus === 'PENDING' || user.kycStatus === 'REVIEW') &&
       (latestDoc.status === 'PENDING' || latestDoc.status === 'REVIEW')
     ) {
-      const s = await stripe.identity.verificationSessions.retrieve(latestDoc.stripeVerificationId);
+      const s = await getStripe().identity.verificationSessions.retrieve(latestDoc.stripeVerificationId);
       if (s.status === 'verified') {
         const issuingCountry = s.verified_outputs?.address?.country;
         const idNumber = s.verified_outputs?.id_number;

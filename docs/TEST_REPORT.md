@@ -29,29 +29,29 @@ Relatório de validação técnica executado em **2026-02-28** para o commit **7
   - telefone em E.164 e DDI compatível com o país do usuário
   - CEP/código postal formatado e validado por país (BR/LU/PT/FR/DE/US)
 - Referências:
-  - UI: [profile/page.tsx](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/dashboard/settings/profile/page.tsx)
-  - API: [user/profile route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/user/profile/route.ts)
-  - Testes: [user.profile-phone.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/integration/user.profile-phone.test.ts), [user.profile-postalcode.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/integration/user.profile-postalcode.test.ts)
+  - UI: [profile/page.tsx](../src/app/dashboard/settings/profile/page.tsx)
+  - API: [user/profile route.ts](../src/app/api/user/profile/route.ts)
+  - Testes: [user.profile-phone.test.ts](../tests/integration/user.profile-phone.test.ts), [user.profile-postalcode.test.ts](../tests/integration/user.profile-postalcode.test.ts)
 
 ### 3.2 Segurança (2FA e OTP ações sensíveis)
 - UI orienta cadastro de telefone quando o usuário tenta habilitar 2FA sem telefone
 - Alteração de senha exige OTP de ação sensível (request + confirmação)
 - Referências:
-  - UI: [security/page.tsx](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/dashboard/settings/security/page.tsx)
-  - API: [change-password route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/security/change-password/route.ts)
+  - UI: [security/page.tsx](../src/app/dashboard/settings/security/page.tsx)
+  - API: [change-password route.ts](../src/app/api/security/change-password/route.ts)
 
 ### 3.3 KYC / Stripe Identity
 - Criação de sessão Stripe Identity usa `user.country` e valida suporte (BR/LU/US/PT/FR/DE)
 - Auto-sync de status com Stripe (endpoint dedicado + sincronização em `/api/kyc/status` quando pendente)
 - Webhook Stripe atualiza documentos e usuário em eventos Identity
 - Referências:
-  - Endpoints: [stripe-identity route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/kyc/stripe-identity/route.ts), [kyc/status route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/kyc/status/route.ts), [stripe-identity sync route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/kyc/stripe-identity/sync/route.ts)
-  - Webhook: [stripe webhook route.ts](file:///c:/GlobalSecure2026!/globalsecuresend/src/app/api/webhooks/stripe/route.ts)
-  - Testes: [kyc.status-autosync.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/integration/kyc.status-autosync.test.ts), [kyc.stripe-identity-country.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/integration/kyc.stripe-identity-country.test.ts), [kyc.stripe-identity-sync.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/integration/kyc.stripe-identity-sync.test.ts)
+  - Endpoints: [stripe-identity route.ts](../src/app/api/kyc/stripe-identity/route.ts), [kyc/status route.ts](../src/app/api/kyc/status/route.ts), [stripe-identity sync route.ts](../src/app/api/kyc/stripe-identity/sync/route.ts)
+  - Webhook: [stripe webhook route.ts](../src/app/api/webhooks/stripe/route.ts)
+  - Testes: [kyc.status-autosync.test.ts](../tests/integration/kyc.status-autosync.test.ts), [kyc.stripe-identity-country.test.ts](../tests/integration/kyc.stripe-identity-country.test.ts), [kyc.stripe-identity-sync.test.ts](../tests/integration/kyc.stripe-identity-sync.test.ts)
 
 ### 3.4 i18n
 - Prevenção de placeholders malformados (double braces) em mensagens
-- Referência: [i18n-messages-placeholders.test.ts](file:///c:/GlobalSecure2026!/globalsecuresend/tests/unit/i18n-messages-placeholders.test.ts)
+- Referência: [i18n-messages-placeholders.test.ts](../tests/unit/i18n-messages-placeholders.test.ts)
 
 ## 4) Itens fora do escopo desta validação
 - Testes de carga/pen-test em ambiente de produção/staging

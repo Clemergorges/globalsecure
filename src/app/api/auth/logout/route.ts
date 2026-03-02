@@ -4,9 +4,16 @@ import { jwtVerify } from 'jose';
 import { revokeSession, clearSessionCookie } from '@/lib/session';
 import { prisma } from '@/lib/db';
 import { logAudit } from '@/lib/logger';
+import { env } from '@/lib/config/env';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super-secret-jwt-key-change-me');
 const COOKIE_NAME = 'auth_token';
+
+let cachedJwtSecretKey: Uint8Array | null = null;
+function jwtSecretKey() {
+  if (cachedJwtSecretKey) return cachedJwtSecretKey;
+  cachedJwtSecretKey = new TextEncoder().encode(env.jwtSecret());
+  return cachedJwtSecretKey;
+}
 
 export async function POST(request: NextRequest) {
   const tokenValue = request.cookies.get(COOKIE_NAME)?.value;
@@ -19,10 +26,11 @@ export async function POST(request: NextRequest) {
 
   if (tokenValue) {
     try {
-      const { payload } = await jwtVerify(tokenValue, JWT_SECRET);
+      const { payload } = await jwtVerify(tokenValue, jwtSecretKey());
+
       sessionId = payload.jti as string | undefined;
       if (sessionId) {
-        revokeSession(sessionId).catch(console.error);
+        revokeSession(sessionId).catch(() => {});
         const s = await prisma.session.findUnique({ where: { id: sessionId }, select: { userId: true } }).catch(() => null);
         userId = s?.userId || undefined;
       }

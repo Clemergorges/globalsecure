@@ -7,7 +7,7 @@ import crypto from 'crypto';
 const BASE_URL = 'http://localhost:3012';
 const JWT_SECRET = "GlobalSecureSecret2026!"; // Hardcoded for test safety
 
-const ADMIN_EMAIL = 'clemergorges@hotmail.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
 const TEST_EMAIL = 'beta_sim@demo.com';
 
 async function main() {
@@ -28,7 +28,7 @@ async function main() {
         email: ADMIN_EMAIL,
         firstName: 'Admin',
         lastName: 'User',
-        passwordHash: await hashPassword('admin123'), account: { create: { primaryCurrency: 'EUR' } }
+        passwordHash: await hashPassword(process.env.DEMO_ADMIN_PASSWORD || 'CHANGE_ME'), account: { create: { primaryCurrency: 'EUR' } }
       },
       include: { account: true }
     });

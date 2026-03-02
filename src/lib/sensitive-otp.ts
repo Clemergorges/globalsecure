@@ -1,12 +1,13 @@
 import crypto from 'crypto';
 import { prisma } from '@/lib/db';
+import { env } from '@/lib/config/env';
 type SensitiveActionType =
   | 'SENSITIVE_CHANGE_PASSWORD'
   | 'SENSITIVE_UPDATE_CONTACT'
   | 'SENSITIVE_HIGH_VALUE_TRANSFER';
 
 function otpPepper() {
-  return process.env.SENSITIVE_OTP_PEPPER || '';
+  return env.sensitiveOtpPepper();
 }
 
 function hashOtp(code: string) {

@@ -269,6 +269,7 @@ model User {
   kycDocuments  KYCDocument[]
   sessions      Session[]
   otps          OTP[]
+  otpChallenges OtpChallenge[]
   sensitiveActionOtps SensitiveActionOtp[]
   passwordResetTokens PasswordResetToken[]
   notifications Notification[]
@@ -865,6 +866,33 @@ model OTP {
 
   @@index([target, code])
   @@index([userId])
+}
+
+enum OtpPurpose {
+  MFA_ENROLL
+  PASSWORD_CHANGE
+  CONTACT_CHANGE
+  HIGH_VALUE_TRANSFER
+}
+
+model OtpChallenge {
+  id          String     @id @default(uuid())
+  userId      String
+  purpose     OtpPurpose
+  codeHash    String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  attempts    Int        @default(0)
+  maxAttempts Int
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, purpose, createdAt])
+  @@index([expiresAt])
+  @@index([userId, usedAt])
 }
 
 model SensitiveActionOtp {

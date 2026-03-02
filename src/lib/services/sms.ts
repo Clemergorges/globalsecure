@@ -1,17 +1,19 @@
 
-// Mock SMS Service (Simulating Twilio)
-// In production, this would use 'twilio' SDK
+import { logger } from '@/lib/logger';
 
 export const smsService = {
   async sendOTP(phoneNumber: string, code: string) {
-    console.log(`[SMS MOCK] Sending OTP "${code}" to ${phoneNumber}`);
-    // Simulate API latency
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // TODO: trocar por implementação real com Twilio (ou outro provedor) e tratar erros/retentativas.
+    // Nunca logar `code` (OTP) em nenhum ambiente.
+    logger.info({ phoneLast4: phoneNumber.slice(-4) }, 'sms.send_otp.requested');
+    await new Promise((resolve) => setTimeout(resolve, 200));
     return true;
   },
 
   async sendNotification(phoneNumber: string, message: string) {
-    console.log(`[SMS MOCK] Sending Notification to ${phoneNumber}: "${message}"`);
+    // TODO: trocar por implementação real com Twilio (ou outro provedor).
+    logger.info({ phoneLast4: phoneNumber.slice(-4), hasMessage: Boolean(message) }, 'sms.send_notification.requested');
+    await new Promise((resolve) => setTimeout(resolve, 50));
     return true;
-  }
+  },
 };

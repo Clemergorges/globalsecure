@@ -1,9 +1,16 @@
 import { prisma } from '@/lib/db';
 import { SignJWT, jwtVerify } from 'jose';
 import { NextRequest, NextResponse } from 'next/server';
+import { env } from '@/lib/config/env';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super-secret-jwt-key-change-me');
 const COOKIE_NAME = 'auth_token';
+
+let cachedJwtSecretKey: Uint8Array | null = null;
+function jwtSecretKey() {
+  if (cachedJwtSecretKey) return cachedJwtSecretKey;
+  cachedJwtSecretKey = new TextEncoder().encode(env.jwtSecret());
+  return cachedJwtSecretKey;
+}
 
 const USER_ROLE_DURATION_SECONDS = 8 * 60 * 60;
 const ADMIN_ROLE_DURATION_SECONDS = 60 * 60;
@@ -55,14 +62,14 @@ export async function createSession(user: UserPayload, ip: string, userAgent: st
     .setJti(sessionId)
     .setIssuedAt()
     .setExpirationTime(new Date(expiresAt.getTime() + 5000))
-    .sign(JWT_SECRET);
+    .sign(jwtSecretKey());
 
   return { token, sessionId, expiresAt, maxAgeSeconds };
 }
 
 export async function validateTokenValue(tokenValue: string, requestUserAgent: string | null): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(tokenValue, JWT_SECRET);
+    const { payload } = await jwtVerify(tokenValue, jwtSecretKey());
     const sessionId = payload.jti as string | undefined;
 
     if (!sessionId) {
@@ -141,7 +148,7 @@ export async function revokeSession(sessionId: string) {
 export function setSessionCookie(response: NextResponse, token: string, maxAgeSeconds: number) {
   response.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.nodeEnv() === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: maxAgeSeconds,
@@ -155,7 +162,7 @@ export function setSessionCookie(response: NextResponse, token: string, maxAgeSe
 export function clearSessionCookie(response: NextResponse) {
   response.cookies.set(COOKIE_NAME, '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: env.nodeEnv() === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 0,
