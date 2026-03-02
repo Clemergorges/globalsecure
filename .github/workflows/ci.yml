@@ -10,6 +10,17 @@ jobs:
   build-and-test:
     name: Build & Test (EMI Audit)
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
+      DIRECT_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
+      JWT_SECRET: test-secret-key-for-ci
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      STRIPE_SECRET_KEY: sk_test_mock
+      STRIPE_WEBHOOK_SECRET: whsec_mock
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_mock
+      TWILIO_ACCOUNT_SID: ACmock
+      TWILIO_AUTH_TOKEN: mock
+      TWILIO_PHONE_NUMBER: +15005550006
 
     services:
       postgres:
@@ -58,7 +69,8 @@ jobs:
       - name: Setup Test Database
         run: npx prisma db push
         env:
-          DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          DIRECT_URL: ${{ env.DIRECT_URL }}
 
       - name: Run Linter
         run: npm run lint
