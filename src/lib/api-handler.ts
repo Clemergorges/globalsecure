@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server" 
 import { z, ZodSchema } from "zod" 
-import { redis } from "./redis" 
+import { redis, ensureRedisConnected } from "./redis" 
 import { logger, logAudit } from "./logger" 
 import * as Sentry from "@sentry/nextjs" 
 import { extractUserId } from "./auth"
@@ -44,6 +44,10 @@ async function applyRateLimit(
   const now = Math.floor(Date.now() / 1000) 
 
   try {
+      if (!redis.isOpen) {
+        const ok = await ensureRedisConnected();
+        if (!ok) return true;
+      }
       const tx = redis.multi() 
       tx.zRemRangeByScore(key, 0, now - cfg.window) 
       tx.zAdd(key, { score: now, value: `${now}-${Math.random()}` }) // Unique value for sorted set

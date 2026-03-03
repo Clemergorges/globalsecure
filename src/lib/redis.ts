@@ -3,10 +3,16 @@ import { createClient } from 'redis';
 // Standard Node.js Redis Client (Not for Edge)
 // Use in Route Handlers / Server Actions
 
-const globalForRedis = global as unknown as { redis: ReturnType<typeof createClient> };
+const globalForRedis = globalThis as unknown as {
+  redis?: ReturnType<typeof createClient>;
+  redisConnect?: Promise<unknown>;
+};
+
+const redisUrl = process.env.REDIS_URL;
+const shouldConnect = Boolean(redisUrl && !redisUrl.includes('mock'));
 
 const redis = globalForRedis.redis || createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379',
+  url: redisUrl || 'redis://localhost:6379',
   socket: {
     reconnectStrategy: (retries) => {
       // Don't retry indefinitely during build/CI
@@ -33,17 +39,23 @@ redis.on('error', (err) => {
 });
 
 // Connect only if not already connected
-if (!redis.isOpen) {
-  // Prevent connection during build time if REDIS_URL is not set or mock
-  const shouldConnect = process.env.REDIS_URL && !process.env.REDIS_URL.includes('mock');
-  
-  if (shouldConnect) {
-    redis.connect().catch((err) => {
-        if (err.code !== 'ECONNREFUSED') console.error('Redis Connect Error', err.message);
+if (!globalForRedis.redis) globalForRedis.redis = redis;
+
+export async function ensureRedisConnected() {
+  if (!shouldConnect) return false;
+  if (redis.isOpen) return true;
+  if (!globalForRedis.redisConnect) {
+    globalForRedis.redisConnect = redis.connect().catch((err) => {
+      globalForRedis.redisConnect = undefined;
+      throw err;
     });
   }
+  try {
+    await globalForRedis.redisConnect;
+    return redis.isOpen;
+  } catch {
+    return false;
+  }
 }
-
-if (process.env.NODE_ENV !== 'production') globalForRedis.redis = redis;
 
 export { redis };

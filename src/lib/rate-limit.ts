@@ -1,4 +1,4 @@
-import { redis } from '@/lib/redis';
+import { redis, ensureRedisConnected } from '@/lib/redis';
 import { alertService } from '@/lib/services/alert';
 
 interface RateLimitResult {
@@ -16,6 +16,17 @@ export async function checkRateLimit(
   const key = `rate_limit:${identifier}`;
   
   try {
+    if (!redis.isOpen) {
+      const ok = await ensureRedisConnected();
+      if (!ok) {
+        return {
+          success: true,
+          limit,
+          remaining: 1,
+          reset: Date.now() + (windowSeconds * 1000),
+        };
+      }
+    }
     const requests = await redis.incr(key);
     
     if (requests === 1) {
