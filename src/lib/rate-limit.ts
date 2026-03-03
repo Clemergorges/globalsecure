@@ -53,6 +53,15 @@ export async function checkRateLimit(
       reset: Date.now() + (ttl * 1000),
     };
   } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('The client is closed') || msg.includes('client is closed')) {
+      return {
+        success: true,
+        limit,
+        remaining: 1,
+        reset: Date.now() + (windowSeconds * 1000),
+      };
+    }
     console.error('Rate Limit Error:', error);
     // Fail open (allow request) if Redis is down, or fail closed? 
     // Usually fail open to avoid downtime, but for security critical... 

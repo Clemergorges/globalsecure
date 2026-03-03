@@ -63,6 +63,10 @@ async function applyRateLimit(
       const count = results[2] as unknown as number;
       return count <= cfg.limit 
   } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes('The client is closed') || msg.includes('client is closed')) {
+        return true;
+      }
       console.error("Rate limit redis error", e);
       return true; // Fail open
   }
