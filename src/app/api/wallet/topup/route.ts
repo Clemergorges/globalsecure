@@ -7,6 +7,7 @@ import { callPartnerWithBreaker, PartnerTemporarilyUnavailableError } from '@/li
 import { isOperationalFlagEnabled } from '@/lib/services/operational-flags';
 import { env } from '@/lib/config/env';
 import { logger } from '@/lib/logger';
+import { resolveBaseUrl } from '@/lib/http/request-origin';
 
 const topUpSchema = z.object({
   amount: z.number().positive().min(5),
@@ -52,6 +53,8 @@ export async function POST(req: Request) {
       apiVersion: '2024-12-18.acacia',
     });
 
+    const baseUrl = resolveBaseUrl(req, { allowLocalhostFallback: env.nodeEnv() !== 'production' });
+
     // Criar Sessão do Checkout
     const checkoutSession = await callPartnerWithBreaker('stripe', 'checkout.sessions.create', async () =>
       stripe.checkout.sessions.create({
@@ -81,8 +84,8 @@ export async function POST(req: Request) {
           },
         ],
         mode: 'payment',
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?payment=success`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?payment=cancel`,
+        success_url: `${baseUrl}/dashboard?payment=success`,
+        cancel_url: `${baseUrl}/dashboard?payment=cancel`,
         metadata: {
           userId: session.userId as string,
           type: 'WALLET_TOPUP',

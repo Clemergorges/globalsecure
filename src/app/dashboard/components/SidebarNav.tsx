@@ -41,17 +41,7 @@ export function SidebarNav({ userEmail, userRole }: SidebarNavProps) {
 
   const handleLogout = async () => {
     try {
-      // Clear cookie on client side if possible, or call API to clear httpOnly cookie
-      // Assuming we need to call an API route or just rely on server clearing it.
-      // For now, let's assume we redirect to a logout route or just clear via client script if not httpOnly.
-      // Since it's likely httpOnly, we should fetch a logout endpoint.
-      // Let's create a logout endpoint later or assume deleting cookie by name works if not httpOnly.
-      // Actually, safest is to just redirect to /auth/login which might clear it or we just redirect.
-      // Let's assume standard Next.js auth behavior.
-      
-      // Better: Call a server action or API route.
-      // For this MVP, let's just expire the cookie manually if we can access it, or redirect.
-      document.cookie = 'auth_token=; Max-Age=0; path=/;';
+      await fetch('/api/auth/logout', { method: 'POST' });
       router.push('/auth/login');
       router.refresh();
     } catch (error) {

@@ -69,7 +69,7 @@ const mockCheckRateLimit = jest.fn();
 const mockSendEmail = jest.fn();
 const mockHashPassword = jest.fn();
 const mockComparePassword = jest.fn();
-const mockLogAudit = jest.fn(async () => {});
+const mockLogAudit = jest.fn(async (..._args: any[]) => {});
 const mockGetCurrencyForCountry = jest.fn();
 const mockCreateSession = jest.fn();
 

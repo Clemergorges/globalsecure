@@ -1,140 +1,75 @@
 # Deploy no Vercel com Domínio Customizado
 
-## 1. Preparação do Ambiente
+Este guia é focado no app em `globalsecure_main`.
+
+## 1) Variáveis de ambiente (Vercel)
+
+Configure no Vercel (Production e Preview). Não comite segredos no Git.
 
 ```bash
-# Configure suas variáveis de ambiente no Vercel Dashboard
-# ou use o arquivo .env.local para testes locais
+NODE_ENV=production
 
-# Variáveis necessárias:
-DATABASE_URL=postgresql://usuario:senha@host:5432/globalsecuresend
-DIRECT_URL=postgresql://usuario:senha@host:5432/globalsecuresend
+# Database
+DATABASE_URL=postgresql://...
+DIRECT_URL=postgresql://...
+
+# URL canônica
+NEXT_PUBLIC_APP_URL=https://www.globalsecuresend.com
+# (opcional) manter igual ao canônico ou remover
+APP_BASE_URL=https://www.globalsecuresend.com
+
+# Auth/Security
 JWT_SECRET=GERAR_UM_SEGREDO_FORTE
-STRIPE_SECRET_KEY=YOUR_STRIPE_SECRET_KEY
-NEXTAUTH_URL=https://seudominio.com
-REDIS_URL=redis://default:YOUR_REDIS_PASSWORD@redis-host:6379
+OTP_PEPPER=GERAR_UM_SEGREDO_FORTE
+SENSITIVE_OTP_PEPPER=GERAR_UM_SEGREDO_FORTE
+CRON_SECRET=GERAR_UM_SEGREDO_FORTE
+
+# Supabase (server-side)
+SUPABASE_URL=https://xxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
+
+# Stripe (server-side)
+STRIPE_SECRET_KEY=sk_test_... ou sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Email (SMTP)
+SMTP_HOST=smtp.seuprovedor.com
+SMTP_PORT=465
+SMTP_USER=usuario
+SMTP_PASS=senha
+SMTP_FROM=onboarding@seudominio.com
+EMAIL_FROM=no-reply@seudominio.com
+
+# (opcional) Sentry
+SENTRY_DSN=https://...
 ```
 
-## 2. Configuração do Vercel
+## 2) Domínios e DNS
+
+### Domínio canônico recomendado
+
+- Produção: `https://www.globalsecuresend.com`
+- Configure no Vercel um redirect 308 do apex `globalsecuresend.com` → `www.globalsecuresend.com`.
+
+### Registros DNS
+
+- Para subdomínio `www`:
+  - Tipo: CNAME
+  - Nome: `www`
+  - Valor: `cname.vercel-dns.com`
+
+- Para domínio raiz (apex):
+  - Use o IP recomendado em **Vercel → Settings → Domains** (não use IP hardcoded antigo).
+
+## 3) SSL
+
+- O Vercel emite SSL automaticamente.
+- Se o seu domínio tiver registros **CAA**, inclua um CAA permitindo emissão por Let's Encrypt, senão o certificado pode ficar preso em `Pending`.
+
+## 4) Validação rápida
 
 ```bash
-# Instale o CLI do Vercel
-npm i -g vercel
-
-# Faça login na sua conta
-vercel login
-
-# Configure o projeto
-vercel
-
-# Quando solicitado:
-# - Set up and deploy: Yes
-# - Which scope: Sua conta/organização
-# - Link to existing project: No
-# - Project name: globalsecuresend
-# - Directory: ./ (ou o diretório atual)
+curl -I https://www.globalsecuresend.com/api/health
 ```
 
-## 3. Configuração de Domínio Customizado
-
-### Opção A: Via Dashboard Vercel
-1. Acesse: https://vercel.com/dashboard
-2. Selecione seu projeto
-3. Vá para "Settings" → "Domains"
-4. Adicione seu domínio: `seudominio.com`
-5. Siga as instruções de DNS
-
-### Opção B: Via CLI
-```bash
-# Adicione seu domínio
-vercel domains add seudominio.com
-
-# Verifique status
-vercel domains inspect seudominio.com
-```
-
-## 4. Configuração DNS
-
-### Para domínio raiz (exemplo.com):
-```
-Tipo: A
-Nome: @
-Valor: 76.76.19.61
-TTL: 3600
-```
-
-### Para subdomínio (www.exemplo.com ou app.exemplo.com):
-```
-Tipo: CNAME
-Nome: www (ou app)
-Valor: cname.vercel-dns.com
-TTL: 3600
-```
-
-## 5. SSL Automático
-O Vercel fornece SSL automático via Let's Encrypt para todos os domínios customizados.
-
-## 6. Configuração Final do Projeto
-
-```json
-// vercel.json atualizado
-{
-  "crons": [
-    {
-      "path": "/api/cron/reconcile-ledger",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/process-queue",
-      "schedule": "0 1 * * *"
-    }
-  ],
-  "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  }
-}
-```
-
-## 7. Deploy Final
-
-```bash
-# Deploy para produção
-vercel --prod
-
-# Ou configure deploy automático via GitHub
-# Cada push para a branch main dispara deploy
-```
-
-## 8. Verificação
-
-```bash
-# Verifique se está funcionando
-curl -I https://seudominio.com/api/health
-
-# Deve retornar: HTTP/2 200
-```
-
-## Notas Importantes:
-
-1. **Banco de Dados**: Você precisa de um banco PostgreSQL externo (Supabase, Neon, ou RDS)
-2. **Redis**: Use Upstash Redis (gratuito) ou Redis Cloud
-3. **Stripe**: Configure webhooks para o domínio customizado
-4. **Email**: Configure SendGrid ou similar para emails de produção
-
-## Comandos Úteis:
-
-```bash
-# Ver logs
-vercel logs
-
-# Redeploy
-vercel --force
-
-# Rollback
-vercel rollback
-
-# Ver variáveis de ambiente
-vercel env ls
-```
+Se o login “parecer instável”, verifique se você não está alternando entre apex e www (cookie de sessão é host-only) e se não há 500 por falha de DB.

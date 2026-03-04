@@ -5,13 +5,20 @@ dotenv.config();
 
 const envSchema = z.object({
   DATABASE_URL: z.string().url().describe('PostgreSQL Connection URL'),
-  STRIPE_SECRET_KEY: z.string().startsWith('sk_').describe('Stripe Secret Key (Production)'),
-  RESEND_API_KEY: z.string().startsWith('re_').describe('Resend API Key'),
-  NEXTAUTH_SECRET: z.string().min(32).describe('NextAuth Secret for JWT encryption'),
   NEXT_PUBLIC_APP_URL: z.string().url().describe('Application Public URL'),
-  SENTRY_DSN: z.string().url().optional().describe('Sentry DSN for Error Tracking'),
+  JWT_SECRET: z.string().min(24).describe('JWT secret for session tokens'),
+  OTP_PEPPER: z.string().min(16).describe('Pepper for OTP hashing'),
+  SENSITIVE_OTP_PEPPER: z.string().min(16).describe('Pepper for sensitive OTP hashing'),
+  SUPABASE_URL: z.string().url().describe('Supabase project URL'),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).describe('Supabase service role key'),
+  STRIPE_SECRET_KEY: z.string().startsWith('sk_').describe('Stripe Secret Key'),
   CRON_SECRET: z.string().min(10).describe('Secret to protect Cron Endpoints'),
-  REDIS_URL: z.string().url().optional().describe('Redis URL for Rate Limiting/Queues')
+  SENTRY_DSN: z.string().url().optional().describe('Sentry DSN for Error Tracking'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
 });
 
 async function checkEnv() {

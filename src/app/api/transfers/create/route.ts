@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { UserRiskTier } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { getJurisdictionRules } from '@/lib/services/jurisdiction-rules';
+import { resolveBaseUrl } from '@/lib/http/request-origin';
 
 const transferSchema = z.object({
   mode: z.enum(['ACCOUNT_CONTROLLED', 'CARD_EMAIL', 'SELF_TRANSFER']), // Add other modes if needed
@@ -670,7 +671,7 @@ export async function POST(req: Request) {
         // Send Email
         try {
             const { sendEmail, templates } = await import('@/lib/services/email');
-            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+            const baseUrl = resolveBaseUrl(req, { allowLocalhostFallback: process.env.NODE_ENV !== 'production' });
             const viewCardUrl = `${baseUrl}/card/${token}`;
             await sendEmail({
               to: receiverEmail!,
