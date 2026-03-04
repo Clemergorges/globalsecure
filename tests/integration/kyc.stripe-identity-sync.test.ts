@@ -5,14 +5,15 @@ jest.mock('@/lib/auth', () => ({
   getSession: jest.fn(),
 }));
 
+var stripeRetrieveMock = jest.fn();
 jest.mock('@/lib/services/stripe', () => ({
-  stripe: {
+  getStripe: () => ({
     identity: {
       verificationSessions: {
-        retrieve: jest.fn(),
+        retrieve: stripeRetrieveMock,
       },
     },
-  },
+  }),
 }));
 
 import { getSession } from '@/lib/auth';
@@ -23,8 +24,7 @@ function uid(prefix: string) {
 
 describe('POST /api/kyc/stripe-identity/sync', () => {
   const createdUserIds: string[] = [];
-  const retrieveMock = () =>
-    (require('@/lib/services/stripe').stripe.identity.verificationSessions.retrieve as jest.Mock);
+  const retrieveMock = () => stripeRetrieveMock;
 
   afterEach(async () => {
     retrieveMock().mockReset();

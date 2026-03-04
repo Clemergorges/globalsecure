@@ -26,6 +26,8 @@ jest.mock('@/lib/rate-limit', () => ({
   checkRateLimit: jest.fn(async () => ({ success: true, limit: 10, remaining: 9, reset: Date.now() + 60000 })),
 }));
 
+import { NextRequest } from 'next/server';
+
 describe('Auth: Forgot password flow', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -39,7 +41,7 @@ describe('Auth: Forgot password flow', () => {
   test('returns 200 when SMTP not configured (generic message, logs)', async () => {
     mockPrisma.user.findUnique.mockResolvedValue({ id: 'u1', email: 'user@test.com' });
     const { POST: forgotPOST } = await import('@/app/api/auth/forgot-password/route');
-    const req = new Request('http://localhost/api/auth/forgot-password', {
+    const req = new NextRequest('http://localhost/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'user@test.com' }),
@@ -61,7 +63,7 @@ describe('Auth: Forgot password flow', () => {
     mockSendEmail.mockResolvedValue({ ok: false, error: 'SMTP_SEND_FAILED' });
 
     const { POST: forgotPOST } = await import('@/app/api/auth/forgot-password/route');
-    const req = new Request('http://localhost/api/auth/forgot-password', {
+    const req = new NextRequest('http://localhost/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'user@test.com' }),
