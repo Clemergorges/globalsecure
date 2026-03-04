@@ -1,5 +1,4 @@
 import { prisma } from '../setup/prisma';
-import { GET as statusGet } from '@/app/api/kyc/status/route';
 
 jest.mock('@/lib/auth', () => ({
   getSession: jest.fn(),
@@ -28,8 +27,8 @@ describe('GET /api/kyc/status auto-sync Stripe Identity', () => {
 
   afterEach(async () => {
     retrieveMock().mockReset();
-    await prisma.kYCDocument.deleteMany({});
     if (createdUserIds.length) {
+      await prisma.kYCDocument.deleteMany({ where: { userId: { in: createdUserIds } } });
       await prisma.account.deleteMany({ where: { userId: { in: createdUserIds } } });
       await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
       createdUserIds.splice(0, createdUserIds.length);
@@ -38,6 +37,7 @@ describe('GET /api/kyc/status auto-sync Stripe Identity', () => {
 
   test('retorna status atual sem sessão', async () => {
     (getSession as unknown as jest.Mock).mockResolvedValue(null);
+    const { GET: statusGet } = await import('@/app/api/kyc/status/route');
     const req = new Request('http://localhost/api/kyc/status', { method: 'GET' });
     const res = await statusGet(req);
     expect(res.status).toBe(401);
@@ -73,6 +73,7 @@ describe('GET /api/kyc/status auto-sync Stripe Identity', () => {
       },
     });
 
+    const { GET: statusGet } = await import('@/app/api/kyc/status/route');
     const req = new Request('http://localhost/api/kyc/status', { method: 'GET' });
     const res = await statusGet(req);
     expect(res.status).toBe(200);

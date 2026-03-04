@@ -12,11 +12,11 @@ jest.mock('next/headers', () => ({
 }));
 
 jest.mock('@/lib/services/stripe', () => ({
-  stripe: {
+  getStripe: () => ({
     webhooks: {
       constructEvent: (...args: any[]) => mockConstructEvent(...args),
     },
-  },
+  }),
 }));
 
 jest.mock('@/lib/services/email', () => ({

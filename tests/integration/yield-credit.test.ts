@@ -8,6 +8,7 @@ function uid() {
 
 describe('Yield credit helpers', () => {
   let userId: string;
+  let assetSymbol: string;
 
   beforeAll(() => {
     process.env.YIELD_LTV_MAX_BPS = '3000';
@@ -15,13 +16,24 @@ describe('Yield credit helpers', () => {
   });
 
   beforeEach(async () => {
-    await prisma.marketGuard.deleteMany({});
     const email = `${uid()}@test.com`;
     const user = await prisma.user.create({
       data: { email, passwordHash: 'hash', firstName: 'Test', lastName: 'User' },
       select: { id: true },
     });
     userId = user.id;
+    assetSymbol = `TEST_${uid()}`.toUpperCase();
+    await prisma.userCreditLine.create({
+      data: {
+        userId,
+        collateralAsset: assetSymbol,
+        collateralAmount: new Prisma.Decimal(0),
+        collateralValueUsd: new Prisma.Decimal(0),
+        ltvMax: new Prisma.Decimal(0),
+        ltvCurrent: new Prisma.Decimal(0),
+        status: 'INACTIVE',
+      },
+    });
   });
 
   afterEach(async () => {

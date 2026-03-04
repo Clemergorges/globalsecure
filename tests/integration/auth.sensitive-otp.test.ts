@@ -41,7 +41,7 @@ describe('Block 3: Sensitive action OTP', () => {
   });
 
   afterAll(async () => {
-    await prisma.sensitiveActionOtp.deleteMany({ where: { userId: user.id } });
+    await prisma.otpChallenge.deleteMany({ where: { userId: user.id } });
     await prisma.session.deleteMany({ where: { userId: user.id } });
     await prisma.user.deleteMany({ where: { id: user.id } });
   });
@@ -59,8 +59,8 @@ describe('Block 3: Sensitive action OTP', () => {
     const body = await res.json();
     expect(body.success).toBe(true);
 
-    const latest = await prisma.sensitiveActionOtp.findFirst({
-      where: { userId: user.id, actionType: SensitiveActionType.SENSITIVE_CHANGE_PASSWORD },
+    const latest = await prisma.otpChallenge.findFirst({
+      where: { userId: user.id, purpose: 'PASSWORD_CHANGE' },
       orderBy: { createdAt: 'desc' },
     });
     expect(latest).not.toBeNull();
@@ -91,8 +91,8 @@ describe('Block 3: Sensitive action OTP', () => {
     const dbSession = await prisma.session.findUnique({ where: { id: sessionId }, select: { lastScaAt: true } });
     expect(dbSession?.lastScaAt).toBeTruthy();
 
-    const otp = await prisma.sensitiveActionOtp.findFirst({
-      where: { userId: user.id, actionType: SensitiveActionType.SENSITIVE_HIGH_VALUE_TRANSFER },
+    const otp = await prisma.otpChallenge.findFirst({
+      where: { userId: user.id, purpose: 'HIGH_VALUE_TRANSFER' },
       orderBy: { createdAt: 'desc' },
       select: { usedAt: true },
     });
@@ -163,8 +163,8 @@ describe('Block 3: Sensitive action OTP', () => {
     const code = extractCodeFromMock();
     expect(code).toBeTruthy();
 
-    await prisma.sensitiveActionOtp.updateMany({
-      where: { userId: user.id, actionType: SensitiveActionType.SENSITIVE_CHANGE_PASSWORD, usedAt: null },
+    await prisma.otpChallenge.updateMany({
+      where: { userId: user.id, purpose: 'PASSWORD_CHANGE', usedAt: null },
       data: { expiresAt: new Date(Date.now() - 1000) },
     });
 

@@ -94,7 +94,7 @@ describe('Block 4: Audit logs', () => {
     await prisma.auditLog.deleteMany({ where: { userId: { in: [user.id, compliance.id, treasury.id] } } });
     await prisma.amlReviewNote.deleteMany({ where: { authorId: compliance.id } });
     await prisma.amlReviewCase.deleteMany({ where: { userId: user.id } });
-    await prisma.sensitiveActionOtp.deleteMany({ where: { userId: user.id } });
+    await prisma.otpChallenge.deleteMany({ where: { userId: user.id } });
     await prisma.session.deleteMany({ where: { userId: { in: [user.id, compliance.id, treasury.id] } } });
     await prisma.accountTransaction.deleteMany({ where: { account: { userId: user.id } } });
     await prisma.account.deleteMany({ where: { userId: user.id } });

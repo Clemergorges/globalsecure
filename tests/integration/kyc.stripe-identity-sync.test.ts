@@ -1,5 +1,4 @@
 import { prisma } from '../setup/prisma';
-import { POST as syncPost } from '@/app/api/kyc/stripe-identity/sync/route';
 
 jest.mock('@/lib/auth', () => ({
   getSession: jest.fn(),
@@ -28,8 +27,8 @@ describe('POST /api/kyc/stripe-identity/sync', () => {
 
   afterEach(async () => {
     retrieveMock().mockReset();
-    await prisma.kYCDocument.deleteMany({});
     if (createdUserIds.length) {
+      await prisma.kYCDocument.deleteMany({ where: { userId: { in: createdUserIds } } });
       await prisma.account.deleteMany({ where: { userId: { in: createdUserIds } } });
       await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
       createdUserIds.splice(0, createdUserIds.length);
@@ -38,6 +37,7 @@ describe('POST /api/kyc/stripe-identity/sync', () => {
 
   test('retorna 401 sem sessão', async () => {
     (getSession as unknown as jest.Mock).mockResolvedValue(null);
+    const { POST: syncPost } = await import('@/app/api/kyc/stripe-identity/sync/route');
     const req = new Request('http://localhost/api/kyc/stripe-identity/sync', {
       method: 'POST',
       body: JSON.stringify({ sessionId: 'vs_test_123' }),
@@ -84,6 +84,7 @@ describe('POST /api/kyc/stripe-identity/sync', () => {
       body: JSON.stringify({ sessionId: 'vs_test_999' }),
       headers: { 'content-type': 'application/json' },
     });
+    const { POST: syncPost } = await import('@/app/api/kyc/stripe-identity/sync/route');
     const res = await syncPost(req);
     expect(res.status).toBe(200);
     const body = await res.json();

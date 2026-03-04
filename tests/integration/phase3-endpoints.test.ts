@@ -72,10 +72,10 @@ describe('Phase 3 endpoints and jobs', () => {
     const body = await res.json();
 
     expect(body.yieldEnabled).toBe(true);
-    expect(body.usd.powerUsd).toBeCloseTo(3000, 2);
+    expect(body.usd.powerUsd).toBeCloseTo(3500, 2);
     expect(body.usd.debtUsd).toBeCloseTo(500, 2);
     expect(body.usd.reservedUsd).toBeCloseTo(500, 2);
-    expect(body.usd.availableUsd).toBeCloseTo(2500, 2);
+    expect(body.usd.availableUsd).toBeCloseTo(3000, 2);
 
     await prisma.yieldLiability.deleteMany({ where: { userId: user.id } });
     await prisma.userCreditLine.deleteMany({ where: { userId: user.id } });

@@ -69,7 +69,7 @@ const mockCheckRateLimit = jest.fn();
 const mockSendEmail = jest.fn();
 const mockHashPassword = jest.fn();
 const mockComparePassword = jest.fn();
-const mockLogAudit = jest.fn();
+const mockLogAudit = jest.fn(async () => {});
 const mockGetCurrencyForCountry = jest.fn();
 const mockCreateSession = jest.fn();
 
@@ -109,7 +109,8 @@ jest.mock('@/lib/redis', () => ({
       };
       return chain;
     }
-  }
+  },
+  ensureRedisConnected: jest.fn(async () => false),
 }));
 
 import { POST as registerPOST } from '../../src/app/api/auth/register/route';
