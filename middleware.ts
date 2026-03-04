@@ -17,20 +17,6 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-request-id', requestId);
 
-  if (process.env.NODE_ENV === 'production') {
-    const rawHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
-    const host = rawHost ? rawHost.split(',')[0].trim() : '';
-
-    if (host === 'globalsecuresend.com') {
-      const url = request.nextUrl.clone();
-      url.host = 'www.globalsecuresend.com';
-      url.protocol = 'https:';
-      const response = NextResponse.redirect(url, 308);
-      response.headers.set('x-request-id', requestId);
-      return applySecurityHeaders(response);
-    }
-  }
-
   const { pathname } = request.nextUrl;
   const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
 
