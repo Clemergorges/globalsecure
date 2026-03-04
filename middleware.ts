@@ -17,21 +17,17 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-request-id', requestId);
 
-  const configuredBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim();
-  if (process.env.NODE_ENV === 'production' && configuredBaseUrl) {
-    try {
-      const canonical = new URL(configuredBaseUrl);
-      const rawHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
-      const host = rawHost ? rawHost.split(',')[0].trim() : '';
-      if (host && canonical.host && host !== canonical.host && (host === 'globalsecuresend.com' || host === `www.globalsecuresend.com`)) {
-        const url = request.nextUrl.clone();
-        url.protocol = canonical.protocol;
-        url.host = canonical.host;
-        const response = NextResponse.redirect(url, 308);
-        response.headers.set('x-request-id', requestId);
-        return applySecurityHeaders(response);
-      }
-    } catch {
+  if (process.env.NODE_ENV === 'production') {
+    const rawHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    const host = rawHost ? rawHost.split(',')[0].trim() : '';
+
+    if (host === 'globalsecuresend.com') {
+      const url = request.nextUrl.clone();
+      url.host = 'www.globalsecuresend.com';
+      url.protocol = 'https:';
+      const response = NextResponse.redirect(url, 308);
+      response.headers.set('x-request-id', requestId);
+      return applySecurityHeaders(response);
     }
   }
 
