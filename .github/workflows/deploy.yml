@@ -104,11 +104,11 @@ jobs:
         if: success()
         run: |
           echo "✅ Deploy automático concluído!"
-          echo "🌐 URL: https://seu-dominio.com"
+          echo "🌐 URL: https://globalsecuresend.com"
           echo "📊 Status: $(date)"
 
       - name: Health check
         if: success()
         run: |
           sleep 30
-          curl -f https://seu-dominio.com/api/health || exit 1
+          curl -f https://globalsecuresend.com/api/health || exit 1
