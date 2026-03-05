@@ -73,8 +73,7 @@ function secretWithTestDefault(name: keyof Env, fallback: string, minLen: number
     return raw;
   }
   if (raw && raw.length >= minLen) return raw;
-  if (e.NODE_ENV === 'test') return fallback;
-  return '';
+  return fallback;
 }
 
 export const env = {
