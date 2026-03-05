@@ -1,15 +1,12 @@
 const { spawnSync } = require('child_process');
 
 function shouldRun() {
-  if (process.env.RUN_DB_MIGRATIONS === 'true') return true;
-  if (process.env.VERCEL === '1') return true;
-  if (process.env.VERCEL_ENV) return true;
-  return false;
+  return process.env.RUN_DB_MIGRATIONS === 'true';
 }
 
 function run() {
   if (!shouldRun()) {
-    console.log('[vercel-migrate] Skipping prisma migrate deploy (not running on Vercel)');
+    console.log('[vercel-migrate] Skipping prisma migrate deploy (RUN_DB_MIGRATIONS not enabled)');
     return;
   }
 
@@ -25,4 +22,3 @@ function run() {
 }
 
 run();
-
