@@ -136,7 +136,7 @@ describe('2FA routes (no KYC dependency + hardened errors)', () => {
     const res = await enablePost(req as any);
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body).toEqual({ error: 'Internal server error' });
+    expect(body).toEqual({ error: 'Internal server error', requestId: expect.any(String) });
   });
 
   test('verify: consumes OTP and enables 2FA (phoneVerified=true) even if KYC pending', async () => {
@@ -198,7 +198,7 @@ describe('2FA routes (no KYC dependency + hardened errors)', () => {
     const res = await verifyPost(req as any);
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body).toEqual({ error: 'Internal server error' });
+    expect(body).toEqual({ error: 'Internal server error', requestId: expect.any(String) });
   });
 });
 

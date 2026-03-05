@@ -124,6 +124,8 @@
   },
   "Common": {
     "close": "Fechar",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
     "cancel": "Cancelar",
     "confirm": "Confirmar",
     "back": "Voltar",

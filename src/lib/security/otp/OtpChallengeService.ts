@@ -33,9 +33,7 @@ export class OtpChallengeService {
     const codeHash = hashOtp(code);
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
-    const otpChallenge = (prisma as any).otpChallenge;
-
-    await otpChallenge.create({
+    await prisma.otpChallenge.create({
       data: {
         userId: params.userId,
         purpose: params.purpose,
@@ -56,8 +54,7 @@ export class OtpChallengeService {
     const now = new Date();
 
     return prisma.$transaction(async (tx) => {
-      const otpChallenge = (tx as any).otpChallenge;
-      const latest = await otpChallenge.findFirst({
+      const latest = await tx.otpChallenge.findFirst({
         where: {
           userId: params.userId,
           purpose: params.purpose,
@@ -73,14 +70,14 @@ export class OtpChallengeService {
       if (latest.attempts >= latest.maxAttempts) return { ok: false as const, reason: 'LOCKED' as const };
 
       if (latest.codeHash !== codeHash) {
-        await otpChallenge.update({
+        await tx.otpChallenge.update({
           where: { id: latest.id },
           data: { attempts: { increment: 1 } },
         });
         return { ok: false as const, reason: 'INVALID' as const };
       }
 
-      const updated = await otpChallenge.updateMany({
+      const updated = await tx.otpChallenge.updateMany({
         where: { id: latest.id, usedAt: null },
         data: { usedAt: now },
       });

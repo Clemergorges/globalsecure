@@ -284,6 +284,14 @@ export async function POST(req: Request) {
       }
     });
 
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        kycStatus: 'PENDING',
+        kycLevel: 1,
+      },
+    });
+
     await logAudit({
       userId,
       action: 'KYC_STRIPE_IDENTITY_CREATE',

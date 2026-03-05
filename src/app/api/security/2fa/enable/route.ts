@@ -5,28 +5,39 @@ import { smsService } from '@/lib/services/sms';
 import { withRouteContext } from '@/lib/http/route';
 import { OtpChallengeService } from '@/lib/security/otp/OtpChallengeService';
 import { logAudit, logger } from '@/lib/logger';
+import { env } from '@/lib/config/env';
 
 const schema = z.object({});
 
 export const POST = withRouteContext(async (req: NextRequest, ctx) => {
   try {
+    if (!ctx.userId) {
+      return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED', requestId: ctx.requestId }, { status: 401 });
+    }
+
+    try {
+      env.otpPepper();
+    } catch {
+      return NextResponse.json({ error: 'Service unavailable', code: 'ENV_MISCONFIGURED', requestId: ctx.requestId }, { status: 503 });
+    }
+
     const parsed = schema.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid request', code: 'VALIDATION_ERROR' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request', code: 'VALIDATION_ERROR', requestId: ctx.requestId }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: ctx.userId! },
+      where: { id: ctx.userId },
       select: { id: true, phone: true, phoneVerified: true, kycStatus: true },
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED', requestId: ctx.requestId }, { status: 401 });
     }
 
     if (!user.phone) {
       return NextResponse.json(
-        { error: 'Phone number required. Please update profile first.', code: 'PHONE_REQUIRED' },
+        { error: 'Phone number required. Please update profile first.', code: 'PHONE_REQUIRED', requestId: ctx.requestId },
         { status: 409 },
       );
     }
@@ -59,6 +70,6 @@ export const POST = withRouteContext(async (req: NextRequest, ctx) => {
     return NextResponse.json({ success: true, ttlSeconds, phoneVerified: user.phoneVerified });
   } catch (error) {
     logger.error({ err: error, requestId: ctx.requestId, userId: ctx.userId, path: ctx.path }, 'security.2fa.enable.error');
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error', requestId: ctx.requestId }, { status: 500 });
   }
 });

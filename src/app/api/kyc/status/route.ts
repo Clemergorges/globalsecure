@@ -46,7 +46,6 @@ export async function GET(req: Request) {
 
     if (
       latestDoc?.stripeVerificationId &&
-      (user.kycStatus === 'PENDING' || user.kycStatus === 'REVIEW') &&
       (latestDoc.status === 'PENDING' || latestDoc.status === 'REVIEW')
     ) {
       const s = await getStripe().identity.verificationSessions.retrieve(latestDoc.stripeVerificationId);
@@ -55,26 +54,31 @@ export async function GET(req: Request) {
         const idNumber = s.verified_outputs?.id_number;
         const docType = s.verified_outputs?.id_number_type;
 
-        await prisma.kYCDocument.update({
-          where: { id: latestDoc.id },
-          data: {
-            status: 'APPROVED',
-            verifiedAt: new Date(),
-            documentNumber: idNumber || 'HIDDEN',
-            issuingCountry: issuingCountry || 'UNKNOWN',
-          },
-        });
+        await prisma.$transaction(async (tx) => {
+          await tx.kYCDocument.update({
+            where: { id: latestDoc.id },
+            data: {
+              status: 'APPROVED',
+              verifiedAt: new Date(),
+              documentNumber: idNumber || 'HIDDEN',
+              issuingCountry: issuingCountry || 'UNKNOWN',
+            },
+          });
 
-        await prisma.user.update({
+          await tx.user.update({
+            // @ts-ignore
+            where: { id: session.userId },
+            data: {
+              kycStatus: 'APPROVED',
+              kycLevel: 2,
+              kycCompletedAt: new Date(),
+              documentNumber: idNumber || undefined,
+              documentType: mapStripeDocType(docType),
+            },
+          });
+
           // @ts-ignore
-          where: { id: session.userId },
-          data: {
-            kycStatus: 'APPROVED',
-            kycLevel: 2,
-            kycCompletedAt: new Date(),
-            documentNumber: idNumber || undefined,
-            documentType: mapStripeDocType(docType),
-          },
+          await tx.account.updateMany({ where: { userId: session.userId }, data: { status: 'ACTIVE' } });
         });
 
         return NextResponse.json({
