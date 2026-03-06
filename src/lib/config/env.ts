@@ -24,6 +24,7 @@ const schema = z.object({
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
+  KYC_STRIPE_IDENTITY_DEMO_MODE: z.string().optional(),
   SMS_PROVIDER: z.enum(['verify', 'messaging']).optional(),
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
@@ -48,6 +49,7 @@ function loadEnv(): Env {
     'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY',
     'STRIPE_SECRET_KEY',
+    'KYC_STRIPE_IDENTITY_DEMO_MODE',
     'SMS_PROVIDER',
     'TWILIO_ACCOUNT_SID',
     'TWILIO_AUTH_TOKEN',
@@ -90,6 +92,11 @@ function secretWithTestDefault(name: keyof Env, fallback: string, minLen: number
   return fallback;
 }
 
+function parseBoolean(raw: string | undefined) {
+  const v = (raw ?? '').trim().toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes' || v === 'on';
+}
+
 export const env = {
   nodeEnv: () => loadEnv().NODE_ENV,
   jwtSecret: () => secretWithTestDefault('JWT_SECRET', TEST_DEFAULT_JWT_SECRET, 24),
@@ -98,6 +105,7 @@ export const env = {
   supabaseUrl: () => requireProdSecret('SUPABASE_URL', 1),
   supabaseServiceRoleKey: () => requireProdSecret('SUPABASE_SERVICE_ROLE_KEY', 20),
   stripeSecretKey: () => requireProdSecret('STRIPE_SECRET_KEY', 20),
+  kycStripeIdentityDemoMode: () => parseBoolean(loadEnv().KYC_STRIPE_IDENTITY_DEMO_MODE),
   smsProvider: () => loadEnv().SMS_PROVIDER ?? '',
   twilioAccountSid: () => loadEnv().TWILIO_ACCOUNT_SID ?? '',
   twilioAuthToken: () => loadEnv().TWILIO_AUTH_TOKEN ?? '',

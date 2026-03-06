@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
+import { env } from '@/lib/config/env';
 import { prisma } from '@/lib/db';
 import { getStripe } from '@/lib/services/stripe';
+import { logger } from '@/lib/logger';
 
 function mapStripeDocType(stripeType: string | null | undefined): 'PASSPORT' | 'NATIONAL_ID' | 'RESIDENCE_PERMIT' | 'DRIVERS_LICENSE' | undefined {
   if (!stripeType) return undefined;
@@ -19,64 +21,87 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (env.kycStripeIdentityDemoMode()) {
+    await prisma.user.update({
+      where: { id: session.userId },
+      data: { kycStatus: 'APPROVED', kycLevel: 2, kycCompletedAt: new Date() },
+    });
+    return NextResponse.json({ success: true, kycStatus: 'APPROVED' }, { status: 200 });
+  }
+
   let body: { sessionId?: string } = {};
   try {
     body = await req.json();
   } catch {}
 
   const sessionId = typeof body.sessionId === 'string' ? body.sessionId.trim() : '';
-  if (!sessionId) {
-    return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
-  }
-  if (!sessionId.startsWith('vs_')) {
+  if (sessionId && !sessionId.startsWith('vs_')) {
     return NextResponse.json({ error: 'Invalid sessionId' }, { status: 400 });
   }
 
-  const doc = await prisma.kYCDocument.findUnique({
-    where: { stripeVerificationId: sessionId },
-    select: { id: true, userId: true, status: true },
-  });
+  const doc = sessionId
+    ? await prisma.kYCDocument.findUnique({
+        where: { stripeVerificationId: sessionId },
+        select: { id: true, userId: true, status: true, stripeVerificationId: true },
+      })
+    : await prisma.kYCDocument.findFirst({
+        where: { userId: session.userId, stripeVerificationId: { not: null } },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, userId: true, status: true, stripeVerificationId: true },
+      });
 
   if (!doc || doc.userId !== session.userId) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const s = await getStripe().identity.verificationSessions.retrieve(sessionId);
+  if (doc.status === 'APPROVED') {
+    await prisma.user.update({
+      where: { id: doc.userId },
+      data: { kycStatus: 'APPROVED', kycLevel: 2, kycCompletedAt: new Date() },
+    });
+    return NextResponse.json({ success: true, kycStatus: 'APPROVED' }, { status: 200 });
+  }
+
+  const sid = doc.stripeVerificationId ?? '';
+  if (!sid) {
+    return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
+  }
+
+  const s = await getStripe().identity.verificationSessions.retrieve(sid);
   const stripeStatus = s.status;
 
   if (stripeStatus === 'verified') {
-    if (doc.status !== 'APPROVED') {
-      const issuingCountry = s.verified_outputs?.address?.country;
-      const idNumber = s.verified_outputs?.id_number;
-      const docType = s.verified_outputs?.id_number_type;
+    const issuingCountry = s.verified_outputs?.address?.country;
+    const idNumber = s.verified_outputs?.id_number;
+    const docType = s.verified_outputs?.id_number_type;
 
-      await prisma.kYCDocument.update({
-        where: { id: doc.id },
-        data: {
-          status: 'APPROVED',
-          verifiedAt: new Date(),
-          documentNumber: idNumber || 'HIDDEN',
-          issuingCountry: issuingCountry || 'UNKNOWN',
-        },
-      });
+    await prisma.kYCDocument.update({
+      where: { id: doc.id },
+      data: {
+        status: 'APPROVED',
+        verifiedAt: new Date(),
+        documentNumber: idNumber || 'HIDDEN',
+        issuingCountry: issuingCountry || 'UNKNOWN',
+      },
+    });
 
-      await prisma.user.update({
-        where: { id: doc.userId },
-        data: {
-          kycStatus: 'APPROVED',
-          kycLevel: 2,
-          kycCompletedAt: new Date(),
-          documentNumber: idNumber || undefined,
-          documentType: mapStripeDocType(docType),
-        },
-      });
-    }
+    await prisma.user.update({
+      where: { id: doc.userId },
+      data: {
+        kycStatus: 'APPROVED',
+        kycLevel: 2,
+        kycCompletedAt: new Date(),
+        documentNumber: idNumber || undefined,
+        documentType: mapStripeDocType(docType),
+      },
+    });
 
-    return NextResponse.json({ status: 'APPROVED', stripeStatus }, { status: 200 });
+    logger.info({ userId: doc.userId, stripeStatus }, 'kyc.stripe_identity.sync.approved');
+    return NextResponse.json({ success: true, kycStatus: 'APPROVED', stripeStatus }, { status: 200 });
   }
 
   if (stripeStatus === 'requires_input') {
-    return NextResponse.json({ status: doc.status, stripeStatus, lastError: s.last_error || null }, { status: 200 });
+    return NextResponse.json({ success: true, kycStatus: doc.status, stripeStatus, lastError: s.last_error || null }, { status: 200 });
   }
 
   if (stripeStatus === 'canceled') {
@@ -86,8 +111,8 @@ export async function POST(req: Request) {
         data: { status: 'REJECTED', rejectionReason: 'CANCELED' },
       });
     }
-    return NextResponse.json({ status: 'REJECTED', stripeStatus }, { status: 200 });
+    return NextResponse.json({ success: true, kycStatus: 'REJECTED', stripeStatus }, { status: 200 });
   }
 
-  return NextResponse.json({ status: doc.status, stripeStatus }, { status: 200 });
+  return NextResponse.json({ success: true, kycStatus: doc.status, stripeStatus }, { status: 200 });
 }
