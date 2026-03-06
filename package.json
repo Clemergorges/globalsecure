@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "dev:3002": "next dev -p 3002",
-    "build": "prisma generate && node scripts/vercel-migrate.js && next build",
-    "vercel-build": "prisma generate && node scripts/vercel-migrate.js && next build",
+    "build": "prisma generate && next build",
+    "vercel-build": "prisma generate && next build",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint --quiet",
