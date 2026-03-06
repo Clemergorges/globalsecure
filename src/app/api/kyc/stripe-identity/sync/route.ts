@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       where: { id: session.userId },
       data: { kycStatus: 'APPROVED', kycLevel: 2, kycCompletedAt: new Date() },
     });
-    return NextResponse.json({ success: true, kycStatus: 'APPROVED' }, { status: 200 });
+    return NextResponse.json({ success: true, status: 'APPROVED', kycStatus: 'APPROVED' }, { status: 200 });
   }
 
   let body: { sessionId?: string } = {};
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       where: { id: doc.userId },
       data: { kycStatus: 'APPROVED', kycLevel: 2, kycCompletedAt: new Date() },
     });
-    return NextResponse.json({ success: true, kycStatus: 'APPROVED' }, { status: 200 });
+    return NextResponse.json({ success: true, status: 'APPROVED', kycStatus: 'APPROVED' }, { status: 200 });
   }
 
   const sid = doc.stripeVerificationId ?? '';
@@ -75,33 +75,38 @@ export async function POST(req: Request) {
     const idNumber = s.verified_outputs?.id_number;
     const docType = s.verified_outputs?.id_number_type;
 
-    await prisma.kYCDocument.update({
-      where: { id: doc.id },
-      data: {
-        status: 'APPROVED',
-        verifiedAt: new Date(),
-        documentNumber: idNumber || 'HIDDEN',
-        issuingCountry: issuingCountry || 'UNKNOWN',
-      },
-    });
+    await prisma.$transaction(async (tx) => {
+      await tx.kYCDocument.update({
+        where: { id: doc.id },
+        data: {
+          status: 'APPROVED',
+          verifiedAt: new Date(),
+          documentNumber: idNumber || 'HIDDEN',
+          issuingCountry: issuingCountry || 'UNKNOWN',
+        },
+      });
 
-    await prisma.user.update({
-      where: { id: doc.userId },
-      data: {
-        kycStatus: 'APPROVED',
-        kycLevel: 2,
-        kycCompletedAt: new Date(),
-        documentNumber: idNumber || undefined,
-        documentType: mapStripeDocType(docType),
-      },
+      await tx.user.update({
+        where: { id: doc.userId },
+        data: {
+          kycStatus: 'APPROVED',
+          kycLevel: 2,
+          kycCompletedAt: new Date(),
+          documentNumber: idNumber || undefined,
+          documentType: mapStripeDocType(docType),
+        },
+      });
     });
 
     logger.info({ userId: doc.userId, stripeStatus }, 'kyc.stripe_identity.sync.approved');
-    return NextResponse.json({ success: true, kycStatus: 'APPROVED', stripeStatus }, { status: 200 });
+    return NextResponse.json({ success: true, status: 'APPROVED', kycStatus: 'APPROVED', stripeStatus }, { status: 200 });
   }
 
   if (stripeStatus === 'requires_input') {
-    return NextResponse.json({ success: true, kycStatus: doc.status, stripeStatus, lastError: s.last_error || null }, { status: 200 });
+    return NextResponse.json(
+      { success: true, status: doc.status, kycStatus: doc.status, stripeStatus, lastError: s.last_error || null },
+      { status: 200 },
+    );
   }
 
   if (stripeStatus === 'canceled') {
@@ -111,8 +116,8 @@ export async function POST(req: Request) {
         data: { status: 'REJECTED', rejectionReason: 'CANCELED' },
       });
     }
-    return NextResponse.json({ success: true, kycStatus: 'REJECTED', stripeStatus }, { status: 200 });
+    return NextResponse.json({ success: true, status: 'REJECTED', kycStatus: 'REJECTED', stripeStatus }, { status: 200 });
   }
 
-  return NextResponse.json({ success: true, kycStatus: doc.status, stripeStatus }, { status: 200 });
+  return NextResponse.json({ success: true, status: doc.status, kycStatus: doc.status, stripeStatus }, { status: 200 });
 }

@@ -576,25 +576,27 @@ export async function POST(req: Request) {
         const idNumber = session.verified_outputs?.id_number;
         const docType = session.verified_outputs?.id_number_type;
 
-        await prisma.kYCDocument.update({
-          where: { id: doc.id },
-          data: {
-            status: 'APPROVED',
-            verifiedAt: new Date(),
-            documentNumber: idNumber || 'HIDDEN',
-            issuingCountry: issuingCountry || 'UNKNOWN',
-          },
-        });
+        await prisma.$transaction(async (tx) => {
+          await tx.kYCDocument.update({
+            where: { id: doc.id },
+            data: {
+              status: 'APPROVED',
+              verifiedAt: new Date(),
+              documentNumber: idNumber || 'HIDDEN',
+              issuingCountry: issuingCountry || 'UNKNOWN',
+            },
+          });
 
-        await prisma.user.update({
-          where: { id: doc.userId },
-          data: {
-            kycStatus: 'APPROVED',
-            kycLevel: 2,
-            kycCompletedAt: new Date(),
-            documentNumber: idNumber || undefined,
-            documentType: mapStripeDocType(docType),
-          },
+          await tx.user.update({
+            where: { id: doc.userId },
+            data: {
+              kycStatus: 'APPROVED',
+              kycLevel: 2,
+              kycCompletedAt: new Date(),
+              documentNumber: idNumber || undefined,
+              documentType: mapStripeDocType(docType),
+            },
+          });
         });
 
         await logAudit({
@@ -619,8 +621,8 @@ export async function POST(req: Request) {
       });
 
       if (doc) {
-        await prisma.kYCDocument.update({
-          where: { id: doc.id },
+        await prisma.kYCDocument.updateMany({
+          where: { id: doc.id, status: { not: 'APPROVED' } },
           data: {
             status: 'REVIEW',
             rejectionReason: lastError?.code || 'REQUIRES_INPUT',

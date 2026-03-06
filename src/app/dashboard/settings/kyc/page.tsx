@@ -23,7 +23,7 @@ type StripeIdentityResponse =
   | { error?: string; code?: string };
 
 type StripeIdentitySyncResponse =
-  | { status: string; stripeStatus?: string; lastError?: unknown }
+  | { status?: string; kycStatus?: string; stripeStatus?: string; lastError?: unknown }
   | { error?: string };
 
 function isStripeIdentitySuccess(payload: StripeIdentityResponse): payload is { url: string; clientSecret?: string; id?: string } {
@@ -65,7 +65,8 @@ function KYCContent() {
       })
         .then((res) => res.json().catch(() => ({})).then((data) => ({ ok: res.ok, data })))
         .then(({ ok, data }: { ok: boolean; data: StripeIdentitySyncResponse }) => {
-          if (ok && (data as any)?.status === 'APPROVED') {
+          const approved = (data as any)?.kycStatus === 'APPROVED' || (data as any)?.status === 'APPROVED';
+          if (ok && approved) {
             setStep(5);
             if (typeof window !== 'undefined') {
               window.localStorage.removeItem('kyc_stripe_session_id');
