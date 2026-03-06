@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
+import { smsService } from '@/lib/services/sms';
 import { withRouteContext } from '@/lib/http/route';
 import { OtpChallengeService } from '@/lib/security/otp/OtpChallengeService';
 import { logAudit, logger } from '@/lib/logger';
@@ -29,7 +30,7 @@ export const POST = withRouteContext(async (req: NextRequest, ctx) => {
 
     const user = await prisma.user.findUnique({
       where: { id: ctx.userId },
-      select: { id: true, kycStatus: true },
+      select: { id: true, kycStatus: true, phone: true },
     });
 
     if (!user) {
@@ -39,11 +40,19 @@ export const POST = withRouteContext(async (req: NextRequest, ctx) => {
     logger.info({ requestId: ctx.requestId, userId: user.id, kycStatus: user.kycStatus }, 'security.2fa.verify.request');
 
     const otpService = new OtpChallengeService();
-    const result = await otpService.consume({
-      userId: user.id,
-      purpose: 'MFA_ENROLL',
-      code: parsed.data.code,
-    });
+    const provider = env.smsProvider();
+    const result =
+      provider === 'verify'
+        ? await (async () => {
+            if (!user.phone) return { ok: false as const, reason: 'NOT_FOUND' as const };
+            const check = await smsService.checkOTP(user.phone, parsed.data.code);
+            return otpService.consumeExternal({ userId: user.id, purpose: 'MFA_ENROLL', approved: check.approved });
+          })()
+        : await otpService.consume({
+            userId: user.id,
+            purpose: 'MFA_ENROLL',
+            code: parsed.data.code,
+          });
 
     if (!result.ok) {
       logAudit({
