@@ -80,10 +80,14 @@ export default function SecuritySettingsPage() {
       if (res.ok && data && typeof data === 'object') {
         const maybeUser = (data as { user?: unknown }).user;
         const maybeEmail = maybeUser && typeof maybeUser === 'object' ? (maybeUser as { email?: unknown }).email : undefined;
+        const maybeTwoFactorEnabled =
+          maybeUser && typeof maybeUser === 'object' ? (maybeUser as { twoFactorEnabled?: unknown }).twoFactorEnabled : undefined;
         if (typeof maybeEmail === 'string' && maybeEmail.length > 0) setUserEmail(maybeEmail);
+        setTwoFaEnabled(Boolean(maybeTwoFactorEnabled));
       }
     } catch {
       setUserEmail(null);
+      setTwoFaEnabled(false);
     }
   }
 
@@ -254,8 +258,19 @@ export default function SecuritySettingsPage() {
         alert(errorMessage);
       }
     } else {
-      // Disable logic (simplified for MVP)
-      setTwoFaEnabled(false);
+      try {
+        const res = await fetch('/api/security/2fa/disable', { method: 'POST' });
+        const data: unknown = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = data && typeof data === 'object' ? (data as { error?: unknown }).error : undefined;
+          throw new Error(typeof msg === 'string' ? msg : t('connectionError'));
+        }
+        setTwoFaEnabled(false);
+      } catch (e: unknown) {
+        setTwoFaEnabled(true);
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+        alert(errorMessage);
+      }
     }
   }
 
@@ -264,12 +279,17 @@ export default function SecuritySettingsPage() {
     try {
       const res = await fetch('/api/security/2fa/verify', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: otpCode })
       });
+      const data: unknown = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(t('errorVerifyingCode'));
       
-      setTwoFaEnabled(true);
+      const enabled2fa = data && typeof data === 'object' ? (data as { twoFactorEnabled?: unknown }).twoFactorEnabled : undefined;
+      setTwoFaEnabled(Boolean(enabled2fa));
       setShowOtpDialog(false);
+      setOtpCode('');
+      fetchMe();
       alert(t('twoFactorEnabled'));
     } catch (e) {
       alert(t('errorVerifyingCode'));
@@ -511,7 +531,7 @@ export default function SecuritySettingsPage() {
               className="text-center text-2xl tracking-widest bg-[#1a1a1f] border-white/10 text-white" 
               maxLength={6}
               value={otpCode}
-              onChange={e => setOtpCode(e.target.value)}
+              onChange={e => setOtpCode(e.target.value.replaceAll(/\D/g, '').slice(0, 6))}
             />
           </div>
           <DialogFooter>

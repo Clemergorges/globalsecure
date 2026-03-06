@@ -18,7 +18,7 @@ export const POST = withRouteContext(async (req: NextRequest, ctx) => {
 
     const user = await prisma.user.findUnique({
       where: { id: ctx.userId! },
-      select: { id: true, kycStatus: true },
+      select: { id: true, phone: true, kycStatus: true },
     });
 
     if (!user) {
@@ -46,8 +46,13 @@ export const POST = withRouteContext(async (req: NextRequest, ctx) => {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { phoneVerified: true },
+      data: { phoneVerified: true, twoFactorEnabled: true },
     });
+
+    logger.info(
+      { requestId: ctx.requestId, userId: user.id, phoneLast4: user.phone ? user.phone.slice(-4) : null },
+      'security.2fa.verify.success',
+    );
 
     logAudit({
       userId: user.id,
@@ -60,7 +65,7 @@ export const POST = withRouteContext(async (req: NextRequest, ctx) => {
       metadata: { requestId: ctx.requestId },
     }).catch(() => {});
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, phoneVerified: true, twoFactorEnabled: true });
   } catch (error) {
     logger.error({ err: error, requestId: ctx.requestId, userId: ctx.userId, path: ctx.path }, 'security.2fa.verify.error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

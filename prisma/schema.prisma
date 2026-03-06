@@ -205,6 +205,7 @@ model User {
   lastName      String?
   phone         String?   @unique
   phoneVerified Boolean   @default(false)
+  twoFactorEnabled Boolean @default(false)
   
   // Extended KYC Data (European Standard)
   dateOfBirth   DateTime? // Replaces birthDate
