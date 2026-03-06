@@ -50,25 +50,32 @@ export async function POST(req: Request) {
       const idNumber = s.verified_outputs?.id_number;
       const docType = s.verified_outputs?.id_number_type;
 
-      await prisma.kYCDocument.update({
-        where: { id: doc.id },
-        data: {
-          status: 'APPROVED',
-          verifiedAt: new Date(),
-          documentNumber: idNumber || 'HIDDEN',
-          issuingCountry: issuingCountry || 'UNKNOWN',
-        },
-      });
+      await prisma.$transaction(async (tx) => {
+        await tx.kYCDocument.update({
+          where: { id: doc.id },
+          data: {
+            status: 'APPROVED',
+            verifiedAt: new Date(),
+            documentNumber: idNumber || 'HIDDEN',
+            issuingCountry: issuingCountry || 'UNKNOWN',
+          },
+        });
 
-      await prisma.user.update({
-        where: { id: doc.userId },
-        data: {
-          kycStatus: 'APPROVED',
-          kycLevel: 2,
-          kycCompletedAt: new Date(),
-          documentNumber: idNumber || undefined,
-          documentType: mapStripeDocType(docType),
-        },
+        await tx.user.update({
+          where: { id: doc.userId },
+          data: {
+            kycStatus: 'APPROVED',
+            kycLevel: 2,
+            kycCompletedAt: new Date(),
+            documentNumber: idNumber || undefined,
+            documentType: mapStripeDocType(docType),
+          },
+        });
+
+        await tx.account.updateMany({
+          where: { userId: doc.userId },
+          data: { status: 'ACTIVE' },
+        });
       });
     }
 
@@ -76,7 +83,19 @@ export async function POST(req: Request) {
   }
 
   if (stripeStatus === 'requires_input') {
-    return NextResponse.json({ status: doc.status, stripeStatus, lastError: s.last_error || null }, { status: 200 });
+    if (doc.status !== 'REVIEW') {
+      await prisma.$transaction(async (tx) => {
+        await tx.kYCDocument.update({
+          where: { id: doc.id },
+          data: { status: 'REVIEW', rejectionReason: s.last_error?.code || 'REQUIRES_INPUT' },
+        });
+        await tx.user.update({
+          where: { id: doc.userId },
+          data: { kycStatus: 'REVIEW' },
+        });
+      });
+    }
+    return NextResponse.json({ status: 'REVIEW', stripeStatus, lastError: s.last_error || null }, { status: 200 });
   }
 
   if (stripeStatus === 'canceled') {

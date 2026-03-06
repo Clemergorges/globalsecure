@@ -23,21 +23,21 @@ interface SidebarNavProps {
   userRole: string;
 }
 
+export const dashboardNavigationItems = [
+  { key: 'overview', href: '/dashboard', icon: LayoutDashboard },
+  { key: 'transactions', href: '/dashboard/transactions', icon: ArrowRightLeft },
+  { key: 'limits', href: '/dashboard/limits', icon: SlidersHorizontal },
+  { key: 'cards', href: '/dashboard/cards', icon: CreditCard },
+  { key: 'security', href: '/dashboard/settings/security', icon: Shield },
+  { key: 'settings', href: '/dashboard/settings', icon: Settings },
+  { key: 'profile', href: '/dashboard/settings/profile', icon: User },
+  { key: 'support', href: '/dashboard/support', icon: HelpCircle },
+] as const;
+
 export function SidebarNav({ userEmail, userRole }: SidebarNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations('Dashboard.Sidebar');
-
-  const navigation = [
-    { name: t('overview'), href: '/dashboard', icon: LayoutDashboard },
-    { name: t('transactions'), href: '/dashboard/transactions', icon: ArrowRightLeft },
-    { name: t('limits'), href: '/dashboard/limits', icon: SlidersHorizontal },
-    { name: t('cards'), href: '/dashboard/cards', icon: CreditCard },
-    { name: t('security'), href: '/dashboard/settings/security', icon: Shield },
-    { name: t('settings'), href: '/dashboard/settings', icon: Settings },
-    { name: t('profile'), href: '/dashboard/settings/profile', icon: User },
-    { name: t('support'), href: '/dashboard/support', icon: HelpCircle },
-  ];
 
   const handleLogout = async () => {
     try {
@@ -61,11 +61,11 @@ export function SidebarNav({ userEmail, userRole }: SidebarNavProps) {
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
-        {navigation.map((item) => {
+        {dashboardNavigationItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
-              key={item.name}
+              key={item.href}
               href={item.href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden",
@@ -81,7 +81,7 @@ export function SidebarNav({ userEmail, userRole }: SidebarNavProps) {
                 "w-5 h-5 transition-colors relative z-10", 
                 isActive ? "text-white" : "text-slate-500 group-hover:text-cyan-400"
               )} />
-              <span className="relative z-10">{item.name}</span>
+              <span className="relative z-10">{t(item.key)}</span>
             </Link>
           );
         })}

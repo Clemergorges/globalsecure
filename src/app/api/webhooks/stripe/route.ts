@@ -54,10 +54,15 @@ export async function POST(req: Request) {
   let event: Stripe.Event;
 
   try {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? (process.env.NODE_ENV === 'production' ? '' : 'whsec_test');
+    if (!webhookSecret) {
+      logger.error({ hasSignature: Boolean(signature) }, 'stripe_webhook_secret_missing');
+      return new NextResponse('Webhook secret not configured', { status: 500 });
+    }
     event = getStripe().webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test' // Fallback for dev/test
+      webhookSecret
     );
   } catch (err: any) {
     console.error(`Webhook signature verification failed: ${err.message}`);
@@ -597,6 +602,11 @@ export async function POST(req: Request) {
           },
         });
 
+        await prisma.account.updateMany({
+          where: { userId: doc.userId },
+          data: { status: 'ACTIVE' },
+        });
+
         await logAudit({
           userId: doc.userId,
           action: 'KYC_STRIPE_IDENTITY_VERIFIED',
@@ -625,6 +635,11 @@ export async function POST(req: Request) {
             status: 'REVIEW',
             rejectionReason: lastError?.code || 'REQUIRES_INPUT',
           },
+        });
+
+        await prisma.user.update({
+          where: { id: doc.userId },
+          data: { kycStatus: 'REVIEW' },
         });
 
         await logAudit({

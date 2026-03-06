@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
+import { smsService } from '@/lib/services/sms';
 import { withRouteContext } from '@/lib/http/route';
 import { OtpChallengeService } from '@/lib/security/otp/OtpChallengeService';
 import { logAudit, logger } from '@/lib/logger';
+import { env } from '@/lib/config/env';
 
 const schema = z.object({
   code: z.string().regex(/^\d{6}$/),
@@ -11,28 +13,46 @@ const schema = z.object({
 
 export const POST = withRouteContext(async (req: NextRequest, ctx) => {
   try {
+    if (!ctx.userId) {
+      return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED', requestId: ctx.requestId }, { status: 401 });
+    }
+
+    try {
+      env.otpPepper();
+    } catch {
+      return NextResponse.json({ error: 'Service unavailable', code: 'ENV_MISCONFIGURED', requestId: ctx.requestId }, { status: 503 });
+    }
+
     const parsed = schema.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid request', code: 'VALIDATION_ERROR' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid request', code: 'VALIDATION_ERROR', requestId: ctx.requestId }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: ctx.userId! },
-      select: { id: true, kycStatus: true },
+      where: { id: ctx.userId },
+      select: { id: true, kycStatus: true, phone: true },
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized', code: 'UNAUTHORIZED', requestId: ctx.requestId }, { status: 401 });
     }
 
     logger.info({ requestId: ctx.requestId, userId: user.id, kycStatus: user.kycStatus }, 'security.2fa.verify.request');
 
     const otpService = new OtpChallengeService();
-    const result = await otpService.consume({
-      userId: user.id,
-      purpose: 'MFA_ENROLL',
-      code: parsed.data.code,
-    });
+    const provider = env.smsProvider();
+    const result =
+      provider === 'verify'
+        ? await (async () => {
+            if (!user.phone) return { ok: false as const, reason: 'NOT_FOUND' as const };
+            const check = await smsService.checkOTP(user.phone, parsed.data.code);
+            return otpService.consumeExternal({ userId: user.id, purpose: 'MFA_ENROLL', approved: check.approved });
+          })()
+        : await otpService.consume({
+            userId: user.id,
+            purpose: 'MFA_ENROLL',
+            code: parsed.data.code,
+          });
 
     if (!result.ok) {
       logAudit({
@@ -67,6 +87,6 @@ export const POST = withRouteContext(async (req: NextRequest, ctx) => {
     return NextResponse.json({ success: true });
   } catch (error) {
     logger.error({ err: error, requestId: ctx.requestId, userId: ctx.userId, path: ctx.path }, 'security.2fa.verify.error');
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error', requestId: ctx.requestId }, { status: 500 });
   }
 });

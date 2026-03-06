@@ -24,6 +24,13 @@ const schema = z.object({
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
+  SMS_PROVIDER: z.enum(['verify', 'messaging']).optional(),
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  TWILIO_VERIFY_SERVICE_SID: z.string().optional(),
+  TWILIO_FROM_NUMBER: z.string().optional(),
+  TWILIO_PHONE_NUMBER: z.string().optional(),
+  TWILIO_MESSAGING_SERVICE_SID: z.string().optional(),
 });
 
 type Env = z.infer<typeof schema>;
@@ -41,6 +48,13 @@ function loadEnv(): Env {
     'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY',
     'STRIPE_SECRET_KEY',
+    'SMS_PROVIDER',
+    'TWILIO_ACCOUNT_SID',
+    'TWILIO_AUTH_TOKEN',
+    'TWILIO_VERIFY_SERVICE_SID',
+    'TWILIO_FROM_NUMBER',
+    'TWILIO_PHONE_NUMBER',
+    'TWILIO_MESSAGING_SERVICE_SID',
   ]) {
     if (normalized[k] === '') normalized[k] = undefined;
   }
@@ -84,4 +98,10 @@ export const env = {
   supabaseUrl: () => requireProdSecret('SUPABASE_URL', 1),
   supabaseServiceRoleKey: () => requireProdSecret('SUPABASE_SERVICE_ROLE_KEY', 20),
   stripeSecretKey: () => requireProdSecret('STRIPE_SECRET_KEY', 20),
+  smsProvider: () => loadEnv().SMS_PROVIDER ?? '',
+  twilioAccountSid: () => loadEnv().TWILIO_ACCOUNT_SID ?? '',
+  twilioAuthToken: () => loadEnv().TWILIO_AUTH_TOKEN ?? '',
+  twilioVerifyServiceSid: () => loadEnv().TWILIO_VERIFY_SERVICE_SID ?? '',
+  twilioFromNumber: () => loadEnv().TWILIO_FROM_NUMBER ?? loadEnv().TWILIO_PHONE_NUMBER ?? '',
+  twilioMessagingServiceSid: () => loadEnv().TWILIO_MESSAGING_SERVICE_SID ?? '',
 };

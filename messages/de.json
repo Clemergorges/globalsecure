@@ -1,6 +1,8 @@
 {
   "Common": {
     "close": "Schließen",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen",
     "cancel": "Abbrechen",
     "confirm": "Bestätigen",
     "back": "Zurück",
