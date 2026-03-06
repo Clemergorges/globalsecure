@@ -28,11 +28,7 @@ export const POST = withRouteContext(async (req: NextRequest, ctx) => {
     logger.info({ requestId: ctx.requestId, userId: user.id, kycStatus: user.kycStatus }, 'security.2fa.verify.request');
 
     const otpService = new OtpChallengeService();
-    const result = await otpService.consume({
-      userId: user.id,
-      purpose: 'MFA_ENROLL',
-      code: parsed.data.code,
-    });
+    const result = await otpService.consumeLatest({ userId: user.id, code: parsed.data.code });
 
     if (!result.ok) {
       logAudit({
