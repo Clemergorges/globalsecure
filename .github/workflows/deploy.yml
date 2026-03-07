@@ -9,6 +9,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: 'Produção – globalsecure'
+      url: 'https://globalsecuresend.com'
+
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://postgres:password@localhost:5432/globalsecure_test
@@ -40,7 +44,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -103,12 +107,4 @@ jobs:
       - name: Notify deployment
         if: success()
         run: |
-          echo "✅ Deploy automático concluído!"
-          echo "🌐 URL: https://globalsecuresend.com"
-          echo "📊 Status: $(date)"
-
-      - name: Health check
-        if: success()
-        run: |
-          sleep 30
-          curl -f https://globalsecuresend.com/api/health || exit 1
+          echo "✅
