@@ -1,0 +1,1200 @@
+{
+  "Register": {
+    "title": "Criar Conta",
+    "subtitle": "Comece sua jornada financeira global",
+    "firstName": "Nome",
+    "lastName": "Sobrenome",
+    "country": "País",
+    "postalCode": "Código Postal",
+    "address": "Endereço",
+    "city": "Cidade",
+    "email": "Email",
+    "phone": "Telefone",
+    "password": "Senha",
+    "passwordStrength": {
+      "weak": "Fraca",
+      "medium": "Média",
+      "strong": "Forte"
+    },
+    "mainCurrency": "Moeda Principal",
+    "language": "Idioma",
+    "emailPlaceholder": "nome@exemplo.com",
+    "selectCountryPlaceholder": "Selecione",
+    "countries": {
+      "br": "🇧🇷 Brasil",
+      "us": "🇺🇸 Estados Unidos",
+      "lu": "🇱🇺 Luxemburgo",
+      "de": "🇩🇪 Alemanha",
+      "pt": "🇵🇹 Portugal"
+    },
+    "gdprConsent": "Concordo com os Termos de Uso e Política de Privacidade. Entendo que meus dados serão processados conforme a GDPR/LGPD.",
+    "submit": "Criar Conta Grátis",
+    "toast": {
+      "successTitle": "Conta criada com sucesso!",
+      "successDescription": "Enviamos um código para seu email. Verifique para continuar."
+    },
+    "verify": {
+      "title": "Verifique seu Email",
+      "description": "Enviamos um código de verificação para <strong>{email}</strong>.<br/><br/>Use o código para ativar sua conta e continuar.",
+      "continue": "Continuar"
+    },
+    "validation": {
+      "invalidEmail": "Email inválido",
+      "passwordMin": "Mínimo 8 caracteres",
+      "passwordUpper": "Pelo menos uma letra maiúscula",
+      "passwordNumber": "Pelo menos um número",
+      "selectCountry": "Selecione um país",
+      "consentRequired": "Consentimento obrigatório"
+    },
+    "errors": {
+      "registerFailed": "Falha no registro"
+    },
+    "loginLink": "Já tem uma conta? <link>Fazer Login</link>"
+  },
+  "Login": {
+    "title": "Acessar Conta",
+    "subtitle": "Digite seu email e senha para entrar",
+    "email": "Email",
+    "emailPlaceholder": "seu@email.com",
+    "password": "Senha",
+    "forgotPassword": "Esqueceu a senha?",
+    "submit": "Entrar",
+    "submitting": "Entrando...",
+    "verifyEmailNow": "Verificar email agora",
+    "noAccount": "Não tem uma conta?",
+    "createNow": "Criar agora",
+    "errors": {
+      "loginFailed": "Falha ao fazer login"
+    }
+  },
+  "ForgotPassword": {
+    "title": "Esqueceu sua senha?",
+    "subtitle": "Insira seu email e enviaremos instruções para redefinir sua senha",
+    "email": "Email",
+    "emailPlaceholder": "seu@email.com",
+    "submit": "Enviar instruções",
+    "submitting": "Enviando...",
+    "success": "Se o email existir, enviaremos instruções.",
+    "backToLogin": "Voltar para login",
+    "errors": {
+      "sendFailed": "Erro ao enviar email. Tente novamente."
+    }
+  },
+  "ResetPassword": {
+    "title": "Redefinir senha",
+    "subtitle": "Digite sua nova senha",
+    "newPassword": "Nova senha",
+    "confirmPassword": "Confirmar nova senha",
+    "passwordPlaceholder": "••••••••",
+    "passwordRequirements": "Mínimo 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial",
+    "submit": "Redefinir senha",
+    "submitting": "Redefinindo...",
+    "success": "Senha redefinida com sucesso!",
+    "backToLogin": "Voltar para login",
+    "invalidToken": "Token inválido ou ausente",
+    "passwordMismatch": "As senhas não coincidem",
+    "errors": {
+      "resetFailed": "Erro ao redefinir senha. Tente novamente.",
+      "invalidToken": "Token inválido ou expirado"
+    }
+  },
+  "VerifyEmail": {
+    "title": "Verificar Email",
+    "missingEmail": "Informe seu email para continuar.",
+    "backToRegister": "Voltar ao cadastro",
+    "sentTo": "Enviamos um código de 6 dígitos para",
+    "codeLabel": "Código de Verificação",
+    "checkInbox": "Verifique sua caixa de entrada e spam.",
+    "submit": "Validar código",
+    "resend": "Reenviar código",
+    "success": {
+      "title": "Email Verificado!",
+      "subtitle": "Redirecionando para o login..."
+    },
+    "info": {
+      "resent": "Enviamos um novo código para seu email."
+    },
+    "errors": {
+      "invalidCode": "Código incorreto.",
+      "expiredCode": "Código expirado. Reenvie um novo código.",
+      "usedCode": "Código já usado. Reenvie um novo código.",
+      "verifyFailed": "Falha na verificação",
+      "resendFailed": "Falha ao reenviar o código"
+    }
+  },
+  "Common": {
+    "close": "Fechar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "disclaimer": {
+      "tax": "Impostos e obrigações fiscais são responsabilidade do usuário. A GSS oferece extratos e relatórios para facilitar a declaração, mas não substitui contador nem consultoria fiscal."
+    }
+  },
+  "CardEmail": {
+    "View": {
+      "title": "Seu cartão GlobalSecure",
+      "subtitle": "Veja saldo e gastos recentes sem criar conta.",
+      "balanceInitial": "Saldo inicial",
+      "balanceAvailable": "Saldo disponível",
+      "transactionsTitle": "Gastos",
+      "emptyTransactions": "Nenhuma transação ainda.",
+      "merchantUnknown": "Estabelecimento desconhecido",
+      "note": "Cartão virtual pré-pago. Não precisa de conta bancária.",
+      "error": {
+        "invalidOrExpired": "Link inválido ou expirado.",
+        "generic": "Não foi possível carregar os dados. Tente novamente."
+      },
+      "otp": {
+        "title": "Código de acesso obrigatório",
+        "description": "Digite o código de acesso de 6 caracteres para continuar.",
+        "label": "Código de acesso",
+        "placeholder": "123456",
+        "submit": "Continuar",
+        "submitting": "Verificando...",
+        "invalid": "Formato de código inválido.",
+        "failed": "Código inválido ou link expirado."
+      }
+    }
+  },
+  "Dashboard": {
+    "title": "Visão Geral",
+    "welcome": "Bem-vindo de volta",
+    "deposit": "Depositar",
+    "transfer": "Transferir",
+    "sendCard": "Enviar Cartão",
+    "totalBalance": "Saldo Total (EUR)",
+    "cryptoBalance": "Saldo Crypto (USDT)",
+    "yieldCardTitle": "Rendimento (Ether.fi)",
+    "yieldCardSubtitle": "{count} transferência(s) com rendimento",
+    "yieldCardCta": "Ver detalhes",
+    "yieldBuyingPower": "Poder de Compra (Rendimento)",
+    "yieldEnabledStatus": "Ativo (beta)",
+    "yieldDisabledStatus": "Desativado",
+    "yieldReservedLabel": "Reservado",
+    "yieldAvailableLabel": "Disponível",
+    "recentTransactions": "Transações Recentes",
+    "viewFullStatement": "Ver extrato completo",
+    "noRecentTransactions": "Nenhuma transação recente",
+    "activitiesAppearHere": "Suas atividades aparecerão aqui.",
+    "thisMonth": "este mês",
+    "polygonNetwork": "Rede Polygon (MATIC)",
+    "walletNotFoundTitle": "Carteira não encontrada",
+    "walletNotFoundDescription": "Ocorreu um erro ao carregar sua carteira. Por favor, contate o suporte.",
+    "Sidebar": {
+      "overview": "Visão Geral",
+      "transactions": "Transações",
+      "send": "Enviar Dinheiro",
+      "cards": "Cartões",
+      "limits": "Limites",
+      "history": "Histórico",
+      "security": "Segurança",
+      "settings": "Configurações",
+      "profile": "Meu Perfil",
+      "support": "Suporte",
+      "admin": "Painel Admin",
+      "logout": "Sair"
+    },
+    "Header": {
+      "search": "Buscar transação...",
+      "notifications": "Notificações",
+      "markAllRead": "Marcar todas como lidas",
+      "noNotifications": "Nenhuma notificação recente.",
+      "myAccount": "Minha Conta",
+      "profile": "Perfil",
+      "myCards": "Meus Cartões",
+      "settings": "Configurações",
+      "help": "Ajuda e Suporte",
+      "logout": "Sair"
+    }
+  },
+  "Incidents": {
+    "treasuryHalt": {
+      "title": "Restrição temporária de serviço",
+      "description": "Depósitos e saques podem ficar temporariamente indisponíveis. Tente novamente mais tarde."
+    },
+    "yieldPaused": {
+      "title": "Yield temporariamente pausado",
+      "description": "Novas alocações em yield estão temporariamente indisponíveis. Posições existentes não são afetadas."
+    },
+    "partnerOutage": {
+      "title": "Interrupção temporária de serviço",
+      "description": "Algumas funcionalidades podem ficar temporariamente indisponíveis. Tente novamente mais tarde."
+    }
+  },
+  "Transfers": {
+    "Create": {
+      "title": "Nova Transferência",
+      "subtitle": "Envie dinheiro instantaneamente para outros usuários.",
+      "detailsTitle": "Detalhes do Envio",
+      "detailsDescription": "Transferências internas são processadas imediatamente.",
+      "recipientEmail": "Email do Destinatário",
+      "recipientEmailPlaceholder": "exemplo@email.com",
+      "amount": "Valor",
+      "currency": "Moeda",
+      "selectPlaceholder": "Selecione",
+      "currencies": {
+        "eur": "Euro (EUR)",
+        "usd": "Dólar (USD)",
+        "gbp": "Libra (GBP)"
+      },
+      "serviceFee": "Taxa de Serviço ({percent}%)",
+      "totalToPay": "Total a Pagar",
+      "enableYield": "Enviar com rendimento (Ether.fi)",
+      "enableYieldHelp": "Opcional e sem garantia. Você pode acompanhar em",
+      "enableYieldView": "Rendimento (beta)",
+      "submit": "Enviar Agora",
+      "toast": {
+        "sentTitle": "Transferência Realizada",
+        "sentDescription": "Enviado {currency} {amount} para {email}"
+      },
+      "success": {
+        "title": "Transferência Enviada!",
+        "subtitle": "Seu dinheiro foi enviado com sucesso para {email}.",
+        "backHome": "Voltar ao Início",
+        "newTransfer": "Nova Transferência"
+      },
+      "errors": {
+        "RECIPIENT_NOT_FOUND": "Destinatário não encontrado",
+        "CANNOT_TRANSFER_TO_SELF": "Você não pode transferir para si mesmo",
+        "RECIPIENT_WALLET_INACTIVE": "Carteira do destinatário não está ativa",
+        "SENDER_WALLET_NOT_FOUND": "Sua carteira não foi encontrada",
+        "BALANCE_NOT_FOUND": "Você não tem saldo nessa moeda",
+        "INSUFFICIENT_FUNDS": "Saldo insuficiente",
+        "SENDER_NOT_FOUND": "Conta do remetente não encontrada",
+        "INVALID_AMOUNT": "Informe um valor válido",
+        "JURISDICTION_NOT_SUPPORTED": "Este serviço não está disponível no seu país.",
+        "KYC_LEVEL_2_REQUIRED": "É necessária verificação adicional para concluir esta transferência.",
+        "YIELD_KILL_SWITCH": "Yield temporariamente indisponível.",
+        "YIELD_EXPOSURE_LIMIT": "Yield temporariamente indisponível.",
+        "PARTNER_TEMPORARILY_UNAVAILABLE": "Serviço temporariamente indisponível. Tente novamente em alguns minutos.",
+        "TREASURY_HALT_DEPOSITS_WITHDRAWS": "Serviço temporariamente indisponível. Tente novamente em alguns minutos.",
+        "INTERNAL_SERVER_ERROR": "Erro interno do servidor",
+        "submitFailed": "Falha ao realizar transferência"
+      }
+    }
+  },
+  "Transactions": {
+    "title": "Extrato Detalhado",
+    "subtitle": "Visualize e filtre todo o seu histórico financeiro.",
+    "exportCsv": "Exportar CSV",
+    "searchPlaceholder": "Buscar por nome, email ou descrição...",
+    "typePlaceholder": "Tipo de Transação",
+    "yieldBadge": "Com rendimento",
+    "typeLabels": {
+      "transfer": "Transferência",
+      "pix": "PIX",
+      "sepa": "SEPA",
+      "crypto": "Cripto",
+      "card": "Cartão",
+      "fee": "Taxa",
+      "fx": "Câmbio",
+      "adjustment": "Ajuste"
+    },
+    "descriptions": {
+      "transferIn": "Recebido de {email}",
+      "transferOut": "Enviado para {email}",
+      "transferFee": "Taxa da transferência – {email}",
+      "fee": "Taxa",
+      "pixIn": "Depósito PIX recebido",
+      "sepaIn": "Depósito SEPA recebido",
+      "cryptoIn": "Depósito cripto recebido",
+      "cryptoOut": "Envio cripto",
+      "cardOut": "Compra com cartão",
+      "fx": "Câmbio",
+      "adjustment": "Ajuste"
+    },
+    "filters": {
+      "all": "Todas",
+      "transfers": "Transferências",
+      "card": "Cartão",
+      "fees": "Taxas"
+    },
+    "table": {
+      "date": "Data",
+      "description": "Descrição",
+      "type": "Tipo",
+      "status": "Status",
+      "amount": "Valor"
+    },
+    "empty": "Nenhuma transação encontrada.",
+    "pagination": "Página {page} de {totalPages} ({total} registros)",
+    "claimSection": {
+      "title": "Envios via Cartão (Claim)",
+      "viewInCards": "Ver em Cartões",
+      "itemDescription": "Envio via cartão (Claim)",
+      "itemDescriptionWithRecipient": "Envio via cartão (Claim) – {recipient}"
+    }
+  },
+  "Yield": {
+    "title": "Rendimento (Ether.fi)",
+    "subtitle": "Acompanhe transferências enviadas com rendimento via Ether.fi.",
+    "beta": "beta",
+    "summary": {
+      "title": "Resumo",
+      "totalPrincipalLabel": "Principal aproximado em rendimento (EUR)",
+      "positionsLabel": "Posições",
+      "note": "Estimativa baseada no principal enviado com rendimento. Não inclui juros e não altera seu Saldo Total (EUR)."
+    },
+    "disclaimer": {
+      "title": "Aviso de risco",
+      "paragraph1": "Rendimento é opcional e baseado em cripto/DeFi (Ether.fi). Não há garantia de capital.",
+      "paragraph2": "No beta, exibimos um resumo por transferência usando yieldPositionId. Pode haver atrasos ou informações incompletas."
+    },
+    "list": {
+      "title": "Transferências com rendimento",
+      "empty": "Nenhuma transferência com rendimento encontrada.",
+      "table": {
+        "date": "Data",
+        "recipient": "Destinatário",
+        "position": "Posição",
+        "status": "Status",
+        "amount": "Valor"
+      }
+    },
+    "status": {
+      "open": "Em rendimento",
+      "closed": "Encerrada"
+    }
+  },
+  "Analytics": {
+    "title": "Analytics",
+    "subtitle": "Análise detalhada dos seus gastos.",
+    "periodPlaceholder": "Período",
+    "periods": {
+      "last30Days": "Últimos 30 dias",
+      "last3Months": "Últimos 3 meses",
+      "thisYear": "Este ano"
+    },
+    "totalSpend": "Total Gasto",
+    "selectedPeriod": "No período selecionado",
+    "spendByCategory": "Gastos por Categoria",
+    "empty": "Nenhuma transação encontrada neste período.",
+    "categories": {
+      "groceries": "Mercado",
+      "restaurants": "Restaurantes",
+      "transport": "Transporte",
+      "entertainment": "Entretenimento",
+      "shopping": "Compras",
+      "bills": "Contas",
+      "transfers": "Transferências",
+      "other": "Outros"
+    }
+  },
+  "Support": {
+    "title": "Central de Ajuda",
+    "faq": {
+      "title": "Perguntas Frequentes",
+      "q1": {
+        "title": "Como recarregar minha conta?",
+        "answer": "Acesse a Visão Geral e clique em “Depositar”. Aceitamos cartão (Stripe) e transferências, conforme disponibilidade."
+      },
+      "q2": {
+        "title": "Quanto tempo demora uma transferência?",
+        "answer": "Transferências entre contas são instantâneas. Envios via cartão virtual também são imediatos."
+      },
+      "q3": {
+        "title": "O que é o Nível KYC?",
+        "answer": "É o nível de verificação de identidade. Quanto maior o nível, maiores são os limites de envio."
+      },
+      "q4": {
+        "title": "Meu cartão virtual funciona no Brasil?",
+        "answer": "Sim. Os cartões são emitidos em EUR/USD e funcionam globalmente. A conversão é feita no momento da compra."
+      }
+    },
+    "contact": {
+      "title": "Fale Conosco",
+      "liveChat": "Chat ao Vivo",
+      "emailSupport": "Email Suporte",
+      "businessHours": "Horário de atendimento: Seg–Sex, 9h às 18h (CET)."
+    }
+  },
+  "Onboarding": {
+    "brandShort": "GS",
+    "brandName": "GlobalSecureSend",
+    "headerTitle": "Abertura de Conta",
+    "steps": {
+      "personal": "Dados Pessoais",
+      "address": "Endereço",
+      "document": "Documento",
+      "review": "Análise"
+    },
+    "Personal": {
+      "title": "Dados Pessoais",
+      "subtitle": "Precisamos conhecer você para cumprir regulações financeiras.",
+      "firstName": "Nome",
+      "lastName": "Sobrenome",
+      "dateOfBirth": "Data de Nascimento",
+      "countryOfBirth": "País de Nascimento",
+      "nationality": "Nacionalidade",
+      "phone": "Celular",
+      "phonePlaceholder": "+55...",
+      "selectPlaceholder": "Selecione",
+      "countries": {
+        "br": "Brasil",
+        "us": "Estados Unidos",
+        "lu": "Luxemburgo",
+        "pt": "Portugal"
+      },
+      "nationalities": {
+        "br": "Brasileira",
+        "us": "Americana",
+        "lu": "Luxemburguesa",
+        "pt": "Portuguesa"
+      },
+      "validation": {
+        "firstNameRequired": "Nome obrigatório",
+        "lastNameRequired": "Sobrenome obrigatório",
+        "minimumAge": "Você deve ter pelo menos 18 anos",
+        "selectCountry": "Selecione o país",
+        "selectNationality": "Selecione a nacionalidade",
+        "invalidPhone": "Telefone inválido"
+      },
+      "errors": {
+        "saveFailed": "Falha ao salvar dados",
+        "checkData": "Verifique os dados e tente novamente."
+      }
+    },
+    "Address": {
+      "title": "Endereço Residencial",
+      "subtitle": "Onde você mora atualmente?",
+      "streetLine1": "Rua, Número",
+      "streetLine2": "Complemento (Opcional)",
+      "streetLine2Placeholder": "Apto, Bloco, etc.",
+      "city": "Cidade",
+      "postalCode": "Código Postal / CEP",
+      "region": "Estado / Região",
+      "country": "País",
+      "selectPlaceholder": "Selecione",
+      "countries": {
+        "br": "Brasil",
+        "us": "Estados Unidos",
+        "lu": "Luxemburgo",
+        "pt": "Portugal"
+      },
+      "validation": {
+        "invalidAddress": "Endereço inválido",
+        "cityRequired": "Cidade obrigatória",
+        "postalRequired": "CEP/Código Postal obrigatório",
+        "selectCountry": "Selecione o país"
+      },
+      "errors": {
+        "saveFailed": "Falha ao salvar endereço",
+        "checkAddress": "Verifique o endereço e tente novamente."
+      }
+    },
+    "Document": {
+      "title": "Verificação de Identidade",
+      "subtitle": "Informe os dados do seu documento oficial.",
+      "documentType": "Tipo de Documento",
+      "documentNumber": "Número do Documento",
+      "documentExpiry": "Data de Validade (Opcional)",
+      "selectPlaceholder": "Selecione",
+      "docTypes": {
+        "passport": "Passaporte",
+        "nationalId": "Carteira de Identidade (RG/CNI)",
+        "driversLicense": "Carteira de Motorista",
+        "residencePermit": "Título de Residência"
+      },
+      "upload": {
+        "title": "Foto do Documento",
+        "description": "Upload de arquivos será habilitado na próxima etapa. Por enquanto, apenas registre os dados."
+      },
+      "submit": "Enviar para Análise",
+      "validation": {
+        "invalidNumber": "Número inválido"
+      },
+      "errors": {
+        "submitFailed": "Falha ao enviar documento"
+      }
+    },
+    "Status": {
+      "title": "Análise em Andamento",
+      "description": "Recebemos seus dados e documentos. Nossa equipe de compliance está revisando suas informações.<br/><br/>Isso geralmente leva alguns minutos, mas pode demorar até 24 horas. Você receberá um email assim que sua conta for ativada.",
+      "checks": {
+        "personal": "Dados Pessoais Recebidos",
+        "address": "Endereço Registrado",
+        "document": "Validação de Documento"
+      },
+      "cta": "Acessar Dashboard (Modo Leitura)"
+    }
+  },
+  "Settings": {
+    "title": "Configurações",
+    "Security": {
+      "title": "Segurança",
+      "description": "Gerencie sua senha e autenticação.",
+      "authTitle": "Senha e Autenticação",
+      "authDesc": "Alterar senha ou ativar autenticação em dois fatores.",
+      "manage": "Gerenciar Segurança",
+      "changePassword": "Alterar Senha",
+      "currentPassword": "Senha Atual",
+      "newPassword": "Nova Senha",
+      "updatePassword": "Atualizar Senha",
+      "twoFactorAuth": "Autenticação de Dois Fatores",
+      "twoFactorAuthDescription": "Adicione uma camada extra de segurança via SMS.",
+      "sms2faLabel": "SMS 2FA",
+      "statusEnabled": "Ativado",
+      "statusDisabled": "Desativado",
+      "twoFactorEnabled": "Autenticação de Dois Fatores Ativada!",
+      "yieldToggleTitle": "Poder de Compra via Rendimento",
+      "yieldToggleSubtitle": "Recurso beta (colateral cripto + rendimento).",
+      "yieldToggleLabel": "Usar rendimento Ether.fi para aumentar meu poder de compra (beta)",
+      "yieldToggleDescription": "Ao ativar esta opção, você autoriza a GSS a considerar o rendimento e o colateral de ativos cripto (por exemplo, eETH em Ether.fi) para aumentar temporariamente seu poder de compra em moeda fiat, usado em pagamentos e cartão. Não há rendimento garantido: o valor desses ativos pode subir ou cair, e há riscos de mercado, tecnologia e parceiros externos. Se você desligar esta opção, novos gastos passarão a usar apenas seu saldo fiat disponível, mas as dívidas já geradas com base no rendimento continuarão válidas. Você só poderá sacar ou transferir o colateral cripto associado a este recurso depois que todas as dívidas vinculadas a ele forem integralmente quitadas.",
+      "activeSessions": "Sessões Ativas",
+      "activeSessionsDescription": "Gerencie os dispositivos conectados à sua conta.",
+      "unknownDevice": "Dispositivo Desconhecido",
+      "currentSessionLabel": "Atual",
+      "signOut": "Sair",
+      "block": "Bloquear",
+      "unblock": "Desbloquear",
+      "viewData": "Ver Dados",
+      "accountSecurity": "Segurança da Conta",
+      "managePasswordAuth": "Gerencie sua senha e métodos de autenticação.",
+      "strongPasswordRecommended": "Recomendamos usar uma senha forte e única.",
+      "confirmDisconnectDevice": "Tem certeza que deseja desconectar este dispositivo?",
+      "verifySmsCodeTitle": "Verificar Código SMS",
+      "verifySmsCodeDescription": "Enviamos um código de 6 dígitos para o seu telefone cadastrado.",
+      "confirm": "Confirmar",
+      "errorVerifyingCode": "Erro ao verificar código",
+      "errorDisconnecting": "Erro ao desconectar",
+      "passwordChangedSuccessfully": "Senha alterada com sucesso!",
+      "passwordChange": {
+        "requestingOtp": "Enviando código de segurança para {email}...",
+        "enterOtp": "Digite o código de 6 dígitos enviado para seu e-mail",
+        "otpResend": "Reenviar código ({seconds}s)",
+        "otpResendReady": "Reenviar código",
+        "otpInvalid": "Código inválido. Tente novamente.",
+        "otpExpired": "Código expirado. Solicite um novo.",
+        "otpUsed": "Código já usado. Solicite um novo.",
+        "passwordChanged": "Senha alterada com sucesso!",
+        "passwordChangeFailed": "Não foi possível alterar a senha. Tente novamente."
+      },
+      "sessions": {
+        "title": "Sessões ativas",
+        "description": "Gerencie os dispositivos conectados à sua conta.",
+        "current": "Sessão atual",
+        "revoke": "Encerrar",
+        "revokeAll": "Encerrar todas as outras",
+        "revokeConfirm": "Tem certeza que deseja encerrar esta sessão?",
+        "revokeAllConfirm": "Tem certeza que deseja encerrar todas as outras sessões?",
+        "device": "Dispositivo: {device}",
+        "location": "Local: {location}",
+        "lastActive": "Ativo há: {time}"
+      },
+      "cardBlockUnavailable": "Funcionalidade de bloquear/desbloquear temporariamente indisponível.",
+      "kycSubmitFailed": "Falha ao enviar documentos KYC",
+      "autoVerificationError": "Erro ao iniciar verificação automática.",
+      "stripeConnectionError": "Erro ao conectar com Stripe Identity.",
+      "documentSendError": "Erro ao enviar documentos.",
+      "connectionError": "Erro de conexão.",
+      "accessDenied": "Acesso Negado",
+      "kycUpdateError": "Erro ao atualizar KYC",
+      "depositSuccess": "Depósito realizado!",
+      "depositError": "Erro ao depositar",
+      "processingError": "Erro ao processar"
+      ,
+      "phoneRequiredFor2FA": "Cadastre um telefone no Perfil para ativar 2FA por SMS."
+    },
+    "Profile": {
+      "title": "Meu Perfil",
+      "loadError": "Erro ao carregar perfil.",
+      "kycLevelLabel": "Nível KYC",
+      "kycLevels": {
+        "basic": "Básico",
+        "verified": "Verificado",
+        "premium": "Premium"
+      },
+      "kycPending": "Verificação em Análise",
+      "increaseLimits": "Aumentar Limites",
+      "personalDataTitle": "Dados Pessoais",
+      "firstName": "Nome",
+      "lastName": "Sobrenome",
+      "email": "Email",
+      "phone": "Telefone",
+      "address": "Endereço",
+      "city": "Cidade",
+      "postalCode": "Código postal",
+      "notProvided": "Não cadastrado",
+      "country": "País",
+      "primaryCurrency": "Moeda Principal",
+      "notAvailable": "N/A",
+      "goToSecurity": "Ir para Segurança",
+      "saveProfile": "Salvar",
+      "profileUpdateFailed": "Não foi possível salvar seus dados.",
+      "editComingSoon": "Editar (Em breve)"
+    },
+    "Notifications": {
+      "title": "Notificações",
+      "description": "Escolha como você quer ser avisado.",
+      "emailTitle": "Notificações por Email",
+      "emailDesc": "Receber comprovantes e alertas de segurança.",
+      "pushTitle": "Notificações Push",
+      "pushDesc": "Alertas em tempo real no navegador."
+    },
+    "Preferences": {
+      "title": "Preferências",
+      "description": "Ajuste sua experiência.",
+      "currencyTitle": "Moeda Principal",
+      "currencyDesc": "Moeda usada para exibir seu saldo total.",
+      "languageTitle": "Idioma",
+      "languageDesc": "Idioma da interface."
+    }
+  },
+  "Cards": {
+    "title": "Meus Cartões",
+    "description": "Gerencie seus cartões virtuais e visualize detalhes",
+    "createCard": "Criar Cartão Virtual",
+    "newCard": "Novo Cartão",
+    "globalLink": "Global Link",
+    "createFirstCard": "Criar Meu Primeiro Cartão",
+    "noCardsFound": "Nenhum cartão encontrado",
+    "noActiveCards": "Você ainda não possui cartões virtuais ativos.",
+    "virtualCard": "Cartão Virtual",
+    "virtualLabel": "VIRTUAL",
+    "claimBadge": "Claim",
+    "sentByLink": "Enviado por link",
+    "claimStatus": {
+      "expired": "Expirado",
+      "active": "Ativo",
+      "pending": "Pendente"
+    },
+    "cardNumberLabel": "Número do Cartão",
+    "recipientLabel": "Destinatário",
+    "expiresAtLabel": "Expira em",
+    "expires": "Validade",
+    "cvcLabel": "CVC",
+    "available": "Disponível",
+    "used": "Usado",
+    "inactive": "Inativo",
+    "copyNumber": "Copiar Número",
+    "viewDetails": "Ver Detalhes",
+    "viewData": "Ver Dados",
+    "blockCard": "Bloquear Cartão",
+    "unblockCard": "Desbloquear Cartão",
+    "cancelCard": "Cancelar Cartão",
+    "active": "Ativo",
+    "blocked": "Bloqueado",
+    "cancelled": "Cancelado",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "currencyLabel": "Moeda",
+    "currencies": {
+      "eur": "Euro (EUR)",
+      "usd": "Dólar (USD)",
+      "gbp": "Libra (GBP)"
+    },
+    "createTile": {
+      "title": "Criar Novo Cartão",
+      "description": "Gere um cartão virtual instantâneo"
+    },
+    "createDialog": {
+      "title": "Criar Novo Cartão Virtual",
+      "description": "Crie um cartão virtual instantaneamente para compras online seguras."
+    },
+    "deleteDialog": {
+      "title": "Remover Cartão",
+      "description": "Tem certeza que deseja remover este cartão? Esta ação não pode ser desfeita.",
+      "confirm": "Remover Cartão"
+    },
+    "cancelDialog": {
+      "title": "Cancelar Cartão",
+      "description": "Tem certeza que deseja cancelar este cartão? Esta ação é irreversível.",
+      "confirm": "Cancelar cartão"
+    },
+    "detailsDialog": {
+      "title": "Dados do Cartão",
+      "description": "Use estes dados para realizar compras online. Nunca compartilhe com terceiros.",
+      "autoCloseNote": "Esta janela fechará automaticamente em 30s por segurança. Certifique-se de que ninguém está olhando sua tela."
+    },
+    "toast": {
+      "createdTitle": "Sucesso",
+      "createdDescription": "Cartão virtual criado com sucesso.",
+      "deletedTitle": "Sucesso",
+      "deletedDescription": "Cartão removido com sucesso.",
+      "globalLinkStartedTitle": "Sucesso",
+      "globalLinkStartedDescription": "Transferência via Link Seguro iniciada!"
+    },
+    "errors": {
+      "createFailed": "Falha ao criar cartão",
+      "revealFailed": "Falha ao revelar dados",
+      "deleteFailed": "Falha ao excluir cartão"
+    },
+    "EmailCard": {
+      "title": "Cartão por e-mail",
+      "description": "Envie um cartão virtual para um destinatário via e-mail.",
+      "amount": "Valor",
+      "currency": "Moeda",
+      "recipientEmail": "Email do destinatário",
+      "recipientName": "Nome do destinatário (opcional)",
+      "recipientNamePlaceholder": "Nome",
+      "message": "Mensagem para o destinatário (opcional)",
+      "messagePlaceholder": "Escreva uma mensagem curta para o destinatário.",
+      "send": "Enviar",
+      "breakdown": {
+        "youPay": "Você paga",
+        "cardValue": "Valor do cartão"
+      },
+      "success": {
+        "title": "Cartão enviado",
+        "description": "Um cartão virtual foi enviado para {email}.",
+        "transferId": "Transfer ID"
+      },
+      "errors": {
+        "missingEmailAmount": "Preencha email e valor.",
+        "invalidAmount": "Valor inválido.",
+        "messageTooLong": "Mensagem muito longa (máximo 240 caracteres).",
+        "sessionExpired": "Sua sessão expirou. Faça login novamente.",
+        "submitFailed": "Falha ao enviar o cartão. Tente novamente."
+      },
+      "sca": {
+        "required": "Autenticação forte (SCA) necessária para concluir esta transferência.",
+        "requestCode": "Enviar código por e-mail",
+        "codeLabel": "Código de verificação (6 dígitos)",
+        "confirm": "Confirmar e concluir",
+        "codeSent": "Enviamos um código de verificação para o seu e-mail.",
+        "requestFailed": "Falha ao solicitar código de verificação.",
+        "confirmFailed": "Falha ao confirmar o código. Tente novamente.",
+        "invalidFormat": "Informe o código de 6 dígitos."
+      }
+    },
+    "removeCardAria": "Remover cartão",
+    "cardBlockUnavailable": "Bloqueio de cartão indisponível no momento."
+  },
+  "SecureTransfer": {
+    "title": "Global Link (Transferência Segura)",
+    "subtitle": "Envie valores instantaneamente para qualquer pessoa via link seguro.",
+    "amount": "Valor",
+    "currency": "Moeda",
+    "currencies": {
+      "eur": "Euro (EUR)",
+      "usd": "Dólar (USD)",
+      "gbp": "Libra (GBP)"
+    },
+    "recipientEmail": "Email do Destinatário",
+    "recipientEmailPlaceholder": "exemplo@email.com",
+    "recipientName": "Nome do Destinatário (Opcional)",
+    "recipientNamePlaceholder": "João Silva",
+    "message": "Nota de Transferência (Opcional)",
+    "messagePlaceholder": "Descrição do pagamento ou mensagem...",
+    "submit": "Gerar Global Link",
+    "success": {
+      "title": "Envio Realizado com Sucesso!",
+      "description": "O link de pagamento seguro foi gerado e enviado para <strong>{email}</strong>.",
+      "securityTitle": "Código de Segurança",
+      "securityDescription": "Para garantir a segurança da transação, este código <strong>NÃO</strong> foi enviado por email. Você deve fornecê-lo ao destinatário por um canal seguro.",
+      "unlockCodeLabel": "Código de Desbloqueio",
+      "backupLinkLabel": "Link de Acesso (Backup)",
+      "done": "Concluir Transação"
+    },
+    "toast": {
+      "copiedTitle": "Copiado",
+      "copiedCode": "Código copiado para a área de transferência",
+      "copiedLink": "Link copiado para a área de transferência"
+    },
+    "errors": {
+      "requiredFields": "Email e valor são obrigatórios.",
+      "submitFailed": "Falha ao processar envio."
+    }
+  },
+  "Claim": {
+    "title": "Resgatar Pagamento Seguro",
+    "subtitle": "Insira o código de segurança fornecido pelo remetente para desbloquear.",
+    "availableAmount": "Valor disponível",
+    "card": "Cartão",
+    "expired": {
+      "title": "Esse link expirou",
+      "subtitle": "Peça um novo ao remetente."
+    },
+    "unlockCodeLabel": "Código de segurança (6 caracteres)",
+    "unlock": "Desbloquear cartão",
+    "unlocking": "Desbloqueando...",
+    "unlocked": {
+      "title": "Cartão desbloqueado",
+      "subtitle": "Esses dados só aparecem uma vez. Guarde com segurança."
+    },
+    "cardDetailsTitle": "Dados do cartão",
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "number": "Número",
+    "expires": "Validade",
+    "cvc": "CVC",
+    "errors": {
+      "loadFailed": "Erro ao carregar link.",
+      "loadFailedRetry": "Erro ao carregar link. Tente novamente.",
+      "invalidUnlockCode": "Código incorreto. Tentativas restantes: {remaining}/3.",
+      "tooManyAttempts": "Cartão bloqueado por segurança. Tente novamente mais tarde.",
+      "claimExpired": "Esse link expirou. Peça um novo ao remetente.",
+      "claimAlreadyClaimed": "Esse cartão já foi desbloqueado. Se perdeu os dados, contate suporte.",
+      "claimNotFound": "Link inválido ou expirado.",
+      "generic": "Erro ao processar. Tente novamente."
+    }
+  },
+  "ClaimClient": {
+    "title": "Você recebeu um cartão pré-pago GlobalSecureSend",
+    "subtitle": "Use agora, sem precisar criar conta bancária.",
+    "availableAmount": "Valor disponível",
+    "expiresIn": "Expira em",
+    "expiredStatus": "Expirado",
+    "time": {
+      "minutes": "{minutes} min",
+      "hoursMinutes": "{hours}h {minutes}min"
+    },
+    "expired": {
+      "title": "Este cartão expirou",
+      "subtitle": "Peça para quem enviou gerar um novo link."
+    },
+    "steps": {
+      "step1Title": "Passo 1 de 3",
+      "step1Description": "Digite o código que você recebeu do remetente e desbloqueie seu cartão.",
+      "step3Title": "Passo 3 de 3",
+      "step3Description": "Adicione ao seu telemóvel ou use para compras online."
+    },
+    "unlockCode": "Código de desbloqueio",
+    "unlockCodePlaceholder": "Digite o código",
+    "unlockCodeHint": "Dica: o remetente envia esse código por um canal seguro.",
+    "unlocking": "Desbloqueando...",
+    "unlock": "Desbloquear cartão",
+    "unlocked": {
+      "title": "Cartão desbloqueado",
+      "subtitle": "Passo 2 de 3: use os dados abaixo para comprar online."
+    },
+    "cardDataDemo": "Dados do cartão (demonstração)",
+    "hide": "Ocultar",
+    "show": "Mostrar",
+    "cardNumber": "Número",
+    "expires": "Validade",
+    "cvc": "CVC",
+    "demoNote": "Integração para mostrar PAN/CVC reais será conectada ao emissor/TSP.",
+    "addToApplePay": "Adicionar ao Apple Pay",
+    "addToGooglePay": "Adicionar ao Google Pay",
+    "whereToUse": {
+      "title": "Onde posso usar?",
+      "subtitle": "Você pode usar este cartão como um cartão Visa normal.",
+      "items": {
+        "contactless": "Lojas físicas que aceitam contactless",
+        "online": "Compras online",
+        "apps": "Apps que aceitam cartões Visa"
+      }
+    },
+    "advanced": {
+      "title": "Ver detalhes avançados",
+      "currency": "Moeda: {currency}",
+      "last4": "Últimos 4 dígitos: {last4}",
+      "expiresIn": "Expira em: {time}",
+      "recipientEmail": "Email do destinatário: {email}"
+    },
+    "comingSoon": {
+      "title": "Em breve",
+      "description": "A integração com Apple Pay / Google Pay está em desenvolvimento."
+    },
+    "errors": {
+      "invalidCodeTryAgain": "Código inválido. Tente novamente.",
+      "tooManyAttempts": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+      "network": "Falha de rede. Tente novamente."
+    }
+  },
+  "ClaimCreate": {
+    "title": "Enviar Cartão por E-mail",
+    "subtitle": "Envie um cartão pré-pago por link seguro, sem exigir conta do destinatário.",
+    "form": {
+      "title": "Dados do envio",
+      "description": "O link expira automaticamente (atualmente 48h).",
+      "amount": "Valor",
+      "amountPlaceholder": "Ex.: 200",
+      "currency": "Moeda",
+      "recipientEmail": "Email do destinatário",
+      "recipientEmailPlaceholder": "email@destinatario.com",
+      "recipientName": "Nome (opcional)",
+      "recipientNamePlaceholder": "Ex.: Maria",
+      "message": "Mensagem (opcional)",
+      "messagePlaceholder": "Escreva uma mensagem para o destinatário"
+    },
+    "currencies": {
+      "eur": "Euro (EUR)",
+      "usd": "Dólar (USD)",
+      "gbp": "Libra (GBP)"
+    },
+    "submit": "Criar e enviar",
+    "success": {
+      "title": "Cartão enviado com sucesso",
+      "sentTo": "Enviado para <strong>{email}</strong>",
+      "amount": "Valor",
+      "expiresIn": "Expira em",
+      "expiresInValue": "48h",
+      "track": "Acompanhar",
+      "trackValue": "Cartões",
+      "securityTitle": "Código de segurança",
+      "securityDescription": "Para segurança, este código não vai por email. Envie ao destinatário por um canal seguro.",
+      "codeLabel": "Código",
+      "backupLinkLabel": "Link de acesso (backup)",
+      "goToCards": "Ir para Cartões",
+      "sendAnother": "Enviar outro"
+    },
+    "errors": {
+      "requiredEmailAmount": "Email e valor são obrigatórios.",
+      "invalidAmount": "Informe um valor válido.",
+      "linkCreatedEmailNotSent": "O link foi criado, mas o email não foi enviado.",
+      "submitFailed": "Falha ao processar envio.",
+      "unexpected": "Erro inesperado."
+    }
+  },
+  "KYC": {
+    "identityVerification": "Verificação de Identidade",
+    "verifyIdentityDescription": "Para aumentar seus limites e garantir a segurança, precisamos verificar quem você é.",
+    "documentsSent": "Documentos Enviados!",
+    "verificationInProgress": "Sua verificação está sendo processada. Você receberá um e-mail assim que aprovado.",
+    "backToDashboard": "Voltar ao Dashboard",
+    "quickOption": "Opção Rápida",
+    "recommended": "Recomendado",
+    "automaticVerification": "Verificação Automática",
+    "useStripeIdentity": "Use Stripe Identity para verificação instantânea",
+    "stripeConnectionError": "Não foi possível conectar ao serviço de verificação. Tente novamente ou use o upload manual.",
+    "cameraHttpsHint": "Em dispositivos móveis, a câmera só funciona em conexões seguras (HTTPS).",
+    "verificationRedirecting": "Redirecionando para verificação segura...",
+    "verificationCancelled": "Verificação cancelada. Você pode tentar novamente depois.",
+    "startVerification": "Iniciar Verificação",
+    "manualVerification": "Verificação Manual",
+    "uploadDocuments": "Carregue seus documentos",
+    "country": {
+      "label": "País",
+      "unsupported": "Seu país não é suportado para este método de verificação."
+    },
+    "countries": {
+      "br": "Brasil (BR)",
+      "de": "Alemanha (DE)",
+      "fr": "França (FR)",
+      "lu": "Luxemburgo (LU)",
+      "pt": "Portugal (PT)",
+      "us": "Estados Unidos (US)",
+      "unknown": "Desconhecido ({code})"
+    },
+    "lastFour": {
+      "labelUs": "SSN: últimos 4 dígitos",
+      "labelOther": "Últimos 4 caracteres do documento",
+      "placeholderUs": "1234",
+      "placeholderOther": "A1B2"
+    },
+    "documentType": {
+      "label": "Tipo de documento",
+      "lastFourDigits": "Últimos 4 dígitos"
+    },
+    "docTypeIdCard": "Carteira de Identidade (ID Card)",
+    "docTypePassport": "Passaporte",
+    "docTypeDriverLicense": "Carteira de Motorista",
+    "documentNumber": "Número do Documento",
+    "documentNumberPlaceholder": "Ex: 123456789",
+    "issuingCountry": "País Emissor",
+    "frontImage": "Imagem da Frente",
+    "backImage": "Imagem do Verso",
+    "selfieImage": "Selfie com Documento",
+    "submitDocuments": "Enviar Documentos",
+    "uploading": "Enviando...",
+    "startNow": "Iniciar Agora",
+    "manualSeparator": "ou envio manual",
+    "stepDocumentDataTitle": "Dados do Documento",
+    "stepFrontTitle": "Documento de Identidade (Frente)",
+    "stepBackTitle": "Documento de Identidade (Verso)",
+    "stepSelfieTitle": "Selfie de Verificação",
+    "stepDocumentDataDesc": "Informe os dados do documento que você enviará.",
+    "stepFrontDesc": "Envie uma foto clara da frente do seu documento.",
+    "stepBackDesc": "Agora envie uma foto do verso do documento.",
+    "stepSelfieDesc": "Por fim, tire uma selfie segurando o documento para confirmar sua identidade.",
+    "uploadSelectOrDrop": "Clique para selecionar ou arraste aqui",
+    "uploadFormats": "JPG, PNG ou PDF (Max 5MB)",
+    "fileSelected": "Arquivo selecionado",
+    "submitForReview": "Enviar para Análise",
+    "autoVerificationError": "Não foi possível iniciar a verificação automática.",
+    "documentSendError": "Não foi possível enviar os documentos.",
+    "connectionError": "Erro de conexão.",
+    "errors": {
+      "unsupportedCountry": "Seu país não é suportado para este método de verificação.",
+      "countryLocked": "O país é obtido do seu perfil.",
+      "countryMissing": "Defina seu país no seu perfil antes de iniciar a verificação.",
+      "countryInvalid": "Seu país é inválido. Atualize seu perfil e tente novamente.",
+      "documentTypeNotSupported": "Este tipo de documento não é suportado para o seu país.",
+      "lastFourInvalidUs": "Informe os últimos 4 dígitos do seu SSN.",
+      "lastFourInvalidOther": "Informe os últimos 4 caracteres (letras e números) do seu documento.",
+      "autoVerificationDisabled": "A verificação automática está temporariamente indisponível.",
+      "serviceUnavailable": "O serviço de verificação está temporariamente indisponível."
+    }
+  },
+  "Limits": {
+    "title": "Seu KYC, risco e limites",
+    "subtitle": "Entenda o que você pode fazer hoje e como aumentar seus limites.",
+    "backToDashboard": "Voltar para dashboard",
+    "reload": "Recarregar",
+    "loading": "Carregando…",
+    "error": {
+      "loadFailedTitle": "Não foi possível carregar seus limites",
+      "loadFailedDesc": "Tente novamente.",
+      "retryButton": "Tentar novamente"
+    },
+    "completeKyc": "Completar KYC",
+    "kycTitle": "KYC",
+    "level": "Nível",
+    "status": "Status",
+    "country": "País",
+    "kycNextStep": {
+      "none": "Complete seu KYC para liberar limites.",
+      "basic": "Envie comprovante de endereço para aumentar seus limites.",
+      "advanced": "Finalize a verificação adicional para aumentar seus limites.",
+      "premium": "Você já está no nível máximo de KYC.",
+      "generic": "Complete etapas adicionais para aumentar seus limites."
+    },
+    "riskTitle": "Perfil de risco",
+    "riskTierLabel": "Nível de risco",
+    "riskExplanation": {
+      "low": "Perfil conservador: limites típicos e menos revisões.",
+      "medium": "Perfil moderado: limites podem ser ajustados conforme uso e histórico.",
+      "high": "Perfil de alto risco: limites reduzidos e mais verificações.",
+      "generic": "Limites podem variar conforme seu perfil."
+    },
+    "riskNote": "O nível de risco influencia limites, revisões e requisitos adicionais.",
+    "limitsTitle": "Limites de envio",
+    "limitsDesc": "Valores aplicados ao seu perfil atual.",
+    "limitsUnavailable": "Limites ainda não disponíveis para este perfil.",
+    "perTx": "Por transação",
+    "perDay": "Por dia",
+    "perMonth": "Por mês",
+    "amlTitle": "AML & Segurança",
+    "openCases": "Casos em análise",
+    "highestRisk": "Risco mais alto",
+    "amlNote": "Se detectarmos algo suspeito, suas operações podem entrar em revisão AML.",
+    "viewSecurity": "Ver segurança"
+  },
+  "Admin": {
+    "adminPanel": "Painel Admin (Super User)",
+    "refresh": "Atualizar",
+    "accessDenied": "Acesso negado",
+    "approveUser": "Aprovar este usuário?",
+    "rejectUser": "Rejeitar este usuário?",
+    "rejectionReasonDefault": "Documentos ilegíveis ou inválidos.",
+    "kycLabel": "KYC",
+    "balances": "Saldos",
+    "noBalances": "Sem saldos",
+    "addManualBalance": "Adicionar Saldo Manual",
+    "kycDocuments": "Documentos KYC",
+    "document": "Doc",
+    "viewFront": "Ver Frente",
+    "viewBack": "Ver Verso",
+    "viewSelfie": "Ver Selfie",
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "noDocumentsSubmitted": "Nenhum documento enviado",
+    "enterDepositAmount": "Valor para depositar (ex: 1000):",
+    "enterCurrency": "Moeda (EUR, USD, BRL):",
+    "kycUpdateError": "Erro ao atualizar KYC",
+    "depositSuccess": "Depósito realizado!",
+    "depositError": "Erro ao depositar"
+  },
+  "WalletDeposit": {
+    "title": "Depositar Fundos",
+    "subtitle": "Escolha como você quer adicionar dinheiro à sua conta.",
+    "countryOrigin": "País de Origem",
+    "countryPlaceholder": "Selecione seu país",
+    "countries": {
+      "br": "🇧🇷 Brasil",
+      "lu": "🇱🇺 Luxemburgo",
+      "pt": "🇵🇹 Portugal",
+      "de": "🇩🇪 Alemanha",
+      "fr": "🇫🇷 França",
+      "us": "🇺🇸 Estados Unidos"
+    },
+    "methods": {
+      "pix": {
+        "title": "PIX Instantâneo",
+        "description": "Depósito imediato via QR Code. Disponível 24/7.",
+        "time": "Instantâneo"
+      },
+      "sepaInstant": {
+        "title": "SEPA Instant",
+        "description": "Transferência bancária europeia. IBAN LU dedicado.",
+        "time": "< 10 segundos"
+      },
+      "crypto": {
+        "title": "Criptoativos",
+        "description": "Depósito via USDT (Polygon). Taxas reduzidas.",
+        "time": "~5 minutos"
+      },
+      "bank": {
+        "title": "Transferência Bancária",
+        "description": "SWIFT/Wire internacional para grandes volumes.",
+        "time": "1-3 dias úteis"
+      }
+    },
+    "backToMethods": "Voltar para métodos",
+    "pixTitle": "Depósito Instantâneo via PIX",
+    "pixDesc": "O valor será creditado na sua conta em segundos. (Simulação)",
+    "pixAmountLabel": "Valor (BRL)",
+    "pixHint": "Em ambiente de produção, isso geraria um QR Code. Para testes, o valor é creditado automaticamente.",
+    "pixSubmit": "Gerar PIX e Pagar",
+    "pix": {
+      "formTitle": "Depósito PIX",
+      "copyPaste": "Gerar PIX Copia e Cola"
+    },
+    "pixSuccessTitle": "Depósito Confirmado",
+    "pixSuccessDesc": "Recebemos seu PIX de R$ {amount} com sucesso!",
+    "crypto": {
+      "addressTitle": "Endereço USDT (Polygon)",
+      "copyAddress": "Copiar Endereço"
+    },
+    "bank": {
+      "steps": {
+        "details": "Dados Bancários",
+        "proof": "Comprovante",
+        "done": "Conclusão"
+      },
+      "transferDetailsTitle": "Dados para Transferência",
+      "labels": {
+        "beneficiary": "Beneficiário",
+        "iban": "IBAN",
+        "bicSwift": "BIC/SWIFT",
+        "bank": "Banco"
+      },
+      "referenceRequired": "⚠️ Referência Obrigatória:",
+      "doneTransfer": "Já realizei a transferência",
+      "uploadTitle": "Clique para enviar o comprovante",
+      "uploadFormats": "PDF, JPG ou PNG (Max 5MB)",
+      "uploadSubmit": "Enviar Comprovante",
+      "successTitle": "Comprovante Enviado!",
+      "successDescription": "Recebemos seus dados. O valor será creditado em sua conta em até 24-48 horas úteis após a compensação bancária.",
+      "protocol": "Protocolo:",
+      "backHome": "Voltar ao Início"
+    },
+    "faq": {
+      "title": "Instruções Detalhadas e FAQ",
+      "bankHowTo": {
+        "title": "Como depositar via Transferência Bancária?",
+        "steps": {
+          "1": "Selecione a opção Transferência Bancária acima.",
+          "2": "Copie os dados bancários (IBAN e BIC/SWIFT) fornecidos.",
+          "3": "Acesse o aplicativo do seu banco e inicie uma transferência internacional (SEPA ou SWIFT).",
+          "4": "Importante: insira o código de referência no campo “Descrição” ou “Motivo”.",
+          "5": "Após realizar a transferência, salve o comprovante (PDF ou imagem).",
+          "6": "Volte aqui e envie o comprovante na etapa 2 do assistente."
+        },
+        "deadline": "Prazo: 1 a 3 dias úteis após o envio do comprovante."
+      },
+      "limitsFees": {
+        "title": "Limites e Taxas",
+        "minimumDeposit": "Depósito Mínimo",
+        "maximumDeposit": "Depósito Máximo",
+        "sepaFee": "Taxa SEPA",
+        "swiftFee": "Taxa SWIFT",
+        "free": "GRÁTIS"
+      },
+      "settlement": {
+        "title": "Prazo de Compensação",
+        "instant": "Imediato (24/7)",
+        "sepaTransfer": "Transferência SEPA",
+        "oneBusinessDay": "1 dia útil",
+        "swiftInternational": "SWIFT (Internacional)",
+        "threeToFiveBusinessDays": "3-5 dias úteis"
+      }
+    }
+  }
+}

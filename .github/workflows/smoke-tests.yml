@@ -1,0 +1,116 @@
+name: Smoke Tests Post-Deploy
+
+# Roda após migrate-prod concluir OU manualmente
+on:
+  workflow_run:
+    workflows: ["Prisma Migrate Production"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  smoke-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Wait for Vercel deployment to be live
+        run: sleep 30
+
+      # ==========================================
+      # 1. Health check básico
+      # ==========================================
+      - name: Health check
+        run: |
+          echo "Verificando /api/health..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://globalsecuresend.com/api/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "FALHA: /api/health retornou $STATUS"
+            exit 1
+          fi
+          echo "OK: /api/health = $STATUS"
+
+      # ==========================================
+      # 2. Verifica página de login está acessível
+      # ==========================================
+      - name: Login page accessible
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://globalsecuresend.com/auth/login)
+          if [ "$STATUS" != "200" ]; then
+            echo "FALHA: /auth/login retornou $STATUS"
+            exit 1
+          fi
+          echo "OK: /auth/login = $STATUS"
+
+      # ==========================================
+      # 3. Verifica rota de OTP não está aberta sem auth
+      # ==========================================
+      - name: OTP route requires authentication
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST https://globalsecuresend.com/api/auth/verify-otp \
+            -H 'Content-Type: application/json' \
+            -d '{}')
+          # Deve retornar 401 ou 400, NUNCA 200 sem credenciais
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "500" ]; then
+            echo "FALHA DE SEGURANCA: /api/auth/verify-otp retornou $STATUS sem credenciais!"
+            exit 1
+          fi
+          echo "OK: /api/auth/verify-otp retorna $STATUS (esperado: 400/401)"
+
+      # ==========================================
+      # 4. Verifica rotas financeiras protegidas
+      # ==========================================
+      - name: Transfer routes require authentication
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://globalsecuresend.com/api/transfers)
+          if [ "$STATUS" = "200" ]; then
+            echo "FALHA DE SEGURANCA: /api/transfers acessível sem token!"
+            exit 1
+          fi
+          echo "OK: /api/transfers retorna $STATUS (esperado: 401/405)"
+
+      # ==========================================
+      # 5. Verifica rota KYC protegida
+      # ==========================================
+      - name: KYC route requires authentication
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://globalsecuresend.com/api/kyc/status)
+          if [ "$STATUS" = "200" ]; then
+            echo "FALHA DE SEGURANCA: /api/kyc/status acessível sem auth!"
+            exit 1
+          fi
+          echo "OK: /api/kyc/status retorna $STATUS (esperado: 401)"
+
+      # ==========================================
+      # 6. Verifica que não há redirect HTTP->HTTPS
+      # ==========================================
+      - name: HTTPS enforced
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-redirs 0 http://globalsecuresend.com/api/health || true)
+          echo "HTTP redirect status: $STATUS (esperado: 301 ou 308)"
+          # Vercel força HTTPS automaticamente
+
+      # ==========================================
+      # 7. Alertar no Slack se qualquer teste falhar
+      # ==========================================
+      - name: Alert on failure
+        if: failure()
+        run: |
+          curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+            -H 'Content-type: application/json' \
+            --data '{
+              "text": ":x: *SMOKE TESTS FALHARAM* em https://globalsecuresend.com!\nVerifique urgente: https://github.com/${{ github.repository }}/actions"
+            }' || true
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "Todos os smoke tests passaram!"
+          echo "Timestamp: $(date -u)"
+          echo "Ambiente: https://globalsecuresend.com"

@@ -1,0 +1,98 @@
+name: Prisma Migrate Production
+
+# Roda APÓS o deploy Vercel ter sucesso em main
+# Separa migrations de produção do job de CI/testes
+on:
+  workflow_run:
+    workflows: ["Deploy to Production"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type MIGRATE to confirm manual migration'
+        required: true
+
+jobs:
+  # Gating: só roda se o deploy anterior teve sucesso
+  check-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.check.outputs.should-run }}
+    steps:
+      - name: Check if should run
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            if [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
+              echo "should-run=true" >> $GITHUB_OUTPUT
+            else
+              echo "should-run=false" >> $GITHUB_OUTPUT
+              echo "Deploy falhou - pulando migrations"
+            fi
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.confirm }}" = "MIGRATE" ]; then
+              echo "should-run=true" >> $GITHUB_OUTPUT
+            else
+              echo "should-run=false" >> $GITHUB_OUTPUT
+              echo "Confirmacao manual incorreta"
+            fi
+          fi
+
+  migrate:
+    needs: check-trigger
+    if: needs.check-trigger.outputs.should-run == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
+
+      - name: Run Prisma Migrate Deploy (PROD)
+        run: npx prisma migrate deploy
+        env:
+          # NUNCA usar DATABASE_URL de teste aqui
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
+
+      - name: Verify migration status
+        run: npx prisma migrate status
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "Migration concluida com sucesso em producao"
+          echo "Timestamp: $(date -u)"
+
+      - name: Notify failure via Slack
+        if: failure()
+        run: |
+          curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+            -H 'Content-type: application/json' \
+            --data '{
+              "text": ":rotating_light: *FALHA em migrate-prod* no GSS!\nVerifique imediatamente: https://github.com/${{ github.repository }}/actions"
+            }' || true
+          echo "Migration FALHOU - banco de producao pode estar inconsistente!"
+          exit 1

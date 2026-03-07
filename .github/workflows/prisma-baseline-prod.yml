@@ -1,0 +1,63 @@
+name: Prisma - Baseline Prod DB
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: plan = only show status; apply = baseline + deploy migrations
+        required: true
+        default: plan
+        type: choice
+        options:
+          - plan
+          - apply
+      baseline_migration:
+        description: Folder name inside prisma/migrations to mark as applied (baseline)
+        required: true
+        default: 20260209154801_init
+        type: string
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate required secrets
+        run: |
+          test -n "${DATABASE_URL}"
+          test -n "${DIRECT_URL}"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Prisma migrate status (plan)
+        if: ${{ inputs.mode == 'plan' }}
+        run: npx prisma migrate status --schema prisma/schema.prisma
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Prisma migrate resolve baseline
+        if: ${{ inputs.mode == 'apply' }}
+        run: npx prisma migrate resolve --schema prisma/schema.prisma --applied "${{ inputs.baseline_migration }}"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Prisma migrate deploy
+        if: ${{ inputs.mode == 'apply' }}
+        run: npx prisma migrate deploy --schema prisma/schema.prisma
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}

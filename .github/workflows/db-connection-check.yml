@@ -1,0 +1,27 @@
+name: DB Connection Check (Supabase)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install psql
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Check DIRECT_URL (5432)
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: |
+          test -n "${DIRECT_URL}"
+          psql "${DIRECT_URL}" -v ON_ERROR_STOP=1 -c "select now() as now, version() as version;"
+
+      - name: Check DATABASE_URL (pooler 6543)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          test -n "${DATABASE_URL}"
+          psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -c "select now() as now, version() as version;"

@@ -1,0 +1,120 @@
+import { NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import Stripe from 'stripe';
+import { z } from 'zod';
+import { callPartnerWithBreaker, PartnerTemporarilyUnavailableError } from '@/lib/services/partner-circuit-breaker';
+import { isOperationalFlagEnabled } from '@/lib/services/operational-flags';
+import { env } from '@/lib/config/env';
+import { logger } from '@/lib/logger';
+import { resolveBaseUrl } from '@/lib/http/request-origin';
+
+const topUpSchema = z.object({
+  amount: z.number().positive().min(5),
+  currency: z.enum(['EUR', 'USD', 'GBP', 'BRL'])
+});
+
+export async function POST(req: Request) {
+  const session = await getSession();
+  if (!session || typeof session === 'string' || !session.userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const isHalted = await isOperationalFlagEnabled('TREASURY_HALT_DEPOSITS_WITHDRAWS');
+    if (isHalted) {
+      return NextResponse.json(
+        { error: 'TREASURY_HALT_DEPOSITS_WITHDRAWS', code: 'TREASURY_HALT_DEPOSITS_WITHDRAWS' },
+        { status: 503 },
+      );
+    }
+
+    const body = await req.json();
+    const { amount, currency } = topUpSchema.parse(body);
+
+    // Calculate Fees (3.5% + 0.30 fixed)
+    const fixedFee = 0.30;
+    const variableFeePercent = 0.035;
+    const feeAmount = (amount * variableFeePercent) + fixedFee;
+    const baseMinor = Math.round(amount * 100);
+    const feeMinor = Math.round(feeAmount * 100);
+    
+    // Total charge = Amount + Fees
+    // But we credit only 'amount' to the account.
+
+    const stripeSecretKey = env.stripeSecretKey();
+    if (!stripeSecretKey) {
+      return NextResponse.json({ error: 'STRIPE_NOT_CONFIGURED', code: 'STRIPE_NOT_CONFIGURED' }, { status: 503 });
+    }
+
+    const stripe = new Stripe(stripeSecretKey.trim(), {
+      // TODO: ajuste apiVersion conforme seu contrato/SDK real.
+      // @ts-expect-error Stripe version mismatch
+      apiVersion: '2024-12-18.acacia',
+    });
+
+    const baseUrl = resolveBaseUrl(req, { allowLocalhostFallback: env.nodeEnv() !== 'production' });
+
+    // Criar Sessão do Checkout
+    const checkoutSession = await callPartnerWithBreaker('stripe', 'checkout.sessions.create', async () =>
+      stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: currency.toLowerCase(),
+              product_data: {
+                name: 'GlobalSecure Top-up',
+                description: 'Crédito na Carteira',
+              },
+              unit_amount: baseMinor,
+            },
+            quantity: 1,
+          },
+          {
+            price_data: {
+              currency: currency.toLowerCase(),
+              product_data: {
+                name: 'Taxa de Processamento',
+                description: 'Taxa de cartão de crédito (3.5% + 0.30)',
+              },
+              unit_amount: feeMinor,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${baseUrl}/dashboard?payment=success`,
+        cancel_url: `${baseUrl}/dashboard?payment=cancel`,
+        metadata: {
+          userId: session.userId as string,
+          type: 'WALLET_TOPUP',
+          base_amount_minor: String(baseMinor),
+          surcharge_minor: String(feeMinor)
+        },
+      }),
+    );
+
+    // Salvar intenção no banco
+    await prisma.topUp.create({
+      data: {
+        userId: session.userId as string,
+        amount: amount,
+        currency: currency,
+        stripeSessionId: checkoutSession.id,
+        status: 'PENDING',
+      },
+    });
+
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (error: any) {
+    logger.error({ err: error?.message || String(error) }, 'wallet.topup error');
+    if (error instanceof PartnerTemporarilyUnavailableError) {
+      return NextResponse.json({ error: error.code, code: error.code }, { status: 503 });
+    }
+    if (error instanceof z.ZodError) {
+        return NextResponse.json({ error: 'Dados inválidos', details: (error as any).errors }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 });
+  }
+}

@@ -1,0 +1,6 @@
+DO $$
+BEGIN
+  ALTER TYPE "OtpPurpose" ADD VALUE 'HIGH_VALUE_TRANSFER';
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
