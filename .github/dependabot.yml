@@ -1,0 +1,54 @@
+# Dependabot - Atualizações automáticas de dependências
+# Cria PRs semanais para vulnerabilidades e atualizações
+version: 2
+
+updates:
+  # npm/Node.js
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Luxembourg"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "Clemergorges"
+    labels:
+      - "dependencies"
+      - "security"
+    # Agrupa updates de tipo minor/patch para menos noise
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    # Ignora major versions de libs que quebram API
+    ignore:
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Luxembourg"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "Clemergorges"
+    labels:
+      - "dependencies"
+      - "github-actions"
