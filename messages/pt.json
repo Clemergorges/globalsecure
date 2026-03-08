@@ -130,6 +130,28 @@
     "next": "Próximo",
     "loading": "Carregando...",
     "error": "Erro",
+    "feeConfig": {
+      "loading": "Carregando taxas…",
+      "fallbackNotice": "Usando taxas padrão. Valores finais podem variar levemente.",
+      "estimate": "estimativa",
+      "source": {
+        "env": "configurada em sistema",
+        "db": "configurada em sistema",
+        "default": "padrão"
+      }
+    },
+    "countries": {
+      "br": "Brasil (BR)",
+      "us": "Estados Unidos (US)",
+      "gb": "Reino Unido (GB)",
+      "pt": "Portugal (PT)",
+      "de": "Alemanha (DE)",
+      "fr": "França (FR)",
+      "es": "Espanha (ES)",
+      "it": "Itália (IT)",
+      "nl": "Holanda (NL)",
+      "lu": "Luxemburgo (LU)"
+    },
     "disclaimer": {
       "tax": "Impostos e obrigações fiscais são responsabilidade do usuário. A GSS oferece extratos e relatórios para facilitar a declaração, mas não substitui contador nem consultoria fiscal."
     }
@@ -209,9 +231,21 @@
       "settings": "Configurações",
       "help": "Ajuda e Suporte",
       "logout": "Sair"
+    },
+    "TravelMode": {
+      "active": "Modo Viagem ativo",
+      "bannerTitle": "Modo Viagem",
+      "bannerDescription": "Modo Viagem reduz bloqueios por geofraude em {country} sem alterar limites de segurança.",
+      "unknownCountry": "seu destino"
     }
   },
   "Incidents": {
+    "travelMode": {
+      "active": "Modo Viagem ativo",
+      "bannerTitle": "Modo Viagem",
+      "bannerDescription": "Modo Viagem reduz bloqueios por geofraude em {country} sem alterar limites de segurança.",
+      "unknownCountry": "seu destino"
+    },
     "treasuryHalt": {
       "title": "Restrição temporária de serviço",
       "description": "Depósitos e saques podem ficar temporariamente indisponíveis. Tente novamente mais tarde."
@@ -242,6 +276,7 @@
         "gbp": "Libra (GBP)"
       },
       "serviceFee": "Taxa de Serviço ({percent}%)",
+      "serviceFeeWithSource": "Taxa de Serviço ({percent}%) ({source})",
       "totalToPay": "Total a Pagar",
       "enableYield": "Enviar com rendimento (Ether.fi)",
       "enableYieldHelp": "Opcional e sem garantia. Você pode acompanhar em",
@@ -333,6 +368,27 @@
     "title": "Rendimento (Ether.fi)",
     "subtitle": "Acompanhe transferências enviadas com rendimento via Ether.fi.",
     "beta": "beta",
+    "reload": "Recarregar",
+    "disabled": {
+      "title": "Rendimento indisponível",
+      "description": "Este recurso está desativado no momento.",
+      "back": "Voltar para dashboard"
+    },
+    "errors": {
+      "loadFailed": "Não foi possível carregar rendimento",
+      "loadFailedTitle": "Não foi possível carregar rendimento",
+      "loadFailedDesc": "Tente novamente.",
+      "retry": "Tentar novamente",
+      "backToDashboard": "Voltar para dashboard"
+    },
+    "product": {
+      "title": "Produto",
+      "apy": "APY atual: {percent}%",
+      "enabledLabel": "Yield ativo",
+      "enabledYes": "sim",
+      "enabledNo": "não",
+      "viewDetails": "Ver detalhes"
+    },
     "summary": {
       "title": "Resumo",
       "totalPrincipalLabel": "Principal aproximado em rendimento (EUR)",
@@ -598,6 +654,22 @@
       "processingError": "Erro ao processar"
       ,
       "phoneRequiredFor2FA": "Cadastre um telefone no Perfil para ativar 2FA por SMS."
+    },
+    "TravelMode": {
+      "title": "Modo Viagem",
+      "description": "Ative para reduzir bloqueios por geofraude durante viagens.",
+      "toggleLabel": "Ativar Modo Viagem",
+      "toggleOnHelp": "Modo Viagem reduz bloqueios por geofraude em {country} sem alterar limites de segurança.",
+      "toggleOffHelp": "Desativado. Geofraude pode bloquear transações fora do seu país habitual.",
+      "estimate": "(estimativa)",
+      "errors": {
+        "saveFailed": "Não foi possível salvar. Tente novamente."
+      },
+      "country": {
+        "label": "País da viagem (opcional)",
+        "placeholder": "Selecione um país",
+        "none": "não definido"
+      }
     },
     "Profile": {
       "title": "Meu Perfil",
@@ -1064,7 +1136,28 @@
     "openCases": "Casos em análise",
     "highestRisk": "Risco mais alto",
     "amlNote": "Se detectarmos algo suspeito, suas operações podem entrar em revisão AML.",
-    "viewSecurity": "Ver segurança"
+    "viewSecurity": "Ver segurança",
+    "AmlStatus": {
+      "title": "Compliance",
+      "subtitle": "Status simplificado de AML/KYC. Sem detalhes sensíveis.",
+      "label": "Status AML",
+      "status": {
+        "verified": "Verificado",
+        "review": "Em revisão",
+        "actionRequired": "Ação necessária",
+        "blocked": "Bloqueado"
+      },
+      "help": {
+        "verified": "Seu status está ok. Se algo mudar, você verá aqui.",
+        "review": "Sua conta pode estar em revisão. Algumas operações podem ficar temporariamente limitadas.",
+        "actionRequired": "Precisamos de uma etapa adicional para manter sua conta ativa.",
+        "blocked": "Sua conta está temporariamente bloqueada. Fale com o suporte para orientação."
+      },
+      "cta": {
+        "sendDocs": "Enviar documentos",
+        "contactSupport": "Falar com suporte"
+      }
+    }
   },
   "Admin": {
     "adminPanel": "Painel Admin (Super User)",

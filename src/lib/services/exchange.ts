@@ -1,6 +1,22 @@
 
 import { getFxRate } from '@/lib/services/fx-engine';
 
+function parseNumber(raw: string | undefined) {
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(Math.max(n, min), max);
+}
+
+function getRemittanceFeePercent() {
+  const pct = parseNumber(process.env.REM_FEE_PERCENT_DEFAULT);
+  if (pct !== null) return clamp(pct, 0, 100);
+  return 1.8;
+}
+
 export async function getExchangeRate(source: string, target: string): Promise<number> {
   if (source === target) return 1;
 
@@ -19,8 +35,7 @@ export async function calculateTransferAmounts(
   const rate = await getExchangeRate(currencySource, currencyTarget);
   
   // Fee Logic
-  // 1.8% Standard Fee
-  const feePercentage = 0.018; 
+  const feePercentage = getRemittanceFeePercent() / 100;
   const fee = amountSource * feePercentage;
   const configuredModel = process.env.FEE_MODEL_TRANSFERS_CREATE?.toUpperCase();
   const feeModel = configuredModel === 'NET' || configuredModel === 'EXPLICIT'

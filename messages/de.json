@@ -7,6 +7,28 @@
     "next": "Weiter",
     "loading": "Laden...",
     "error": "Fehler",
+    "feeConfig": {
+      "loading": "Gebühren werden geladen…",
+      "fallbackNotice": "Standardgebühren werden verwendet. Endwerte können leicht abweichen.",
+      "estimate": "Schätzung",
+      "source": {
+        "env": "im System konfiguriert",
+        "db": "im System konfiguriert",
+        "default": "Standard"
+      }
+    },
+    "countries": {
+      "br": "Brasilien (BR)",
+      "us": "Vereinigte Staaten (US)",
+      "gb": "Vereinigtes Königreich (GB)",
+      "pt": "Portugal (PT)",
+      "de": "Deutschland (DE)",
+      "fr": "Frankreich (FR)",
+      "es": "Spanien (ES)",
+      "it": "Italien (IT)",
+      "nl": "Niederlande (NL)",
+      "lu": "Luxemburg (LU)"
+    },
     "disclaimer": {
       "tax": "Steuern und steuerliche Pflichten liegen in der Verantwortung des Nutzers. GSS stellt Kontoauszüge und Berichte zur Unterstützung der Erklärung bereit, ersetzt jedoch keinen Steuerberater oder Buchhalter."
     }
@@ -38,6 +60,12 @@
     }
   },
   "Incidents": {
+    "travelMode": {
+      "active": "Reisemodus aktiv",
+      "bannerTitle": "Reisemodus",
+      "bannerDescription": "Der Reisemodus reduziert Geofraud-Blockierungen in {country}, ohne Sicherheitslimits zu ändern.",
+      "unknownCountry": "Ihr Reiseziel"
+    },
     "treasuryHalt": {
       "title": "Vorübergehende Serviceeinschränkung",
       "description": "Ein- und Auszahlungen können vorübergehend nicht verfügbar sein. Bitte später erneut versuchen."
@@ -333,6 +361,27 @@
     "title": "Rendite (Ether.fi)",
     "subtitle": "Verfolgen Sie Überweisungen, die mit Ether.fi-Rendite gesendet wurden.",
     "beta": "beta",
+    "reload": "Neu laden",
+    "disabled": {
+      "title": "Rendite nicht verfügbar",
+      "description": "Diese Funktion ist derzeit deaktiviert.",
+      "back": "Zurück zum Dashboard"
+    },
+    "errors": {
+      "loadFailed": "Rendite konnte nicht geladen werden",
+      "loadFailedTitle": "Rendite konnte nicht geladen werden",
+      "loadFailedDesc": "Bitte erneut versuchen.",
+      "retry": "Erneut versuchen",
+      "backToDashboard": "Zurück zum Dashboard"
+    },
+    "product": {
+      "title": "Produkt",
+      "apy": "Aktueller APY: {percent}%",
+      "enabledLabel": "Rendite aktiv",
+      "enabledYes": "ja",
+      "enabledNo": "nein",
+      "viewDetails": "Details ansehen"
+    },
     "summary": {
       "title": "Zusammenfassung",
       "totalPrincipalLabel": "Ca. Kapital in Rendite (EUR)",
@@ -597,6 +646,22 @@
       },
       "phoneRequiredFor2FA": "Fügen Sie im Profil eine Telefonnummer hinzu, um SMS-2FA zu aktivieren.",
       "connectionError": "Verbindungsfehler."
+    },
+    "TravelMode": {
+      "title": "Reisemodus",
+      "description": "Aktivieren, um Geofraud-Blockierungen während Reisen zu reduzieren.",
+      "toggleLabel": "Reisemodus aktivieren",
+      "toggleOnHelp": "Der Reisemodus reduziert Geofraud-Blockierungen in {country}, ohne Sicherheitslimits zu ändern.",
+      "toggleOffHelp": "Deaktiviert. Geofraud kann Transaktionen außerhalb Ihres Heimatlandes blockieren.",
+      "estimate": "(Schätzung)",
+      "errors": {
+        "saveFailed": "Speichern nicht möglich. Bitte erneut versuchen."
+      },
+      "country": {
+        "label": "Reiseland (optional)",
+        "placeholder": "Land auswählen",
+        "none": "nicht festgelegt"
+      }
     },
     "Profile": {
       "title": "Mein Profil",
@@ -1063,7 +1128,28 @@
     "openCases": "Offene Fälle",
     "highestRisk": "Höchstes Risiko",
     "amlNote": "Wenn wir etwas Verdächtiges erkennen, können Ihre Vorgänge einer AML-Prüfung unterzogen werden.",
-    "viewSecurity": "Sicherheit ansehen"
+    "viewSecurity": "Sicherheit ansehen",
+    "AmlStatus": {
+      "title": "Compliance",
+      "subtitle": "Vereinfachter AML/KYC-Status. Keine sensiblen Details.",
+      "label": "AML-Status",
+      "status": {
+        "verified": "Verifiziert",
+        "review": "In Prüfung",
+        "actionRequired": "Aktion erforderlich",
+        "blocked": "Gesperrt"
+      },
+      "help": {
+        "verified": "Ihr Status ist in Ordnung. Wenn sich etwas ändert, sehen Sie es hier.",
+        "review": "Ihr Konto kann in Prüfung sein. Einige Vorgänge können vorübergehend eingeschränkt sein.",
+        "actionRequired": "Wir benötigen einen zusätzlichen Schritt, um Ihr Konto aktiv zu halten.",
+        "blocked": "Ihr Konto ist vorübergehend gesperrt. Kontaktieren Sie den Support für weitere Schritte."
+      },
+      "cta": {
+        "sendDocs": "Dokumente senden",
+        "contactSupport": "Support kontaktieren"
+      }
+    }
   },
   "Admin": {
     "adminPanel": "Admin-Bereich",

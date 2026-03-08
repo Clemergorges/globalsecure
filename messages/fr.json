@@ -7,6 +7,28 @@
     "next": "Suivant",
     "loading": "Chargement…",
     "error": "Erreur",
+    "feeConfig": {
+      "loading": "Chargement des frais…",
+      "fallbackNotice": "Utilisation des frais par défaut. Les valeurs finales peuvent légèrement varier.",
+      "estimate": "estimation",
+      "source": {
+        "env": "configuré dans le système",
+        "db": "configuré dans le système",
+        "default": "par défaut"
+      }
+    },
+    "countries": {
+      "br": "Brésil (BR)",
+      "us": "États-Unis (US)",
+      "gb": "Royaume-Uni (GB)",
+      "pt": "Portugal (PT)",
+      "de": "Allemagne (DE)",
+      "fr": "France (FR)",
+      "es": "Espagne (ES)",
+      "it": "Italie (IT)",
+      "nl": "Pays-Bas (NL)",
+      "lu": "Luxembourg (LU)"
+    },
     "disclaimer": {
       "tax": "Les impôts et obligations fiscales relèvent de la responsabilité de l’utilisateur. GSS fournit des relevés et rapports pour faciliter la déclaration, mais ne remplace pas un comptable ni un conseiller fiscal."
     }
@@ -38,6 +60,12 @@
     }
   },
   "Incidents": {
+    "travelMode": {
+      "active": "Mode Voyage actif",
+      "bannerTitle": "Mode Voyage",
+      "bannerDescription": "Le Mode Voyage réduit les blocages de géofraude en {country} sans modifier les limites de sécurité.",
+      "unknownCountry": "votre destination"
+    },
     "treasuryHalt": {
       "title": "Restriction temporaire du service",
       "description": "Les dépôts et retraits peuvent être temporairement indisponibles. Veuillez réessayer plus tard."
@@ -333,6 +361,27 @@
     "title": "Rendement (Ether.fi)",
     "subtitle": "Suivez les transferts envoyés avec rendement via Ether.fi.",
     "beta": "bêta",
+    "reload": "Recharger",
+    "disabled": {
+      "title": "Rendement indisponible",
+      "description": "Cette fonctionnalité est désactivée pour le moment.",
+      "back": "Retour au dashboard"
+    },
+    "errors": {
+      "loadFailed": "Impossible de charger le rendement",
+      "loadFailedTitle": "Impossible de charger le rendement",
+      "loadFailedDesc": "Veuillez réessayer.",
+      "retry": "Réessayer",
+      "backToDashboard": "Retour au dashboard"
+    },
+    "product": {
+      "title": "Produit",
+      "apy": "APY actuel : {percent}%",
+      "enabledLabel": "Rendement activé",
+      "enabledYes": "oui",
+      "enabledNo": "non",
+      "viewDetails": "Voir les détails"
+    },
     "summary": {
       "title": "Résumé",
       "totalPrincipalLabel": "Principal approx. en rendement (EUR)",
@@ -597,6 +646,22 @@
       },
       "phoneRequiredFor2FA": "Ajoutez un numéro dans Profil pour activer le 2FA SMS.",
       "connectionError": "Erreur de connexion."
+    },
+    "TravelMode": {
+      "title": "Mode Voyage",
+      "description": "Activez pour réduire les blocages de géofraude pendant vos déplacements.",
+      "toggleLabel": "Activer le Mode Voyage",
+      "toggleOnHelp": "Le Mode Voyage réduit les blocages de géofraude en {country} sans modifier les limites de sécurité.",
+      "toggleOffHelp": "Désactivé. La géofraude peut bloquer les transactions hors de votre pays habituel.",
+      "estimate": "(estimation)",
+      "errors": {
+        "saveFailed": "Impossible d'enregistrer. Veuillez réessayer."
+      },
+      "country": {
+        "label": "Pays du voyage (optionnel)",
+        "placeholder": "Sélectionnez un pays",
+        "none": "non défini"
+      }
     },
     "Profile": {
       "title": "Mon profil",
@@ -1063,7 +1128,28 @@
     "openCases": "Dossiers en analyse",
     "highestRisk": "Risque le plus élevé",
     "amlNote": "Si nous détectons quelque chose de suspect, vos opérations peuvent passer en revue AML.",
-    "viewSecurity": "Voir la sécurité"
+    "viewSecurity": "Voir la sécurité",
+    "AmlStatus": {
+      "title": "Conformité",
+      "subtitle": "Statut AML/KYC simplifié. Aucun détail sensible.",
+      "label": "Statut AML",
+      "status": {
+        "verified": "Vérifié",
+        "review": "En revue",
+        "actionRequired": "Action requise",
+        "blocked": "Bloqué"
+      },
+      "help": {
+        "verified": "Votre statut est OK. Si quelque chose change, vous le verrez ici.",
+        "review": "Votre compte peut être en revue. Certaines opérations peuvent être temporairement limitées.",
+        "actionRequired": "Nous avons besoin d’une étape supplémentaire pour garder votre compte actif.",
+        "blocked": "Votre compte est temporairement bloqué. Contactez le support pour être guidé."
+      },
+      "cta": {
+        "sendDocs": "Envoyer des documents",
+        "contactSupport": "Contacter le support"
+      }
+    }
   },
   "Admin": {
     "adminPanel": "Panneau d'administration",

@@ -6,6 +6,14 @@ import { logger } from '@/lib/logger';
 
 const schema = z.object({
   enabled: z.boolean(),
+  countryCode: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(2)
+    .regex(/^[A-Z]{2}$/)
+    .optional()
+    .nullable(),
   travelRegion: z
     .string()
     .trim()
@@ -41,6 +49,14 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
+  return updateTravelMode(req);
+}
+
+export async function POST(req: Request) {
+  return updateTravelMode(req);
+}
+
+async function updateTravelMode(req: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -50,7 +66,8 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'Invalid request', issues: parsed.error.issues }, { status: 400 });
   }
 
-  const { enabled, travelRegion } = parsed.data;
+  const { enabled, travelRegion, countryCode } = parsed.data;
+  const regionToStore = enabled ? ((countryCode || travelRegion || '').trim().toUpperCase() || null) : null;
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: { travelModeEnabled: true, travelRegion: true },
@@ -61,7 +78,7 @@ export async function PATCH(req: Request) {
     where: { id: session.userId },
     data: {
       travelModeEnabled: enabled,
-      travelRegion: enabled ? (travelRegion || null) : null,
+      travelRegion: regionToStore,
     },
     select: { travelModeEnabled: true, travelRegion: true, country: true },
   });

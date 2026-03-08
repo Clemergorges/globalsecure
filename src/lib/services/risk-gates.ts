@@ -11,6 +11,7 @@ function asIso2(country: string) {
 
 function getRegionCountries(region: string) {
   const r = region.trim().toUpperCase();
+  if (/^[A-Z]{2}$/.test(r)) return new Set([r]);
   if (r === 'EU') {
     return new Set([
       'AT',

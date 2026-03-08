@@ -145,8 +145,8 @@ describe('2FA routes (no KYC dependency + hardened errors)', () => {
       kycStatus: 'PENDING',
     });
 
-    const consume = jest.fn(async () => ({ ok: true as const }));
-    (OtpChallengeService as unknown as jest.Mock).mockImplementation(() => ({ consume }));
+    const consumeLatest = jest.fn(async () => ({ ok: true as const }));
+    (OtpChallengeService as unknown as jest.Mock).mockImplementation(() => ({ consumeLatest }));
     (prisma.user.update as unknown as jest.Mock).mockResolvedValue({ id: 'user_test' });
 
     const req = new NextRequest('http://localhost/api/security/2fa/verify', {
@@ -160,7 +160,7 @@ describe('2FA routes (no KYC dependency + hardened errors)', () => {
     expect((prisma.user.update as unknown as jest.Mock).mock.calls.length).toBe(1);
     expect((prisma.user.update as unknown as jest.Mock).mock.calls[0][0]).toEqual({
       where: { id: 'user_test' },
-      data: { phoneVerified: true },
+      data: { phoneVerified: true, twoFactorEnabled: true },
     });
   });
 
@@ -170,8 +170,8 @@ describe('2FA routes (no KYC dependency + hardened errors)', () => {
       kycStatus: 'PENDING',
     });
 
-    const consume = jest.fn(async () => ({ ok: false as const, reason: 'INVALID' as const }));
-    (OtpChallengeService as unknown as jest.Mock).mockImplementation(() => ({ consume }));
+    const consumeLatest = jest.fn(async () => ({ ok: false as const, reason: 'INVALID' as const }));
+    (OtpChallengeService as unknown as jest.Mock).mockImplementation(() => ({ consumeLatest }));
 
     const req = new NextRequest('http://localhost/api/security/2fa/verify', {
       method: 'POST',

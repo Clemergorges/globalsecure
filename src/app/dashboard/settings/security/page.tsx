@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Loader2, Shield, Smartphone, Key, Globe, LogOut, Eye, EyeOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useTranslations } from 'next-intl';
+import TravelModeToggle from '@/components/settings/TravelModeToggle';
 
 interface Session {
   id: string;
@@ -429,24 +430,28 @@ export default function SecuritySettingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-[#111116] border-white/5 backdrop-blur-sm md:col-span-2">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-[var(--color-primary)]" />
-              <CardTitle className="text-white">{t('yieldToggleTitle')}</CardTitle>
-            </div>
-            <CardDescription className="text-slate-400">{t('yieldToggleSubtitle')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg bg-[#1a1a1f] border-white/10">
-              <div className="space-y-1">
-                <Label className="text-base text-slate-300">{t('yieldToggleLabel')}</Label>
-                <p className="text-sm text-slate-400">{t('yieldToggleDescription')}</p>
+        {process.env.NEXT_PUBLIC_YIELD_UI_ENABLED === 'true' ? (
+          <Card className="bg-[#111116] border-white/5 backdrop-blur-sm md:col-span-2">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-[var(--color-primary)]" />
+                <CardTitle className="text-white">{t('yieldToggleTitle')}</CardTitle>
               </div>
-              <Switch checked={yieldEnabled} onCheckedChange={toggleYield} disabled={yieldLoading} />
-            </div>
-          </CardContent>
-        </Card>
+              <CardDescription className="text-slate-400">{t('yieldToggleSubtitle')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-[#1a1a1f] border-white/10">
+                <div className="space-y-1">
+                  <Label className="text-base text-slate-300">{t('yieldToggleLabel')}</Label>
+                  <p className="text-sm text-slate-400">{t('yieldToggleDescription')}</p>
+                </div>
+                <Switch checked={yieldEnabled} onCheckedChange={toggleYield} disabled={yieldLoading} />
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        <TravelModeToggle />
       </div>
 
       {/* Active Sessions */}

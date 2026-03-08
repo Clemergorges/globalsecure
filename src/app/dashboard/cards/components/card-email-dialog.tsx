@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, CheckCircle, CreditCard, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useFeeConfigWithOptions } from '@/hooks/useFeeConfig';
 
 export function CardEmailDialog(props: {
   open: boolean;
@@ -18,6 +19,7 @@ export function CardEmailDialog(props: {
   const tc = useTranslations('Common');
   const t = useTranslations('Cards.EmailCard');
   const tf = useTranslations('Transfers.Create');
+  const feeCfg = useFeeConfigWithOptions({ enabled: props.open });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ transferId?: string; recipientEmail?: string } | null>(null);
@@ -191,7 +193,9 @@ export function CardEmailDialog(props: {
 
   const amountNumber = Number(formData.amount);
   const amountValid = Number.isFinite(amountNumber) && amountNumber > 0;
-  const fee = amountValid ? amountNumber * 0.018 : 0;
+  const feePct = feeCfg.data.remittance_fee_percent / 100;
+  const feeSourceLabel = tc(`feeConfig.source.${feeCfg.data.source}` as any);
+  const fee = amountValid ? amountNumber * feePct : 0;
   const totalPay = amountValid ? amountNumber + fee : 0;
 
   return (
@@ -326,10 +330,21 @@ export function CardEmailDialog(props: {
             </span>
           </div>
           <div className="flex justify-between items-center text-sm mb-2">
-            <span className="text-slate-400">{tf('serviceFee', { percent: '1.8' })}</span>
+            <span className="text-slate-400">{tf('serviceFee', { percent: (feePct * 100).toFixed(2) })}</span>
             <span className="text-slate-300 font-mono">
               {fee.toFixed(2)} {formData.currency}
             </span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-500 mb-2">
+            <span>
+              {feeSourceLabel}
+              {feeCfg.isFallback ? (
+                <span className="ml-2 inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200">
+                  {tc('feeConfig.estimate')}
+                </span>
+              ) : null}
+            </span>
+            {feeCfg.error ? <span>{tc('feeConfig.fallbackNotice')}</span> : null}
           </div>
           <div className="flex justify-between items-center text-sm font-bold pt-2 border-t border-cyan-500/10">
             <span className="text-cyan-400">{t('breakdown.cardValue')}</span>
@@ -338,6 +353,7 @@ export function CardEmailDialog(props: {
             </span>
           </div>
         </div>
+        {feeCfg.loading ? <div className="text-xs text-slate-500">{tc('feeConfig.loading')}</div> : null}
         <div className="text-xs text-slate-500">
           {tc('disclaimer.tax')}
         </div>
@@ -346,7 +362,7 @@ export function CardEmailDialog(props: {
           <Button variant="ghost" onClick={() => close(false)} className="text-slate-400 hover:text-white" disabled={loading}>
             {tc('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={loading} className="bg-cyan-500 text-black hover:bg-cyan-600">
+          <Button onClick={handleSubmit} disabled={loading || feeCfg.loading} className="bg-cyan-500 text-black hover:bg-cyan-600">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('send')}
           </Button>
         </DialogFooter>

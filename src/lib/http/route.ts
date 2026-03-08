@@ -25,7 +25,9 @@ export function withRouteContext(
   options: RouteOptions = {},
 ) {
   return async (req: NextRequest): Promise<NextResponse> => {
-    const requestId = req.headers.get('x-request-id') ?? crypto.randomUUID();
+    const requestId =
+      req.headers.get('x-request-id') ??
+      (globalThis.crypto && 'randomUUID' in globalThis.crypto ? globalThis.crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`);
     const ipAddress = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
     const userAgent = req.headers.get('user-agent') ?? 'unknown';
     const method = req.method;

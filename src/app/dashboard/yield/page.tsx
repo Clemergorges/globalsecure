@@ -2,6 +2,10 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import YieldClient from './YieldClient';
 import { cookies, headers } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 type YieldPowerResponse = {
   yieldEnabled: boolean;
@@ -69,8 +73,29 @@ async function serverFetchJson<T>(path: string): Promise<T> {
 }
 
 export default async function YieldPage() {
+  const t = await getTranslations('Yield');
   const session = await getSession();
   if (!session) redirect('/auth/login');
+
+  if (process.env.NEXT_PUBLIC_YIELD_UI_ENABLED !== 'true') {
+    return (
+      <div className="space-y-6 max-w-[960px] mx-auto pb-20 p-6 md:p-8">
+        <Card className="bg-[#111116] border-white/5">
+          <CardHeader>
+            <CardTitle className="text-white">{t('disabled.title')}</CardTitle>
+            <CardDescription className="text-slate-400">{t('disabled.description')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/dashboard">
+              <Button variant="outline" className="border-white/10 text-slate-300 hover:bg-white/5">
+                {t('disabled.back')}
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   let initialPower: YieldPowerResponse | null = null;
   let initialSummary: YieldSummary | null = null;
   let initialError: string | null = null;
@@ -82,7 +107,7 @@ export default async function YieldPage() {
     initialPower = power;
     initialSummary = summary;
   } catch {
-    initialError = 'Não foi possível carregar rendimento';
+    initialError = t('errors.loadFailed');
   }
   return <YieldClient initialPower={initialPower} initialSummary={initialSummary} initialError={initialError} />;
 }

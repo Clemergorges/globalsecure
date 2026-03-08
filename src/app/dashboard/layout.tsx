@@ -2,6 +2,7 @@ import { getSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { SidebarNav } from './components/SidebarNav';
 import { OperationalBanners } from '@/components/incident/OperationalBanners';
+import { TravelModeHeaderIcon } from '@/components/dashboard/TravelModeHeaderIcon';
 
 export default async function DashboardLayout({
   children,
@@ -27,6 +28,7 @@ export default async function DashboardLayout({
 
       {/* Main Content */}
       <main className="flex-1 md:ml-64 min-h-screen relative z-1">
+        <TravelModeHeaderIcon />
         <OperationalBanners />
         {children}
       </main>

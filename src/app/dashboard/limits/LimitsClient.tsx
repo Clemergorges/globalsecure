@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldAlert, SlidersHorizontal, UserCheck } from 'lucide-react';
 import { formatCurrencyLocale } from '@/lib/utils';
 import { useLocale, useTranslations } from 'next-intl';
+import { AmlStatusCard } from '@/components/compliance/AmlStatusCard';
 
 type UserOverview = {
   user: {
@@ -246,6 +247,8 @@ export default function LimitsClient(props: { initialOverview?: UserOverview | n
               </div>
             </CardContent>
           </Card>
+
+          <AmlStatusCard />
         </>
       )}
     </div>

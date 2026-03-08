@@ -130,6 +130,28 @@
     "next": "Next",
     "loading": "Loading...",
     "error": "Error",
+    "feeConfig": {
+      "loading": "Loading fees…",
+      "fallbackNotice": "Using default fees. Final values may vary slightly.",
+      "estimate": "estimate",
+      "source": {
+        "env": "configured in system",
+        "db": "configured in system",
+        "default": "default"
+      }
+    },
+    "countries": {
+      "br": "Brazil (BR)",
+      "us": "United States (US)",
+      "gb": "United Kingdom (GB)",
+      "pt": "Portugal (PT)",
+      "de": "Germany (DE)",
+      "fr": "France (FR)",
+      "es": "Spain (ES)",
+      "it": "Italy (IT)",
+      "nl": "Netherlands (NL)",
+      "lu": "Luxembourg (LU)"
+    },
     "disclaimer": {
       "tax": "Taxes and fiscal obligations are the user’s responsibility. GSS provides statements and reports to support filing, but does not replace an accountant or tax advisor."
     }
@@ -161,6 +183,12 @@
     }
   },
   "Incidents": {
+    "travelMode": {
+      "active": "Travel Mode active",
+      "bannerTitle": "Travel Mode",
+      "bannerDescription": "Travel Mode reduces geo-fraud blocks in {country} without changing security limits.",
+      "unknownCountry": "your destination"
+    },
     "treasuryHalt": {
       "title": "Temporary service restriction",
       "description": "Deposits and withdrawals may be temporarily unavailable. Please try again later."
@@ -223,6 +251,12 @@
       "settings": "Settings",
       "help": "Help & Support",
       "logout": "Sign out"
+    },
+    "TravelMode": {
+      "active": "Travel Mode active",
+      "bannerTitle": "Travel Mode",
+      "bannerDescription": "Travel Mode reduces geo-fraud blocks in {country} without changing security limits.",
+      "unknownCountry": "your destination"
     }
   },
   "Transfers": {
@@ -242,6 +276,7 @@
         "gbp": "British Pound (GBP)"
       },
       "serviceFee": "Service fee ({percent}%)",
+      "serviceFeeWithSource": "Service fee ({percent}%) ({source})",
       "totalToPay": "Total to pay",
       "enableYield": "Send with yield (Ether.fi)",
       "enableYieldHelp": "Optional and not guaranteed. Track it in",
@@ -333,6 +368,27 @@
     "title": "Yield (Ether.fi)",
     "subtitle": "Track transfers sent with Ether.fi yield.",
     "beta": "beta",
+    "reload": "Reload",
+    "disabled": {
+      "title": "Yield unavailable",
+      "description": "This feature is currently disabled.",
+      "back": "Back to dashboard"
+    },
+    "errors": {
+      "loadFailed": "Unable to load yield",
+      "loadFailedTitle": "Unable to load yield",
+      "loadFailedDesc": "Please try again.",
+      "retry": "Try again",
+      "backToDashboard": "Back to dashboard"
+    },
+    "product": {
+      "title": "Product",
+      "apy": "Current APY: {percent}%",
+      "enabledLabel": "Yield enabled",
+      "enabledYes": "yes",
+      "enabledNo": "no",
+      "viewDetails": "View details"
+    },
     "summary": {
       "title": "Summary",
       "totalPrincipalLabel": "Approx. principal in yield (EUR)",
@@ -597,6 +653,22 @@
       },
       "phoneRequiredFor2FA": "Add a phone number in Profile to enable SMS 2FA.",
       "connectionError": "Connection error."
+    },
+    "TravelMode": {
+      "title": "Travel Mode",
+      "description": "Enable to reduce geo-fraud blocks while traveling.",
+      "toggleLabel": "Enable Travel Mode",
+      "toggleOnHelp": "Travel Mode reduces geo-fraud blocks in {country} without changing security limits.",
+      "toggleOffHelp": "Disabled. Geo-fraud may block transactions outside your home country.",
+      "estimate": "(estimate)",
+      "errors": {
+        "saveFailed": "Could not save. Please try again."
+      },
+      "country": {
+        "label": "Travel country (optional)",
+        "placeholder": "Select a country",
+        "none": "not set"
+      }
     },
     "Profile": {
       "title": "My profile",
@@ -1063,7 +1135,28 @@
     "openCases": "Open cases",
     "highestRisk": "Highest risk",
     "amlNote": "If we detect something suspicious, your operations may undergo AML review.",
-    "viewSecurity": "View security"
+    "viewSecurity": "View security",
+    "AmlStatus": {
+      "title": "Compliance",
+      "subtitle": "Simplified AML/KYC status. No sensitive details.",
+      "label": "AML status",
+      "status": {
+        "verified": "Verified",
+        "review": "In review",
+        "actionRequired": "Action required",
+        "blocked": "Blocked"
+      },
+      "help": {
+        "verified": "Your status is OK. If anything changes, you will see it here.",
+        "review": "Your account may be under review. Some operations may be temporarily limited.",
+        "actionRequired": "We need an additional step to keep your account active.",
+        "blocked": "Your account is temporarily blocked. Contact support for guidance."
+      },
+      "cta": {
+        "sendDocs": "Submit documents",
+        "contactSupport": "Contact support"
+      }
+    }
   },
   "Admin": {
     "adminPanel": "Admin panel",

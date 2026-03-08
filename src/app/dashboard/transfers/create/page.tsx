@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, ArrowRight, CheckCircle, AlertCircle, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useFeeConfig } from '@/hooks/useFeeConfig';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -18,6 +19,7 @@ export default function CreateTransferPage() {
   const { toast } = useToast();
   const t = useTranslations('Transfers.Create');
   const tc = useTranslations('Common');
+  const feeCfg = useFeeConfig();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -28,6 +30,9 @@ export default function CreateTransferPage() {
     currency: 'EUR',
     enableYield: false
   });
+
+  const feePct = feeCfg.data.remittance_fee_percent / 100;
+  const feeSourceLabel = tc(`feeConfig.source.${feeCfg.data.source}` as any);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,40 +199,54 @@ export default function CreateTransferPage() {
 
             <div className="bg-cyan-950/10 p-4 rounded-lg border border-cyan-500/10">
               <div className="flex justify-between items-center text-sm mb-2">
-                <span className="text-slate-400">{t('serviceFee', { percent: '1.8' })}</span>
+                <span className="text-slate-400">{t('serviceFee', { percent: (feePct * 100).toFixed(2) })}</span>
                 <span className="text-slate-300 font-mono">
-                  {formData.amount ? (parseFloat(formData.amount) * 0.018).toFixed(2) : '0.00'} {formData.currency}
+                  {formData.amount ? (parseFloat(formData.amount) * feePct).toFixed(2) : '0.00'} {formData.currency}
                 </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 mb-2">
+                <span>
+                  {feeSourceLabel}
+                  {feeCfg.isFallback ? (
+                    <span className="ml-2 inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-200">
+                      {tc('feeConfig.estimate')}
+                    </span>
+                  ) : null}
+                </span>
+                {feeCfg.error ? <span>{tc('feeConfig.fallbackNotice')}</span> : null}
               </div>
               <div className="flex justify-between items-center text-sm font-bold pt-2 border-t border-cyan-500/10">
                 <span className="text-cyan-400">{t('totalToPay')}</span>
                 <span className="text-white font-mono">
-                  {formData.amount ? (parseFloat(formData.amount) * 1.018).toFixed(2) : '0.00'} {formData.currency}
+                  {formData.amount ? (parseFloat(formData.amount) * (1 + feePct)).toFixed(2) : '0.00'} {formData.currency}
                 </span>
               </div>
             </div>
+            {feeCfg.loading ? <div className="text-xs text-slate-500">{tc('feeConfig.loading')}</div> : null}
             <div className="text-xs text-slate-500">
               {tc('disclaimer.tax')}
             </div>
 
-            <div className="flex items-center gap-3">
-              <Checkbox
-                id="enableYield"
-                checked={formData.enableYield}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, enableYield: checked === true })
-                }
-              />
-              <Label htmlFor="enableYield" className="text-slate-300">
-                {t('enableYield')}
-              </Label>
-            </div>
-            <div className="text-xs text-slate-500 pl-7">
-              {t('enableYieldHelp')}{' '}
-              <Link href="/dashboard/yield" className="text-emerald-400 hover:text-emerald-300 font-medium">
-                {t('enableYieldView')}
-              </Link>
-            </div>
+            {process.env.NEXT_PUBLIC_YIELD_UI_ENABLED === 'true' ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="enableYield"
+                    checked={formData.enableYield}
+                    onCheckedChange={(checked) => setFormData({ ...formData, enableYield: checked === true })}
+                  />
+                  <Label htmlFor="enableYield" className="text-slate-300">
+                    {t('enableYield')}
+                  </Label>
+                </div>
+                <div className="text-xs text-slate-500 pl-7">
+                  {t('enableYieldHelp')}{' '}
+                  <Link href="/dashboard/yield" className="text-emerald-400 hover:text-emerald-300 font-medium">
+                    {t('enableYieldView')}
+                  </Link>
+                </div>
+              </>
+            ) : null}
           </CardContent>
 
           <CardFooter className="flex justify-end gap-3 pt-2">
@@ -241,7 +260,7 @@ export default function CreateTransferPage() {
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || !formData.toEmail || !formData.amount}
+              disabled={loading || feeCfg.loading || !formData.toEmail || !formData.amount}
               className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold min-w-[140px] shadow-[0_0_20px_-5px_rgba(6,182,212,0.4)]"
             >
               {loading ? (

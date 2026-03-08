@@ -7,6 +7,28 @@
     "next": "Siguiente",
     "loading": "Cargando...",
     "error": "Error",
+    "feeConfig": {
+      "loading": "Cargando comisiones…",
+      "fallbackNotice": "Usando comisiones predeterminadas. Los valores finales pueden variar levemente.",
+      "estimate": "estimación",
+      "source": {
+        "env": "configurada en el sistema",
+        "db": "configurada en el sistema",
+        "default": "predeterminada"
+      }
+    },
+    "countries": {
+      "br": "Brasil (BR)",
+      "us": "Estados Unidos (US)",
+      "gb": "Reino Unido (GB)",
+      "pt": "Portugal (PT)",
+      "de": "Alemania (DE)",
+      "fr": "Francia (FR)",
+      "es": "España (ES)",
+      "it": "Italia (IT)",
+      "nl": "Países Bajos (NL)",
+      "lu": "Luxemburgo (LU)"
+    },
     "disclaimer": {
       "tax": "Los impuestos y obligaciones fiscales son responsabilidad del usuario. GSS ofrece extractos e informes para facilitar la declaración, pero no sustituye a un contador ni a un asesor fiscal."
     }
@@ -38,6 +60,12 @@
     }
   },
   "Incidents": {
+    "travelMode": {
+      "active": "Modo Viaje activo",
+      "bannerTitle": "Modo Viaje",
+      "bannerDescription": "El Modo Viaje reduce bloqueos por geofraude en {country} sin cambiar límites de seguridad.",
+      "unknownCountry": "tu destino"
+    },
     "treasuryHalt": {
       "title": "Restricción temporal del servicio",
       "description": "Los depósitos y retiros pueden estar temporalmente no disponibles. Inténtalo de nuevo más tarde."
@@ -49,6 +77,58 @@
     "partnerOutage": {
       "title": "Interrupción temporal del servicio",
       "description": "Algunas funciones pueden estar temporalmente no disponibles. Inténtalo de nuevo más tarde."
+    }
+  },
+  "Yield": {
+    "title": "Yield (Ether.fi)",
+    "subtitle": "Sigue transferencias enviadas con yield via Ether.fi.",
+    "beta": "beta",
+    "reload": "Recargar",
+    "disabled": {
+      "title": "Yield no disponible",
+      "description": "Esta función está desactivada por el momento.",
+      "back": "Volver al panel"
+    },
+    "errors": {
+      "loadFailed": "No se pudo cargar yield",
+      "loadFailedTitle": "No se pudo cargar yield",
+      "loadFailedDesc": "Inténtalo de nuevo.",
+      "retry": "Intentar de nuevo",
+      "backToDashboard": "Volver al panel"
+    },
+    "product": {
+      "title": "Producto",
+      "apy": "APY actual: {percent}%",
+      "enabledLabel": "Yield activo",
+      "enabledYes": "sí",
+      "enabledNo": "no",
+      "viewDetails": "Ver detalles"
+    },
+    "summary": {
+      "title": "Resumen",
+      "totalPrincipalLabel": "Principal aprox. en yield (EUR)",
+      "positionsLabel": "Posiciones",
+      "note": "Estimación basada en el principal enviado con yield. No incluye intereses y no cambia tu saldo total (EUR)."
+    },
+    "disclaimer": {
+      "title": "Aviso de riesgo",
+      "paragraph1": "Yield es opcional y se basa en cripto/DeFi (Ether.fi). No hay garantía de capital.",
+      "paragraph2": "En beta, mostramos un resumen por transferencia usando yieldPositionId. Puede haber retrasos o información incompleta."
+    },
+    "list": {
+      "title": "Transferencias con yield",
+      "empty": "No se encontraron transferencias con yield.",
+      "table": {
+        "date": "Fecha",
+        "recipient": "Destinatario",
+        "position": "Posición",
+        "status": "Estado",
+        "amount": "Monto"
+      }
+    },
+    "status": {
+      "open": "En yield",
+      "closed": "Cerrada"
     }
   },
   "KYC": {
@@ -197,6 +277,22 @@
         "lastActive": "Activo hace: {time}"
       },
       "phoneRequiredFor2FA": "Agrega un teléfono en Perfil para activar el 2FA por SMS."
+    },
+    "TravelMode": {
+      "title": "Modo Viaje",
+      "description": "Actívalo para reducir bloqueos por geofraude durante tus viajes.",
+      "toggleLabel": "Activar Modo Viaje",
+      "toggleOnHelp": "El Modo Viaje reduce bloqueos por geofraude en {country} sin cambiar límites de seguridad.",
+      "toggleOffHelp": "Desactivado. Geofraude puede bloquear transacciones fuera de tu país habitual.",
+      "estimate": "(estimación)",
+      "errors": {
+        "saveFailed": "No se pudo guardar. Inténtalo de nuevo."
+      },
+      "country": {
+        "label": "País del viaje (opcional)",
+        "placeholder": "Selecciona un país",
+        "none": "no definido"
+      }
     },
     "Profile": {
       "title": "Mi perfil",

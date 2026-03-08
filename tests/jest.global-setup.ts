@@ -14,7 +14,7 @@ export default async function globalSetup() {
     databaseUrl.includes('globalsecure_test');
   if (!isLocal) return;
 
-  execSync('npx prisma db push --schema prisma/schema.prisma --skip-generate', {
+  execSync('npx prisma db push --schema prisma/schema.prisma --skip-generate --accept-data-loss', {
     stdio: 'inherit',
     env: process.env,
   });
