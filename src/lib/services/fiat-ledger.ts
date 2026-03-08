@@ -40,6 +40,39 @@ export async function applyFiatMovement(
       select: { id: true },
     });
     if (!exists) {
+      const canBackfill =
+        typeof (tx as any).account?.findUnique === 'function' && typeof (tx as any).balance?.findMany === 'function';
+      if (canBackfill) {
+        const account = await (tx as any).account.findUnique({
+          where: { userId },
+          select: { id: true },
+        });
+        if (account?.id) {
+          await backfillFiatBalancesFromAccount(tx, userId, account.id);
+          const debitAfterBackfill = await tx.fiatBalance.updateMany({
+            where: {
+              userId,
+              currency,
+              amount: { gte: debitAmount },
+            },
+            data: { amount: { decrement: debitAmount } },
+          });
+          if (debitAfterBackfill.count > 0) {
+            const updatedAfterBackfill = await tx.fiatBalance.findUnique({
+              where: { userId_currency: { userId, currency } },
+            });
+            return updatedAfterBackfill!;
+          }
+          const existsAfterBackfill = await tx.fiatBalance.findUnique({
+            where: { userId_currency: { userId, currency } },
+            select: { id: true },
+          });
+          if (!existsAfterBackfill) {
+            throw new Error('BALANCE_NOT_FOUND');
+          }
+          throw new Error('INSUFFICIENT_FUNDS');
+        }
+      }
       throw new Error('BALANCE_NOT_FOUND');
     }
     throw new Error('INSUFFICIENT_FUNDS');
