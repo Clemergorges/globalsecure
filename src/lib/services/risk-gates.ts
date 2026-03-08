@@ -11,7 +11,6 @@ function asIso2(country: string) {
 
 function getRegionCountries(region: string) {
   const r = region.trim().toUpperCase();
-  if (/^[A-Z]{2}$/.test(r)) return new Set([r]);
   if (r === 'EU') {
     return new Set([
       'AT',
@@ -50,6 +49,7 @@ function getRegionCountries(region: string) {
   if (r === 'US') return new Set(['US', 'CA']);
   if (r === 'BR') return new Set(['BR']);
   if (r === 'APAC') return new Set(['JP', 'SG', 'AU', 'NZ', 'HK', 'KR', 'ID', 'MY', 'PH', 'TH', 'VN', 'TW']);
+  if (/^[A-Z]{2}$/.test(r)) return new Set([r]);
   return null;
 }
 

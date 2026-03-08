@@ -5,6 +5,10 @@ type FiatBalanceRow = { currency: string; amount: { toNumber: () => number } };
 
 function getRegionCurrencies(region: string) {
   const r = region.trim().toUpperCase();
+  if (r === 'EU') return new Set(['EUR', 'GBP', 'CHF', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF']);
+  if (r === 'US') return new Set(['USD', 'CAD']);
+  if (r === 'BR') return new Set(['BRL', 'USD']);
+  if (r === 'APAC') return new Set(['JPY', 'SGD', 'AUD', 'NZD', 'HKD', 'KRW']);
   if (/^[A-Z]{2}$/.test(r)) {
     const currencyMap: Record<string, string> = {
       BR: 'BRL',
@@ -32,10 +36,6 @@ function getRegionCurrencies(region: string) {
     if (!currency) return null;
     return new Set([currency, 'USD']);
   }
-  if (r === 'EU') return new Set(['EUR', 'GBP', 'CHF', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF']);
-  if (r === 'US') return new Set(['USD', 'CAD']);
-  if (r === 'BR') return new Set(['BRL', 'USD']);
-  if (r === 'APAC') return new Set(['JPY', 'SGD', 'AUD', 'NZD', 'HKD', 'KRW']);
   return null;
 }
 
