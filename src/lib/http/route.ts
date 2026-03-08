@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateSession } from '@/lib/session';
 import { logAudit, logger } from '@/lib/logger';
 import { monitor } from '@/lib/monitor';
+import { generateRequestId } from '@/lib/http/request-id';
 
 export type RouteContext = {
   requestId: string;
@@ -25,9 +26,7 @@ export function withRouteContext(
   options: RouteOptions = {},
 ) {
   return async (req: NextRequest): Promise<NextResponse> => {
-    const requestId =
-      req.headers.get('x-request-id') ??
-      (globalThis.crypto && 'randomUUID' in globalThis.crypto ? globalThis.crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`);
+    const requestId = req.headers.get('x-request-id') ?? generateRequestId();
     const ipAddress = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
     const userAgent = req.headers.get('user-agent') ?? 'unknown';
     const method = req.method;

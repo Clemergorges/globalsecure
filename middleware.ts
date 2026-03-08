@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { validateSession, clearSessionCookie } from '@/lib/session';
+import { generateRequestId } from './src/lib/http/request-id';
 
 const apiRateLimitMap = new Map<string, { count: number; lastReset: number }>();
 
@@ -13,7 +14,7 @@ function applySecurityHeaders(response: NextResponse) {
 }
 
 export async function middleware(request: NextRequest) {
-  const requestId = crypto.randomUUID();
+  const requestId = request.headers.get('x-request-id') ?? generateRequestId();
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-request-id', requestId);
 

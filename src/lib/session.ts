@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { SignJWT, jwtVerify } from 'jose';
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/config/env';
+import { generateRequestId } from '@/lib/http/request-id';
 
 const COOKIE_NAME = 'auth_token';
 
@@ -42,7 +43,7 @@ function getSessionMaxAgeSeconds(role: string) {
 export async function createSession(user: UserPayload, ip: string, userAgent: string) {
   const maxAgeSeconds = getSessionMaxAgeSeconds(user.role);
   const expiresAt = new Date(Date.now() + maxAgeSeconds * 1000);
-  const sessionId = globalThis.crypto.randomUUID();
+  const sessionId = generateRequestId();
 
   // Create the session in the database
   await prisma.session.create({
