@@ -251,6 +251,12 @@
       "settings": "Einstellungen",
       "help": "Hilfe & Support",
       "logout": "Abmelden"
+    },
+    "TravelMode": {
+      "active": "Reisemodus aktiv",
+      "bannerTitle": "Reisemodus",
+      "bannerDescription": "Der Reisemodus reduziert Geo-Fraud-Sperren in {country}, ohne Sicherheitslimits zu ändern.",
+      "unknownCountry": "Ihr Reiseziel"
     }
   },
   "Transfers": {
@@ -270,6 +276,7 @@
         "gbp": "Britisches Pfund (GBP)"
       },
       "serviceFee": "Servicegebühr ({percent}%)",
+      "serviceFeeWithSource": "Servicegebühr ({percent}%) ({source})",
       "totalToPay": "Gesamtbetrag",
       "enableYield": "Mit Rendite senden (Ether.fi)",
       "enableYieldHelp": "Optional und ohne Garantie. Nachverfolgen unter",

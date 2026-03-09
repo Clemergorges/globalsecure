@@ -40,13 +40,12 @@ const COUNTRY_OPTIONS: Array<{ code: string; labelKey: string }> = [
 ];
 
 export default function TravelModeToggle() {
-  if (process.env.NEXT_PUBLIC_TRAVEL_MODE_ENABLED !== 'true') return null;
-
+  const featureEnabled = process.env.NEXT_PUBLIC_TRAVEL_MODE_ENABLED === 'true';
   const t = useTranslations('Settings.TravelMode');
   const tc = useTranslations('Common');
   const tCountries = useTranslations('Common.countries');
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(featureEnabled);
   const [saving, setSaving] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [countryCode, setCountryCode] = useState<string>('');
@@ -63,6 +62,7 @@ export default function TravelModeToggle() {
   }, [countryCode, tCountries, t]);
 
   useEffect(() => {
+    if (!featureEnabled) return;
     let mounted = true;
 
     async function load() {
@@ -102,7 +102,9 @@ export default function TravelModeToggle() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [featureEnabled]);
+
+  if (!featureEnabled) return null;
 
   async function persist(nextEnabled: boolean, nextCountry: string) {
     setSaving(true);

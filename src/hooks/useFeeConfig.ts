@@ -92,10 +92,7 @@ function useFeeConfigInternal(enabled: boolean): FeeConfigState {
   });
 
   useEffect(() => {
-    if (!enabled) {
-      setState({ loading: false, error: null, data: FALLBACK_CONFIG, isFallback: true });
-      return;
-    }
+    if (!enabled) return;
     let mounted = true;
 
     fetchFeeConfig()
@@ -113,6 +110,10 @@ function useFeeConfigInternal(enabled: boolean): FeeConfigState {
       mounted = false;
     };
   }, [enabled]);
+
+  if (!enabled) {
+    return { loading: false, error: null, data: FALLBACK_CONFIG, isFallback: true };
+  }
 
   return state;
 }

@@ -251,6 +251,12 @@
       "settings": "Paramètres",
       "help": "Aide & support",
       "logout": "Se déconnecter"
+    },
+    "TravelMode": {
+      "active": "Mode Voyage actif",
+      "bannerTitle": "Mode Voyage",
+      "bannerDescription": "Le Mode Voyage réduit les blocages de géofraude en {country} sans modifier les limites de sécurité.",
+      "unknownCountry": "votre destination"
     }
   },
   "Transfers": {
@@ -270,6 +276,7 @@
         "gbp": "Livre (GBP)"
       },
       "serviceFee": "Frais de service ({percent}%)",
+      "serviceFeeWithSource": "Frais de service ({percent}%) ({source})",
       "totalToPay": "Total à payer",
       "enableYield": "Envoyer avec rendement (Ether.fi)",
       "enableYieldHelp": "Optionnel et sans garantie. Suivez-le dans",

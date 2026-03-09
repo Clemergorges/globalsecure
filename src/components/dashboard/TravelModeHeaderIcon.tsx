@@ -13,12 +13,12 @@ function logDevError(message: string, err: unknown) {
 }
 
 export function TravelModeHeaderIcon() {
-  if (process.env.NEXT_PUBLIC_TRAVEL_MODE_ENABLED !== 'true') return null;
-
+  const featureEnabled = process.env.NEXT_PUBLIC_TRAVEL_MODE_ENABLED === 'true';
   const t = useTranslations('Incidents.travelMode');
   const [state, setState] = useState<TravelModeState | null>(null);
 
   useEffect(() => {
+    if (!featureEnabled) return;
     let mounted = true;
     fetch('/api/user/travel-mode', { method: 'GET' })
       .then((r) => r.json())
@@ -34,7 +34,9 @@ export function TravelModeHeaderIcon() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [featureEnabled]);
+
+  if (!featureEnabled) return null;
 
   if (!state?.travelModeEnabled) return null;
 
