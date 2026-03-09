@@ -805,7 +805,9 @@
       "success": {
         "title": "Karte gesendet",
         "description": "Eine virtuelle Karte wurde an {email} gesendet.",
-        "transferId": "Transfer ID"
+        "transferId": "Transfer ID",
+        "unlockCodeLabel": "Entsperrcode",
+        "viewLink": "Kartenlink"
       },
       "errors": {
         "missingEmailAmount": "E-Mail und Betrag sind erforderlich.",

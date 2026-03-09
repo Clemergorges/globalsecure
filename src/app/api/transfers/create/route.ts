@@ -628,6 +628,8 @@ export async function POST(req: Request) {
             path,
             metadata: { cardId: cardData.cardId, transferId: result.id, issuer: issuer.kind }
         });
+
+        const unlockCode = randomBytes(3).toString('hex');
         
         const createdCard = await prisma.virtualCard.create({
             data: {
@@ -642,7 +644,8 @@ export async function POST(req: Request) {
               expiresAt: new Date(new Date().setFullYear(new Date().getFullYear() + 3)),
               amount: calculation.amountReceived,
               currency: currencyTarget,
-              status: 'ACTIVE'
+              status: 'ACTIVE',
+              unlockCode
             }
         });
 
@@ -669,9 +672,9 @@ export async function POST(req: Request) {
         await prisma.transfer.update({ where: { id: result.id }, data: { status: 'COMPLETED' } });
 
         // Send Email
+        const baseUrl = resolveBaseUrl(req, { allowLocalhostFallback: process.env.NODE_ENV !== 'production' });
         try {
             const { sendEmail, templates } = await import('@/lib/services/email');
-            const baseUrl = resolveBaseUrl(req, { allowLocalhostFallback: process.env.NODE_ENV !== 'production' });
             const viewCardUrl = `${baseUrl}/card/${token}`;
             await sendEmail({
               to: receiverEmail!,
@@ -688,6 +691,26 @@ export async function POST(req: Request) {
         } catch (emailError) {
             console.error('[Transfer] Email sending failed:', emailError);
         }
+
+        return NextResponse.json({
+          success: true,
+          transferId: result.id,
+          card: {
+            unlockCode,
+            viewUrl: `${baseUrl}/card/${token}`,
+          },
+          quote: {
+            amountSent: calculation.amountSent,
+            currencySent: calculation.currencySent,
+            fee: calculation.fee,
+            feePercentage: calculation.feePercentage,
+            totalToPay: totalDeduction,
+            rate: calculation.rate,
+            amountReceived: calculation.amountReceived,
+            currencyReceived: calculation.currencyReceived,
+            feeModel: calculation.feeModel,
+          },
+        });
 
       } catch (stripeError: any) {
         console.error('[Transfer] Stripe Card Creation Failed:', stripeError);

@@ -10,19 +10,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, CheckCircle, CreditCard, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useFeeConfigWithOptions } from '@/hooks/useFeeConfig';
+import { useToast } from '@/hooks/use-toast';
 
 export function CardEmailDialog(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }) {
+  const { toast } = useToast();
   const tc = useTranslations('Common');
   const t = useTranslations('Cards.EmailCard');
   const tf = useTranslations('Transfers.Create');
   const feeCfg = useFeeConfigWithOptions({ enabled: props.open });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<{ transferId?: string; recipientEmail?: string } | null>(null);
+  const [success, setSuccess] = useState<{ transferId?: string; recipientEmail?: string; unlockCode?: string; viewUrl?: string } | null>(null);
   const [sca, setSca] = useState<{ required: boolean; otpSent: boolean; otp: string; sending: boolean; verifying: boolean }>(
     { required: false, otpSent: false, otp: '', sending: false, verifying: false }
   );
@@ -102,7 +104,12 @@ export function CardEmailDialog(props: {
         return;
       }
 
-      setSuccess({ transferId: body.transferId, recipientEmail: formData.recipientEmail });
+      setSuccess({
+        transferId: body.transferId,
+        recipientEmail: formData.recipientEmail,
+        unlockCode: body?.card?.unlockCode,
+        viewUrl: body?.card?.viewUrl,
+      });
       props.onSuccess();
     } catch {
       setError(t('errors.submitFailed'));
@@ -130,6 +137,33 @@ export function CardEmailDialog(props: {
               <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{t('success.transferId')}</div>
               <div className="font-mono text-slate-200">{success.transferId}</div>
             </div>
+            {success.unlockCode && (
+              <div className="mt-3 rounded-lg border border-cyan-500/20 bg-cyan-950/20 p-3">
+                <div className="text-xs text-cyan-400 uppercase tracking-wider mb-1">{t('success.unlockCodeLabel')}</div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-mono text-lg tracking-widest text-cyan-200">{success.unlockCode}</div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-white/10 hover:bg-white/5"
+                    onClick={() => {
+                      navigator.clipboard.writeText(success.unlockCode!);
+                      toast({ title: tc('copied') });
+                    }}
+                  >
+                    {tc('copy')}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {success.viewUrl && (
+              <div className="mt-3 rounded-lg border border-white/10 bg-black/30 p-3">
+                <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{t('success.viewLink')}</div>
+                <a href={success.viewUrl} className="text-cyan-400 underline break-all" target="_blank" rel="noreferrer">
+                  {success.viewUrl}
+                </a>
+              </div>
+            )}
           </div>
 
           <DialogFooter>

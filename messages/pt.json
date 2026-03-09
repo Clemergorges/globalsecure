@@ -813,7 +813,9 @@
       "success": {
         "title": "Cartão enviado",
         "description": "Um cartão virtual foi enviado para {email}.",
-        "transferId": "Transfer ID"
+        "transferId": "Transfer ID",
+        "unlockCodeLabel": "Código de Desbloqueio",
+        "viewLink": "Link do cartão"
       },
       "errors": {
         "missingEmailAmount": "Preencha email e valor.",

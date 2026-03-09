@@ -9,17 +9,25 @@ describe('Block 1: Session and Authentication', () => {
     let user: any;
     let admin: any;
     const userPassword = 'password123';
+    const userEmail = 'test.session@example.com';
+    const adminEmail = 'test.admin@example.com';
 
     beforeAll(async () => {
-        // Clean up previous test runs
-        await prisma.session.deleteMany();
-        await prisma.user.deleteMany({ where: { email: 'test.session@example.com' } });
-        await prisma.user.deleteMany({ where: { email: 'test.admin@example.com' } });
+        const existing = await prisma.user.findMany({
+            where: { email: { in: [userEmail, adminEmail] } },
+            select: { id: true },
+        });
+        const existingIds = existing.map((u) => u.id);
+        if (existingIds.length) {
+            await prisma.session.deleteMany({ where: { userId: { in: existingIds } } });
+        }
+        await prisma.user.deleteMany({ where: { email: userEmail } });
+        await prisma.user.deleteMany({ where: { email: adminEmail } });
 
         // Create a test user
         user = await prisma.user.create({
             data: {
-                email: 'test.session@example.com',
+                email: userEmail,
                 passwordHash: await hashPassword(userPassword),
                 emailVerified: true,
                 role: 'END_USER', // Explicitly set role
@@ -28,7 +36,7 @@ describe('Block 1: Session and Authentication', () => {
 
         admin = await prisma.user.create({
             data: {
-                email: 'test.admin@example.com',
+                email: adminEmail,
                 passwordHash: await hashPassword(userPassword),
                 emailVerified: true,
                 role: 'ADMIN',
@@ -37,10 +45,12 @@ describe('Block 1: Session and Authentication', () => {
     });
 
     afterAll(async () => {
-        await prisma.session.deleteMany();
-        await prisma.user.deleteMany({ where: { email: 'test.session@example.com' } });
-        await prisma.user.deleteMany({ where: { email: 'test.admin@example.com' } });
-        await prisma.$disconnect();
+        const ids = [user?.id, admin?.id].filter(Boolean);
+        if (ids.length) {
+            await prisma.session.deleteMany({ where: { userId: { in: ids } } });
+        }
+        await prisma.user.deleteMany({ where: { email: userEmail } });
+        await prisma.user.deleteMany({ where: { email: adminEmail } });
     });
 
     let authToken: string | undefined;

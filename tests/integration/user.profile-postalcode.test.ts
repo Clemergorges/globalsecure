@@ -15,7 +15,9 @@ describe('PATCH /api/user/profile postalCode validation', () => {
   const createdUserIds: string[] = [];
 
   afterEach(async () => {
-    await prisma.kYCDocument.deleteMany({});
+    if (createdUserIds.length) {
+      await prisma.kYCDocument.deleteMany({ where: { userId: { in: createdUserIds } } });
+    }
     await prisma.account.deleteMany({ where: { userId: { in: createdUserIds } } });
     await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
     createdUserIds.splice(0, createdUserIds.length);

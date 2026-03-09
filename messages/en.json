@@ -812,7 +812,9 @@
       "success": {
         "title": "Card sent",
         "description": "A virtual card was sent to {email}.",
-        "transferId": "Transfer ID"
+        "transferId": "Transfer ID",
+        "unlockCodeLabel": "Unlock Code",
+        "viewLink": "Card link"
       },
       "errors": {
         "missingEmailAmount": "Enter email and amount.",

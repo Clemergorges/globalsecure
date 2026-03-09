@@ -48,9 +48,9 @@ describe('POST /api/kyc/stripe-identity usa user.country e valida suporte', () =
   });
 
   afterEach(async () => {
-    await prisma.kYCDocument.deleteMany({});
     await prisma.auditLog.deleteMany({ where: { action: 'KYC_STRIPE_IDENTITY_CREATE' } });
     if (createdUserIds.length) {
+      await prisma.kYCDocument.deleteMany({ where: { userId: { in: createdUserIds } } });
       await prisma.account.deleteMany({ where: { userId: { in: createdUserIds } } });
       await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
       createdUserIds.splice(0, createdUserIds.length);

@@ -168,8 +168,18 @@ describe('MVP Feb/2026: public card email view (Scenario B)', () => {
     const r = await cardEmailGet(new Request('http://localhost/api/card/email/t', { method: 'GET' }), {
       params: Promise.resolve({ token: link!.token }),
     });
-    expect(r.status).toBe(200);
-    const body = await r.json();
+    expect(r.status).toBe(401);
+
+    await prisma.virtualCard.update({
+      where: { id: card!.id },
+      data: { unlockedAt: new Date() },
+    });
+
+    const r2 = await cardEmailGet(new Request('http://localhost/api/card/email/t', { method: 'GET' }), {
+      params: Promise.resolve({ token: link!.token }),
+    });
+    expect(r2.status).toBe(200);
+    const body = await r2.json();
     expect(body.ok).toBe(true);
     expect(body.currency).toBe('EUR');
     expect(body.amountInitial).toBeCloseTo(98.2, 2);

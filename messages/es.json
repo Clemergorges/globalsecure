@@ -230,7 +230,9 @@
       "success": {
         "title": "Tarjeta enviada",
         "description": "Se envió una tarjeta virtual a {email}.",
-        "transferId": "Transfer ID"
+        "transferId": "Transfer ID",
+        "unlockCodeLabel": "Código de desbloqueo",
+        "viewLink": "Enlace de la tarjeta"
       },
       "errors": {
         "missingEmailAmount": "Completa correo e importe.",
