@@ -28,9 +28,6 @@ export const POST = createHandler(
     });
 
     if (!user) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[login-secure] 401: user not found for email:', normalizedEmail);
-        }
         logAudit({
           action: 'LOGIN_FAILURE',
           status: 'FAILURE',
@@ -38,7 +35,7 @@ export const POST = createHandler(
           userAgent,
           method,
           path,
-          metadata: { email: normalizedEmail, reason: 'USER_NOT_FOUND' },
+          metadata: { reason: 'USER_NOT_FOUND' },
         });
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
@@ -47,9 +44,6 @@ export const POST = createHandler(
     const isValid = await comparePassword(password, user.passwordHash);
     
     if (!isValid) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[login-secure] 401: wrong password for email:', normalizedEmail);
-        }
         logAudit({
           userId: user.id,
           action: 'LOGIN_FAILURE',
@@ -58,7 +52,7 @@ export const POST = createHandler(
           userAgent,
           method,
           path,
-          metadata: { email: normalizedEmail, reason: 'INVALID_PASSWORD' },
+          metadata: { reason: 'INVALID_PASSWORD' },
         });
         return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
@@ -72,7 +66,7 @@ export const POST = createHandler(
           userAgent,
           method,
           path,
-          metadata: { email: normalizedEmail, reason: 'EMAIL_NOT_VERIFIED' },
+          metadata: { reason: 'EMAIL_NOT_VERIFIED' },
         });
         return NextResponse.json(
             { error: "Email não verificado. Verifique seu email para continuar.", code: "EMAIL_NOT_VERIFIED" },

@@ -663,25 +663,6 @@ export function CardsList({ initialCards }: CardsListProps) {
             </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
-        <DialogContent className="bg-[#0A0A0F] border-white/10 text-white sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Cancelar cartão</DialogTitle>
-            <DialogDescription className="text-slate-400">
-              Tem certeza que deseja cancelar este cartão? Essa ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setCancelConfirmOpen(false)} className="text-slate-400 hover:text-white">
-              {tc('cancel')}
-            </Button>
-            <Button onClick={handleCancelCard} disabled={cancelLoading} className="bg-red-600 text-white hover:bg-red-700">
-              {cancelLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar cancelamento'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

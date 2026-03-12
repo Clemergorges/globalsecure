@@ -14,9 +14,15 @@ import { runEtherFiReconciliation } from '@/lib/services/yield-reconciliation';
 export async function GET(req: Request) {
   // Security Check: Verify CRON_SECRET if in production
   const authHeader = req.headers.get('authorization');
-  if (process.env.NODE_ENV === 'production' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    // return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // Note: Vercel Cron uses specific headers, implementing simple bypass for MVP demo
+  const cronSecret = process.env.CRON_SECRET;
+  const mustAuth = process.env.NODE_ENV === 'production' || Boolean(cronSecret);
+  if (mustAuth) {
+    if (!cronSecret) {
+      return NextResponse.json({ error: 'CRON_SECRET not configured' }, { status: 500 });
+    }
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
   }
 
   try {

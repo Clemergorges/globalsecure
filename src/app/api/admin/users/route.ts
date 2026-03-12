@@ -3,12 +3,18 @@ import { prisma } from '@/lib/db';
 import { checkAdmin } from '@/lib/auth';
 
 export async function GET(req: Request) {
-  const isAdmin = await checkAdmin();
-  if (!isAdmin) {
+  try {
+    await checkAdmin();
+  } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   try {
+    const url = new URL(req.url);
+    const rawLimit = url.searchParams.get('limit');
+    const parsedLimit = rawLimit ? Number(rawLimit) : 100;
+    const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(Math.floor(parsedLimit), 200) : 100;
+
     const users = await prisma.user.findMany({
       include: {
         account: {
@@ -21,7 +27,8 @@ export async function GET(req: Request) {
             take: 1
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      take: limit,
     });
 
     // Sanitize sensitive data & Normalize Balances

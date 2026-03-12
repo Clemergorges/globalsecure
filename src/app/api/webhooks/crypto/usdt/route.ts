@@ -12,7 +12,11 @@ export async function POST(req: Request) {
     const WEBHOOK_SECRET = process.env.ALCHEMY_WEBHOOK_SECRET;
 
     // 1. Validate HMAC Signature
-    if (WEBHOOK_SECRET && signature) {
+    const mustVerify = process.env.NODE_ENV === 'production' || Boolean(WEBHOOK_SECRET);
+    if (mustVerify) {
+        if (!WEBHOOK_SECRET || !signature) {
+            return NextResponse.json({ error: 'Missing webhook signature' }, { status: 401 });
+        }
         const hmac = crypto.createHmac('sha256', WEBHOOK_SECRET);
         hmac.update(bodyText);
         const digest = hmac.digest('hex');
@@ -21,18 +25,13 @@ export async function POST(req: Request) {
             console.error('Invalid Webhook Signature');
             return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
-    } else {
-        // Warn if running without security in dev
-        console.warn('Skipping signature validation (Missing Secret or Header)');
     }
 
     const body = JSON.parse(bodyText);
-    console.log('Received crypto webhook:', JSON.stringify(body));
 
     // Alchemy Notify payload structure
     const activity = body.event?.activity?.[0];
     if (!activity) {
-      console.log('No activity found in payload');
       return NextResponse.json({ received: true });
     }
 
@@ -49,7 +48,7 @@ export async function POST(req: Request) {
     const isUsdt = (contractAddress === USDT_CONTRACT) || (asset === 'USDT');
 
     if (category === 'token' && isUsdt) {
-        console.log(`Processing USDT Deposit: ${value} to ${toAddress}`);
+        console.log(`Processing USDT Deposit: tx=${hash}`);
 
         // Check if tx already processed
         const existing = await prisma.cryptoDeposit.findUnique({
@@ -57,7 +56,6 @@ export async function POST(req: Request) {
         });
 
         if (existing) {
-            console.log('Transaction already processed:', hash);
             return NextResponse.json({ received: true });
         }
 
@@ -69,7 +67,7 @@ export async function POST(req: Request) {
         });
 
         if (!account) {
-            console.warn(`[ORPHANED] Deposit to unknown address: ${toAddress}`);
+            console.warn(`[ORPHANED] Deposit to unknown address`);
             // TODO: Log to OrphanedDeposits table for manual review
             return NextResponse.json({ received: true, status: 'orphaned' });
         }
@@ -122,7 +120,7 @@ export async function POST(req: Request) {
             });
         });
 
-        console.log(`[SUCCESS] Credited ${amount} USDT to User ${userId}`);
+        console.log(`[SUCCESS] Credited USDT deposit tx=${hash}`);
     }
 
     return NextResponse.json({ received: true });

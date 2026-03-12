@@ -50,6 +50,11 @@ function mapStripeDocType(stripeType: string | null | undefined): any {
 export async function POST(req: Request) {
   const body = await req.text();
   const signature = (await headers()).get('stripe-signature') as string;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (process.env.NODE_ENV === 'production' && !webhookSecret) {
+    return new NextResponse('Webhook Error: STRIPE_WEBHOOK_SECRET not configured', { status: 500 });
+  }
 
   let event: Stripe.Event;
 
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
     event = getStripe().webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test' // Fallback for dev/test
+      webhookSecret || 'whsec_test' // Fallback for dev/test
     );
   } catch (err: any) {
     console.error(`Webhook signature verification failed: ${err.message}`);
