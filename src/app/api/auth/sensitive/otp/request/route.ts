@@ -8,6 +8,7 @@ import { withRouteContext } from '@/lib/http/route';
 import { OtpChallengeService } from '@/lib/security/otp/OtpChallengeService';
 import { sendEmail, templates } from '@/lib/services/email';
 import { logAudit } from '@/lib/logger';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const schema = z.object({
   actionType: z.enum([
@@ -40,11 +41,21 @@ export const POST = withRouteContext(async (req: NextRequest, ctx) => {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const purpose = mapPurpose(parsed.data.actionType);
+  const rl = await checkRateLimit(`sensitive_otp_request:${ctx.userId}:${purpose}:${ctx.ipAddress}`, 5, 10 * 60);
+  if (!rl.success) {
+    const res = NextResponse.json({ error: 'Too many requests', code: 'RATE_LIMIT' }, { status: 429 });
+    res.headers.set('x-ratelimit-limit', String(rl.limit));
+    res.headers.set('x-ratelimit-remaining', String(rl.remaining));
+    res.headers.set('x-ratelimit-reset', String(rl.reset));
+    return res;
+  }
+
   const otpService = new OtpChallengeService();
   const ttlSeconds = 10 * 60;
   const { code } = await otpService.create({
     userId: ctx.userId!,
-    purpose: mapPurpose(parsed.data.actionType),
+    purpose,
     ttlSeconds,
     maxAttempts: 5,
     ipAddress: ctx.ipAddress,

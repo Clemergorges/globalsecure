@@ -17,6 +17,8 @@ import { UserRiskTier } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { getJurisdictionRules } from '@/lib/services/jurisdiction-rules';
 import { resolveBaseUrl } from '@/lib/http/request-origin';
+import { generateRequestId } from '@/lib/http/request-id';
+import { beginIdempotency, hashIdempotencyPayload, readIdempotencyKey, type IdempotencyBeginResult } from '@/lib/idempotency';
 
 const transferSchema = z.object({
   mode: z.enum(['ACCOUNT_CONTROLLED', 'CARD_EMAIL', 'SELF_TRANSFER']), // Add other modes if needed
@@ -29,9 +31,18 @@ const transferSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const requestId = req.headers.get('x-request-id') ?? generateRequestId();
+  const respond = (body: unknown, status: number = 200) => {
+    const res = NextResponse.json(body, { status });
+    res.headers.set('x-request-id', requestId);
+    return res;
+  };
+
+  let idempotency: IdempotencyBeginResult = { kind: 'skip' };
+
   const session = await getSession();
 
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session) return respond({ error: 'Unauthorized' }, 401);
 
   async function sumTransfersEur(senderId: string, since: Date) {
     const transfers = await prisma.transfer.findMany({
@@ -56,7 +67,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    const requestId = req.headers.get('x-request-id') || null;
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
     const method = req.method;
@@ -297,6 +307,43 @@ export async function POST(req: Request) {
     // Total to deduct = amountSource (fee is already represented inside amountReceived calculation)
     const totalDeduction = Number(calculation.totalToPay);
 
+    const finalize = async (body: unknown, status: number = 200) => {
+      if (idempotency.kind === 'proceed') {
+        if (status < 500) await idempotency.commit({ status, body });
+        else await idempotency.rollback();
+      }
+      return respond(body, status);
+    };
+
+    const idempotencyKey = readIdempotencyKey(req.headers);
+    if (idempotencyKey) {
+      const requestHash = hashIdempotencyPayload({
+        mode,
+        amountSource,
+        currencySource: currencySource.toUpperCase(),
+        currencyTarget: currencyTarget.toUpperCase(),
+        receiverEmail: receiverEmailFinal,
+        receiverName: receiverName || null,
+        personalMessage: senderMessage,
+      });
+
+      idempotency = await beginIdempotency({
+        scope: `transfers:create:${(session as any).userId}`,
+        key: idempotencyKey,
+        requestHash,
+      });
+
+      if (idempotency.kind === 'replay') {
+        return respond(idempotency.body, idempotency.status);
+      }
+      if (idempotency.kind === 'in_progress') {
+        return respond({ error: 'Request in progress', code: 'IDEMPOTENCY_IN_PROGRESS' }, 409);
+      }
+      if (idempotency.kind === 'conflict') {
+        return respond({ error: 'Idempotency key reuse', code: 'IDEMPOTENCY_KEY_REUSE' }, 409);
+      }
+    }
+
     const cardEmailRecipient =
       mode === 'CARD_EMAIL'
         ? await prisma.user.findUnique({ where: { email: receiverEmailFinal }, include: { account: true } })
@@ -472,7 +519,7 @@ export async function POST(req: Request) {
         metadata: { transferId: result.id, mode, amount: amountSource, currencySource, currencyTarget },
       });
 
-      return NextResponse.json({
+      return await finalize({
         success: true,
         transferId: result.id,
         quote: {
@@ -692,7 +739,7 @@ export async function POST(req: Request) {
             console.error('[Transfer] Email sending failed:', emailError);
         }
 
-        return NextResponse.json({
+        return await finalize({
           success: true,
           transferId: result.id,
           card: {
@@ -791,10 +838,10 @@ export async function POST(req: Request) {
            } catch (e) { /* ignore */ }
         }
         
-        return NextResponse.json({ 
+        return await finalize({ 
             error: 'Falha ao processar transferência. O valor foi reembolsado para sua carteira.', 
             code: 'STRIPE_ERROR_REFUNDED' 
-        }, { status: 500 });
+        }, 500);
       }
     }
 
@@ -816,7 +863,7 @@ export async function POST(req: Request) {
       metadata: { transferId: result.id, mode, amount: amountSource, currencySource, currencyTarget },
     });
 
-    return NextResponse.json({
+    return await finalize({
       success: true,
       transferId: result.id,
       quote: {
@@ -832,7 +879,9 @@ export async function POST(req: Request) {
       },
     });
   } catch (error: any) {
-    const requestId = req.headers.get('x-request-id') || null;
+    if (idempotency.kind === 'proceed') {
+      await idempotency.rollback();
+    }
     console.error('Transfer creation failed:', error);
     logger.error({ requestId, userId: (session as any)?.userId, err: error }, 'Transfer create failed');
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -850,11 +899,11 @@ export async function POST(req: Request) {
       metadata: { reason: error?.message || 'UNKNOWN' },
     });
     if (error?.message === 'BALANCE_NOT_FOUND') {
-      return NextResponse.json({ error: 'Balance not found' }, { status: 400 });
+      return respond({ error: 'Balance not found' }, 400);
     }
     if (error?.message === 'INSUFFICIENT_FUNDS') {
-      return NextResponse.json({ error: 'Insufficient funds' }, { status: 409 });
+      return respond({ error: 'Insufficient funds' }, 409);
     }
-    return NextResponse.json({ error: 'Transfer creation failed', details: error.message }, { status: 500 });
+    return respond({ error: 'Transfer creation failed', details: error.message }, 500);
   }
 }

@@ -10,6 +10,7 @@ import { comparePassword, hashPassword } from '@/lib/auth';
 import { logAudit } from '@/lib/logger';
 import { withRouteContext } from '@/lib/http/route';
 import { OtpChallengeService } from '@/lib/security/otp/OtpChallengeService';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const schema = z.discriminatedUnion('actionType', [
   z.object({
@@ -42,10 +43,20 @@ export const POST = withRouteContext(async (req: NextRequest, ctx) => {
     return NextResponse.json({ error: 'Validation Error', details: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
+  const purpose = mapPurpose(parsed.data.actionType);
+  const rl = await checkRateLimit(`sensitive_otp_confirm:${ctx.userId}:${purpose}:${ctx.ipAddress}`, 10, 10 * 60);
+  if (!rl.success) {
+    const res = NextResponse.json({ error: 'Too many requests', code: 'RATE_LIMIT' }, { status: 429 });
+    res.headers.set('x-ratelimit-limit', String(rl.limit));
+    res.headers.set('x-ratelimit-remaining', String(rl.remaining));
+    res.headers.set('x-ratelimit-reset', String(rl.reset));
+    return res;
+  }
+
   const otpService = new OtpChallengeService();
   const consume = await otpService.consume({
     userId: ctx.userId!,
-    purpose: mapPurpose(parsed.data.actionType),
+    purpose,
     code: parsed.data.otpCode,
   });
 

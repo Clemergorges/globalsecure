@@ -35,6 +35,18 @@ type AppHandler<TBody = any> = (
   params?: any
 ) => Promise<NextResponse> 
 
+function attachRequestId(res: NextResponse, requestId: string) {
+  if (!res.headers.get('x-request-id')) {
+    res.headers.set('x-request-id', requestId);
+  }
+  return res;
+}
+
+function jsonWithRequestId(body: unknown, init: { status?: number } | undefined, requestId: string) {
+  const res = NextResponse.json(body, init);
+  return attachRequestId(res, requestId);
+}
+
 async function applyRateLimit( 
   req: NextRequest, 
   cfg: RateLimitConfig, 
@@ -111,10 +123,7 @@ export function createHandler<TBody>(
               duration: Date.now() - start
           });
 
-          return NextResponse.json( 
-            { error: "Too many requests" }, 
-            { status: 429 }, 
-          ) 
+          return jsonWithRequestId({ error: "Too many requests" }, { status: 429 }, requestId);
         } 
       } 
 
@@ -160,6 +169,8 @@ export function createHandler<TBody>(
       // 4. Handler Execution
       const res = await handler(extendedReq, params) 
 
+      attachRequestId(res, requestId);
+
       const duration = Date.now() - start 
       logger.info( 
         { requestId, duration, status: res.status }, 
@@ -204,10 +215,7 @@ export function createHandler<TBody>(
             duration
         });
 
-        return NextResponse.json( 
-          { error: "Invalid request", issues: err.issues }, 
-          { status: 400 }, 
-        ) 
+        return jsonWithRequestId({ error: "Invalid request", issues: err.issues }, { status: 400 }, requestId);
       } 
 
       if (err instanceof ApiError) {
@@ -228,10 +236,11 @@ export function createHandler<TBody>(
           duration
         })
 
-        return NextResponse.json(
+        return jsonWithRequestId(
           { code: err.code, message: err.message, details: err.details },
           { status: err.status },
-        )
+          requestId,
+        );
       }
 
       logger.error( 
@@ -252,10 +261,7 @@ export function createHandler<TBody>(
           duration
       });
 
-      return NextResponse.json( 
-        { error: "Internal server error" }, 
-        { status: 500 }, 
-      ) 
+      return jsonWithRequestId({ error: "Internal server error" }, { status: 500 }, requestId);
     } 
   } 
 } 

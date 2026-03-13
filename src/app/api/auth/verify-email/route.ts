@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { withRouteContext } from '@/lib/http/route';
 import { env } from '@/lib/config/env';
 import { logger } from '@/lib/logger';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const verifySchema = z.object({
   email: z.string().email(),
@@ -25,6 +26,17 @@ export const POST = withRouteContext(async (req: NextRequest) => {
 
     const { email, code } = parsed.data;
     const normalizedEmail = email.toLowerCase();
+
+    const emailKey = crypto.createHash('sha256').update(normalizedEmail).digest('hex');
+    const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
+    const rl = await checkRateLimit(`verify_email:${ip}:${emailKey}`, 10, 15 * 60);
+    if (!rl.success) {
+      const res = NextResponse.json({ error: 'Muitas tentativas. Tente novamente em instantes.', code: 'RATE_LIMIT' }, { status: 429 });
+      res.headers.set('x-ratelimit-limit', String(rl.limit));
+      res.headers.set('x-ratelimit-remaining', String(rl.remaining));
+      res.headers.set('x-ratelimit-reset', String(rl.reset));
+      return res;
+    }
     const codeHash = hashEmailOtp(code);
 
     const user = await prisma.user.findUnique({
