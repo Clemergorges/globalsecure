@@ -182,6 +182,7 @@ export default function ClaimPage() {
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6))}
                     placeholder="A1B2C3"
+                    autoComplete="one-time-code"
                     className="bg-black/20 border-white/10 text-white placeholder:text-slate-500 font-mono tracking-widest text-center"
                     disabled={unlocking}
                   />

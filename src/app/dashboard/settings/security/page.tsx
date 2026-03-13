@@ -348,6 +348,7 @@ export default function SecuritySettingsPage() {
                 <div className="relative">
                   <Input 
                     type={showCurrentPassword ? "text" : "password"} 
+                    autoComplete="current-password"
                     value={passwordData.current}
                     onChange={e => setPasswordData({...passwordData, current: e.target.value})}
                     required
@@ -372,6 +373,7 @@ export default function SecuritySettingsPage() {
                 <div className="relative">
                   <Input 
                     type={showNewPassword ? "text" : "password"} 
+                    autoComplete="new-password"
                     value={passwordData.new}
                     onChange={e => setPasswordData({...passwordData, new: e.target.value})}
                     required minLength={8}
@@ -534,6 +536,7 @@ export default function SecuritySettingsPage() {
             <Input 
               placeholder="000000" 
               className="text-center text-2xl tracking-widest bg-[#1a1a1f] border-white/10 text-white" 
+              autoComplete="one-time-code"
               maxLength={6}
               value={otpCode}
               onChange={e => setOtpCode(e.target.value.replaceAll(/\D/g, '').slice(0, 6))}
@@ -577,6 +580,7 @@ export default function SecuritySettingsPage() {
             <Input
               autoFocus
               inputMode="numeric"
+              autoComplete="one-time-code"
               placeholder="000000"
               className="text-center text-2xl tracking-widest bg-[#1a1a1f] border-white/10 text-white"
               maxLength={6}

@@ -138,6 +138,7 @@ function VerifyContent() {
               <Input
                 id="code"
                 name="code"
+                autoComplete="one-time-code"
                 placeholder="000000"
                 required
                 maxLength={6}

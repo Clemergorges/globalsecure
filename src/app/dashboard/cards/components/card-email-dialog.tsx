@@ -266,6 +266,7 @@ export function CardEmailDialog(props: {
                   <Input
                     id="otp"
                     inputMode="numeric"
+                    autoComplete="one-time-code"
                     placeholder="000000"
                     value={sca.otp}
                     onChange={(e) => setSca((s) => ({ ...s, otp: e.target.value.replace(/\\D/g, '').slice(0, 6) }))}

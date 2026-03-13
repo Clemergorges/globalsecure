@@ -139,6 +139,8 @@ export default function RegisterPage() {
                 <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                 <Input 
                   {...register('email')} 
+                  type="email"
+                  autoComplete="username"
                   placeholder={t('emailPlaceholder')}
                   disabled={loading}
                   className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-cyan-500/20" 
@@ -153,6 +155,7 @@ export default function RegisterPage() {
                 <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                 <Input 
                   type="password"
+                  autoComplete="new-password"
                   {...register('password')} 
                   placeholder="••••••••" 
                   disabled={loading}
