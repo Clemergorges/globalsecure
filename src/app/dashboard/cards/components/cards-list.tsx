@@ -321,16 +321,16 @@ export function CardsList({ initialCards }: CardsListProps) {
         </div>
       )}
 
-      <div className="flex justify-end gap-3">
-        <Button onClick={() => setIsTransferOpen(true)} variant="outline" className="border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 font-medium">
+      <div className="flex flex-col sm:flex-row sm:justify-end gap-3">
+        <Button onClick={() => setIsTransferOpen(true)} variant="outline" className="w-full sm:w-auto border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 font-medium">
           <Send className="w-4 h-4 mr-2" />
           {t('globalLink')}
         </Button>
-        <Button onClick={() => setIsCardEmailOpen(true)} variant="outline" className="border-white/10 text-slate-200 hover:bg-white/5 font-medium">
+        <Button onClick={() => setIsCardEmailOpen(true)} variant="outline" className="w-full sm:w-auto border-white/10 text-slate-200 hover:bg-white/5 font-medium">
           <CreditCard className="w-4 h-4 mr-2" />
           Cartão por e-mail
         </Button>
-        <Button onClick={() => setIsCreateOpen(true)} className="bg-cyan-500 hover:bg-cyan-600 text-black font-medium shadow-[0_0_15px_-5px_rgba(6,182,212,0.5)]">
+        <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-black font-medium shadow-[0_0_15px_-5px_rgba(6,182,212,0.5)]">
           <Plus className="w-4 h-4 mr-2" />
           {t('newCard')}
         </Button>
