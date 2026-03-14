@@ -156,6 +156,129 @@
       "tax": "Impostos e obrigações fiscais são responsabilidade do usuário. A GSS oferece extratos e relatórios para facilitar a declaração, mas não substitui contador nem consultoria fiscal."
     }
   },
+  "MoneyPath": {
+    "common": {
+      "unknown": "Desconhecido",
+      "seconds": "{n}s",
+      "minutes": "{n} min",
+      "hours": "{n}h",
+      "days": "{n} dias"
+    },
+    "playground": {
+      "title": "Playground: Caminho do Dinheiro",
+      "subtitle": "Crie uma transferência demo e veja a linha do tempo completa, etapa por etapa.",
+      "badgeDemo": "DEMO",
+      "corridorLabel": "Corredor",
+      "corridorPlaceholder": "Selecione um corredor",
+      "amountLabel": "Valor",
+      "amountHint": "Valor em {currency} (demo).",
+      "simulate": "Simular agora",
+      "simulateLoading": "Simulando…",
+      "cards": {
+        "realtimeTitle": "Linha do tempo viva",
+        "realtimeBody": "Acompanhe o status do seu envio com etapas claras e visuais.",
+        "aiTitle": "Roteamento automático",
+        "aiBody": "A demo escolhe a rota com base em custo e tempo estimados.",
+        "didacticTitle": "Didático e auditável",
+        "didacticBody": "Clique nas etapas para ver detalhes, motivos e alternativas."
+      }
+    },
+    "corridors": {
+      "EU_BR_FIAT": "EU → BR (Fiat demo)",
+      "BR_EU_FIAT": "BR → EU (Fiat demo)",
+      "EU_BR_CRYPTO": "EU → BR (Polygon demo)",
+      "BR_EU_CRYPTO": "BR → EU (Polygon demo)",
+      "EU_EU": "EU → EU (Ledger interno)",
+      "BR_BR": "BR → BR (Ledger interno)"
+    },
+    "status": {
+      "PENDING": "Em trânsito",
+      "PROCESSING": "Processando",
+      "COMPLETED": "Concluída",
+      "CANCELED": "Cancelada",
+      "LOADING": "Carregando…"
+    },
+    "stageStatus": {
+      "DONE": "OK",
+      "CURRENT": "AGORA",
+      "UPCOMING": "EM BREVE"
+    },
+    "stages": {
+      "ORIGIN": {
+        "title": "Origem",
+        "subtitle": "Carteira/conta de origem",
+        "details": "Mostra o valor inicial e o ponto de entrada do fluxo (demo)."
+      },
+      "SECURITY": {
+        "title": "Validação",
+        "subtitle": "KYC/AML e limites",
+        "details": "Aplicamos checagens de segurança e regras de risco (demo)."
+      },
+      "FX": {
+        "title": "Conversão (FX)",
+        "subtitle": "Câmbio e taxas",
+        "details": "Calculamos taxa, spread e valor final após conversão (demo)."
+      },
+      "RAIL": {
+        "title": "Rail escolhido",
+        "subtitle": "Fiat/Polygon/Ledger",
+        "details": "A rota é escolhida automaticamente com base em custo e tempo estimados."
+      },
+      "PARTNER": {
+        "title": "Parceiro",
+        "subtitle": "Rede/infra de destino",
+        "details": "Mostra onde o dinheiro entra na infraestrutura do país/rail de destino (demo)."
+      },
+      "DESTINATION": {
+        "title": "Destino",
+        "subtitle": "Conta/carteira destino",
+        "details": "Resumo do valor final e taxas totais do fluxo (demo)."
+      }
+    },
+    "rails": {
+      "FIAT_STUB": "Fiat (stub)",
+      "CRYPTO_POLYGON": "Polygon (USDT)",
+      "LEDGER_INTERNAL": "Ledger interno"
+    },
+    "railSummary": {
+      "FIAT_STUB": "Fiat stub → FX interno → Rede bancária (demo)",
+      "CRYPTO_POLYGON": "FX interno → Polygon USDT → Off‑ramp (demo)",
+      "LEDGER_INTERNAL": "Movimentação interna no ledger (demo)"
+    },
+    "timeline": {
+      "title": "Caminho do Dinheiro",
+      "tagline": "Acompanhe o caminho exato do seu dinheiro, em tempo real.",
+      "transferIdLabel": "ID da transferência",
+      "liveHint": "Linha do tempo interativa (clique em uma estação para ver detalhes).",
+      "demoDisclaimer": "Simulação demo (sem parceiros reais).",
+      "originAmount": "Você enviou: {amount}",
+      "entryFeeDemo": "Taxa de entrada: 0,00 (demo)",
+      "fxPair": "Conversão: {from} → {to}",
+      "fxFees": "Taxas: {feePct}% (demo)",
+      "railChosen": "Rota escolhida: {rail}",
+      "railEstimate": "Tempo estimado: {time}",
+      "finalAmount": "Chegou: {amount}",
+      "totalFees": "Taxas totais: {fee} ({pct}%)"
+    },
+    "side": {
+      "title": "Resumo & IA (demo)",
+      "subtitle": "Entenda a rota escolhida e compare alternativas.",
+      "reset": "Auto",
+      "routeSummary": "Resumo da rota",
+      "estimatedCost": "Custo estimado",
+      "estimatedTime": "Tempo estimado",
+      "selectedStage": "Etapa selecionada",
+      "none": "Selecione uma etapa na linha do tempo.",
+      "at": "Timestamp: {at}",
+      "comparisonTitle": "Comparação de rotas (demo)",
+      "comparisonEmpty": "Sem dados de comparação ainda.",
+      "comparisonRow": "{feePct}% • {time}"
+    },
+    "errors": {
+      "generic": "Erro: {code}",
+      "timelineLoad": "Falha ao carregar timeline (código: {code})."
+    }
+  },
   "CardEmail": {
     "View": {
       "title": "Seu cartão GlobalSecure",
@@ -214,6 +337,7 @@
       "limits": "Limites",
       "history": "Histórico",
       "security": "Segurança",
+      "moneyPathDemo": "Caminho do Dinheiro",
       "settings": "Configurações",
       "profile": "Meu Perfil",
       "support": "Suporte",
