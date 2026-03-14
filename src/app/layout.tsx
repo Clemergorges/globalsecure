@@ -15,6 +15,9 @@ export const metadata = {
     statusBarStyle: 'black-translucent',
     title: 'GlobalSecure',
   },
+  other: {
+    google: 'notranslate',
+  },
 };
 
 export default async function RootLayout({
@@ -26,8 +29,8 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className="dark">
-      <body className="min-h-screen bg-background font-sans antialiased">
+    <html lang={locale} className="dark notranslate" translate="no">
+      <body className="min-h-screen bg-background font-sans antialiased" translate="no">
         <NextIntlClientProvider messages={messages}>
           {children}
           <Toaster />

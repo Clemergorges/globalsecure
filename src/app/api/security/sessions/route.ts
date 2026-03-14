@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 import { inferDeviceTypeFromUserAgent } from '@/lib/device';
+import { revokeSession } from '@/lib/session';
 
 type SessionRow = {
   id: string;
@@ -61,14 +62,18 @@ export async function DELETE(req: Request) {
     if (!session || typeof session === 'string' || !session.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   
     try {
-      const { sessionId } = await req.json();
-  
-      await prisma.session.deleteMany({
-        where: {
-          id: sessionId,
-          userId: session.userId // Ensure user owns the session
-        }
-      });
+      const body = await req.json().catch(() => null);
+      const sessionId = body && typeof body === 'object' ? (body as any).sessionId : null;
+      if (!sessionId || typeof sessionId !== 'string') {
+        return NextResponse.json({ error: 'Invalid sessionId' }, { status: 400 });
+      }
+
+      const owned = await prisma.session.findFirst({ where: { id: sessionId, userId: session.userId }, select: { id: true } });
+      if (!owned) {
+        return NextResponse.json({ success: true });
+      }
+
+      await revokeSession(sessionId);
   
       return NextResponse.json({ success: true });
     } catch (error) {

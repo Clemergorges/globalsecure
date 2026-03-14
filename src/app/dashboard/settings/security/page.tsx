@@ -302,10 +302,12 @@ export default function SecuritySettingsPage() {
   async function revokeSession(id: string) {
     if (!confirm(t('sessions.revokeConfirm'))) return;
     try {
-      await fetch('/api/security/sessions', {
+      const res = await fetch('/api/security/sessions', {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: id })
       });
+      if (!res.ok) throw new Error('failed');
       fetchSessions();
     } catch (e) {
       alert(t('errorDisconnecting'));
@@ -318,7 +320,11 @@ export default function SecuritySettingsPage() {
     if (!confirm(t('sessions.revokeAllConfirm'))) return;
     for (const id of other) {
       try {
-        await fetch('/api/security/sessions', { method: 'DELETE', body: JSON.stringify({ sessionId: id }) });
+        await fetch('/api/security/sessions', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: id }),
+        });
       } catch {}
     }
     fetchSessions();
