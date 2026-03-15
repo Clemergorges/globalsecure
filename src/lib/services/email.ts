@@ -196,6 +196,18 @@ export const templates = {
     </div>
   `,
 
+  claimStepUpOtp: (code: string, ttlMinutes: number) => `
+    <div style="font-family: sans-serif; color: #0f172a; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px; background: #ffffff;">
+      <h2 style="color: #2563eb; margin: 0 0 12px;">Confirmação de segurança do cartão</h2>
+      <p style="margin: 0 0 10px; color: #334155;">Use o código abaixo para confirmar o acesso ao cartão.</p>
+      <div style="background: #f8fafc; padding: 18px; border-radius: 8px; margin: 16px 0; text-align: center; border: 1px solid #e2e8f0;">
+        <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1e293b;">${escapeHtml(code)}</span>
+      </div>
+      <p style="margin: 0; color: #334155;">Este código expira em ${ttlMinutes} minutos.</p>
+      <p style="margin: 10px 0 0; font-size: 12px; color: #64748b;">Se você não solicitou este acesso, ignore este e-mail.</p>
+    </div>
+  `,
+
   passwordResetLink: (resetUrl: string) => `
     <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
       <h2 style="color: #2563eb;">Redefinir Senha 🔐</h2>

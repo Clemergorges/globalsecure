@@ -302,6 +302,13 @@
         "submitting": "Verifying...",
         "invalid": "Invalid code format.",
         "failed": "Invalid code or link expired."
+      },
+      "stepUp": {
+        "title": "Additional verification",
+        "description": "We sent a code to your email. Enter it below to continue.",
+        "label": "Code (6 digits)",
+        "submit": "Confirm",
+        "submitting": "Verifying..."
       }
     }
   },
@@ -1028,6 +1035,13 @@
       "claimAlreadyClaimed": "This card was already unlocked. If you lost the details, contact support.",
       "claimNotFound": "Invalid or expired link.",
       "generic": "Processing error. Please try again."
+    },
+    "stepUp": {
+      "title": "Additional verification",
+      "subtitle": "We sent a code to your email. Enter it below to continue.",
+      "codeLabel": "Code (6 digits)",
+      "confirm": "Confirm",
+      "verifying": "Verifying..."
     }
   },
   "ClaimClient": {

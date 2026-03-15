@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { logClaimEvent } from '@/lib/services/claim-events';
+import { ClaimLinkEventType } from '@prisma/client';
 
-export async function GET(_req: Request, { params }: { params: Promise<{ token: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
 
   const claim = await prisma.claimLink.findUnique({
@@ -13,6 +15,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   if (!claim || !claim.virtualCard) {
     return NextResponse.json({ ok: false, code: 'CARD_LINK_INVALID' }, { status: 404 });
   }
+
+  logClaimEvent({
+    claimLinkId: claim.id,
+    type: ClaimLinkEventType.VIEW,
+    ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || null,
+    userAgent: req.headers.get('user-agent') || null,
+    metadata: { kind: 'CARD_EMAIL_VIEW' },
+  }).catch(() => {});
   if (claim.expiresAt <= now || claim.status === 'EXPIRED' || claim.status === 'CANCELLED') {
     return NextResponse.json({ ok: false, code: 'CARD_LINK_INVALID' }, { status: 404 });
   }

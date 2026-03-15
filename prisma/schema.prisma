@@ -1107,6 +1107,9 @@ model ClaimLink {
   virtualCardId String? @unique
   virtualCard   VirtualCard? @relation(fields: [virtualCardId], references: [id])
 
+  events        ClaimLinkEvent[]
+  otpChallenges ClaimOtpChallenge[]
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -1115,6 +1118,51 @@ model ClaimLink {
   @@index([token])
   @@index([creatorId])
   @@index([status])
+}
+
+enum ClaimLinkEventType {
+  VIEW
+  UNLOCK_CODE_FAILED
+  UNLOCK_CODE_OK
+  STEPUP_OTP_SENT
+  STEPUP_OTP_FAILED
+  STEPUP_OTP_VERIFIED
+  REVEAL_SUCCESS
+}
+
+model ClaimLinkEvent {
+  id          String             @id @default(uuid())
+  claimLinkId String
+  type        ClaimLinkEventType
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime           @default(now())
+
+  claimLink    ClaimLink         @relation(fields: [claimLinkId], references: [id])
+
+  @@index([claimLinkId, createdAt])
+  @@index([type, createdAt])
+}
+
+model ClaimOtpChallenge {
+  id             String   @id @default(uuid())
+  claimLinkId    String
+  recipientEmail String
+  codeHash       String
+  expiresAt      DateTime
+  usedAt         DateTime?
+  attempts       Int      @default(0)
+  maxAttempts    Int
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+
+  claimLink      ClaimLink @relation(fields: [claimLinkId], references: [id])
+
+  @@index([claimLinkId, createdAt])
+  @@index([expiresAt])
+  @@index([recipientEmail, createdAt])
 }
 
 enum ClaimStatus {

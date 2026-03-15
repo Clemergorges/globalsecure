@@ -44,6 +44,9 @@ export default function CardEmailViewPage() {
   const [requiresOtp, setRequiresOtp] = useState(false);
   const [otp, setOtp] = useState('');
   const [otpSubmitting, setOtpSubmitting] = useState(false);
+  const [stepUpRequired, setStepUpRequired] = useState(false);
+  const [stepUpOtp, setStepUpOtp] = useState('');
+  const [stepUpSubmitting, setStepUpSubmitting] = useState(false);
 
   const cardLabel = useMemo(() => {
     if (!data || !data.ok) return null;
@@ -61,6 +64,7 @@ export default function CardEmailViewPage() {
     setLoading(true);
     setError(null);
     setRequiresOtp(false);
+    setStepUpRequired(false);
     try {
       const res = await fetch(`/api/card/email/${encodeURIComponent(token)}`, { method: 'GET' });
       const body = (await res.json().catch(() => ({}))) as CardEmailPublic;
@@ -104,6 +108,12 @@ export default function CardEmailViewPage() {
       });
       const body = (await res.json().catch(() => ({}))) as ClaimUnlock;
       if (!res.ok || (body as any)?.ok === false) {
+        const err = String((body as any)?.error || '').toUpperCase();
+        if (err === 'CLAIM_STEPUP_REQUIRED') {
+          setStepUpRequired(true);
+          setError(null);
+          return;
+        }
         setError(t('otp.failed'));
         return;
       }
@@ -113,6 +123,35 @@ export default function CardEmailViewPage() {
       setError(t('otp.failed'));
     } finally {
       setOtpSubmitting(false);
+    }
+  }
+
+  async function confirmStepUp() {
+    if (stepUpSubmitting) return;
+    if (!/^[0-9]{6}$/.test(stepUpOtp)) {
+      setError(t('otp.invalid'));
+      return;
+    }
+    setStepUpSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/claim/${encodeURIComponent(token)}/step-up/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp: stepUpOtp }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || (body as any)?.ok === false) {
+        setError(t('otp.failed'));
+        return;
+      }
+      setStepUpOtp('');
+      setStepUpRequired(false);
+      await load();
+    } catch {
+      setError(t('otp.failed'));
+    } finally {
+      setStepUpSubmitting(false);
     }
   }
 
@@ -132,7 +171,7 @@ export default function CardEmailViewPage() {
               </div>
             )}
 
-            {requiresOtp && (
+            {requiresOtp && !stepUpRequired && (
               <div className="space-y-3">
                 <div className="bg-cyan-950/20 text-cyan-200 p-4 rounded-xl border border-cyan-500/20">
                   <div className="font-semibold">{t('otp.title')}</div>
@@ -171,6 +210,54 @@ export default function CardEmailViewPage() {
                   className="w-full border-white/10 text-slate-200 hover:bg-white/5"
                   onClick={() => setOtp('')}
                   disabled={otpSubmitting}
+                >
+                  {tc('cancel')}
+                </Button>
+              </div>
+            )}
+
+            {requiresOtp && stepUpRequired && (
+              <div className="space-y-3">
+                <div className="bg-cyan-950/20 text-cyan-200 p-4 rounded-xl border border-cyan-500/20">
+                  <div className="font-semibold">{t('stepUp.title')}</div>
+                  <div className="text-sm text-cyan-200/80">{t('stepUp.description')}</div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t('stepUp.label')}</Label>
+                  <Input
+                    value={stepUpOtp}
+                    onChange={(e) => setStepUpOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                    placeholder="123456"
+                    className="bg-black/20 border-white/10 text-white placeholder:text-slate-500"
+                    disabled={stepUpSubmitting}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                  />
+                </div>
+
+                <Button
+                  onClick={confirmStepUp}
+                  disabled={stepUpSubmitting || stepUpOtp.length !== 6}
+                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold h-12"
+                >
+                  {stepUpSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t('stepUp.submitting')}
+                    </span>
+                  ) : (
+                    t('stepUp.submit')
+                  )}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full border-white/10 text-slate-200 hover:bg-white/5"
+                  onClick={() => {
+                    setStepUpRequired(false);
+                    setStepUpOtp('');
+                  }}
+                  disabled={stepUpSubmitting}
                 >
                   {tc('cancel')}
                 </Button>

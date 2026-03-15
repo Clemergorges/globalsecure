@@ -302,6 +302,13 @@
         "submitting": "Verificando...",
         "invalid": "Formato de código inválido.",
         "failed": "Código inválido ou link expirado."
+      },
+      "stepUp": {
+        "title": "Confirmação adicional",
+        "description": "Enviamos um código para o seu e-mail. Digite abaixo para continuar.",
+        "label": "Código (6 dígitos)",
+        "submit": "Confirmar",
+        "submitting": "Verificando..."
       }
     }
   },
@@ -1029,6 +1036,13 @@
       "claimAlreadyClaimed": "Esse cartão já foi desbloqueado. Se perdeu os dados, contate suporte.",
       "claimNotFound": "Link inválido ou expirado.",
       "generic": "Erro ao processar. Tente novamente."
+    },
+    "stepUp": {
+      "title": "Confirmação adicional",
+      "subtitle": "Enviamos um código para o seu e-mail. Digite abaixo para continuar.",
+      "codeLabel": "Código (6 dígitos)",
+      "confirm": "Confirmar",
+      "verifying": "Verificando..."
     }
   },
   "ClaimClient": {

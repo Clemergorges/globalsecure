@@ -52,6 +52,9 @@ export default function ClaimPage() {
   const [unlocking, setUnlocking] = useState(false);
   const [unlocked, setUnlocked] = useState<ClaimUnlock | null>(null);
   const [showDetails, setShowDetails] = useState(true);
+  const [stepUpRequired, setStepUpRequired] = useState(false);
+  const [stepUpOtp, setStepUpOtp] = useState('');
+  const [stepUpSubmitting, setStepUpSubmitting] = useState(false);
 
   const isExpired = useMemo(() => {
     if (!claim || !claim.ok) return false;
@@ -98,6 +101,15 @@ export default function ClaimPage() {
       const data = (await res.json().catch(() => ({}))) as ClaimUnlock;
       if (!res.ok || (data as any).ok === false) {
         const errCode = (data as any)?.error || 'Erro ao desbloquear.';
+        if (errCode === 'CLAIM_STEPUP_REQUIRED') {
+          setStepUpRequired(true);
+          setError(null);
+          return;
+        }
+        if (errCode === 'CLAIM_AMOUNT_LIMIT') {
+          setError(t('errors.generic'));
+          return;
+        }
         if (errCode === 'INVALID_UNLOCK_CODE') {
           setError(t('errors.invalidUnlockCode', { remaining: (data as any)?.attemptsRemaining ?? 0 }));
         } else if (errCode === 'TOO_MANY_ATTEMPTS') {
@@ -119,6 +131,37 @@ export default function ClaimPage() {
       setError(t('errors.generic'));
     } finally {
       setUnlocking(false);
+    }
+  }
+
+  async function confirmStepUp() {
+    if (!token) return;
+    if (stepUpSubmitting) return;
+    if (!/^[0-9]{6}$/.test(stepUpOtp)) {
+      setError(t('errors.generic'));
+      return;
+    }
+    setStepUpSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/claim/${encodeURIComponent(token)}/step-up/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp: stepUpOtp }),
+      });
+      const data = (await res.json().catch(() => ({}))) as ClaimUnlock;
+      if (!res.ok || (data as any).ok === false) {
+        setError(t('errors.generic'));
+        return;
+      }
+      setUnlocked(data);
+      setShowDetails(true);
+      setStepUpRequired(false);
+      setStepUpOtp('');
+    } catch {
+      setError(t('errors.generic'));
+    } finally {
+      setStepUpSubmitting(false);
     }
   }
 
@@ -174,7 +217,7 @@ export default function ClaimPage() {
               </div>
             ) : null}
 
-            {!loading && !unlocked && claim?.ok && !isExpired ? (
+            {!loading && !unlocked && claim?.ok && !isExpired && !stepUpRequired ? (
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>{t('unlockCodeLabel')}</Label>
@@ -199,6 +242,50 @@ export default function ClaimPage() {
                   ) : (
                     t('unlock')
                   )}
+                </Button>
+              </div>
+            ) : null}
+
+            {!loading && !unlocked && claim?.ok && !isExpired && stepUpRequired ? (
+              <div className="space-y-3">
+                <div className="bg-cyan-950/20 text-cyan-200 p-4 rounded-xl border border-cyan-500/20">
+                  <div className="font-semibold">{t('stepUp.title')}</div>
+                  <div className="text-sm text-cyan-200/80">{t('stepUp.subtitle')}</div>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('stepUp.codeLabel')}</Label>
+                  <Input
+                    value={stepUpOtp}
+                    onChange={(e) => setStepUpOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                    placeholder="123456"
+                    autoComplete="one-time-code"
+                    className="bg-black/20 border-white/10 text-white placeholder:text-slate-500 font-mono tracking-widest text-center"
+                    disabled={stepUpSubmitting}
+                  />
+                </div>
+                <Button
+                  onClick={confirmStepUp}
+                  disabled={stepUpOtp.length !== 6 || stepUpSubmitting}
+                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold h-12"
+                >
+                  {stepUpSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t('stepUp.verifying')}
+                    </span>
+                  ) : (
+                    t('stepUp.confirm')
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full border-white/10 text-slate-200 hover:bg-white/5"
+                  onClick={() => {
+                    setStepUpRequired(false);
+                    setStepUpOtp('');
+                  }}
+                  disabled={stepUpSubmitting}
+                >
+                  {tc('cancel')}
                 </Button>
               </div>
             ) : null}

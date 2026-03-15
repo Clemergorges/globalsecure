@@ -179,6 +179,13 @@
         "submitting": "Vérification…",
         "invalid": "Format de code invalide.",
         "failed": "Code invalide ou lien expiré."
+      },
+      "stepUp": {
+        "title": "Vérification supplémentaire",
+        "description": "Nous avons envoyé un code à votre e-mail. Saisissez-le ci-dessous pour continuer.",
+        "label": "Code (6 chiffres)",
+        "submit": "Confirmer",
+        "submitting": "Vérification…"
       }
     }
   },
@@ -1028,6 +1035,13 @@
       "claimAlreadyClaimed": "Cette carte a déjà été déverrouillée. Si vous avez perdu les données, contactez le support.",
       "claimNotFound": "Lien invalide ou expiré.",
       "generic": "Erreur de traitement. Veuillez réessayer."
+    },
+    "stepUp": {
+      "title": "Vérification supplémentaire",
+      "subtitle": "Nous avons envoyé un code à votre e-mail. Saisissez-le ci-dessous pour continuer.",
+      "codeLabel": "Code (6 chiffres)",
+      "confirm": "Confirmer",
+      "verifying": "Vérification…"
     }
   },
   "ClaimClient": {

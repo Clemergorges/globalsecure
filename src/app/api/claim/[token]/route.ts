@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { logClaimEvent } from '@/lib/services/claim-events';
+import { ClaimLinkEventType } from '@prisma/client';
 
 export async function GET(req: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -18,6 +20,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     if (!claim.virtualCard) {
       return NextResponse.json({ ok: false, error: 'CARD_NOT_FOUND' }, { status: 404 });
     }
+
+    logClaimEvent({
+      claimLinkId: claim.id,
+      type: ClaimLinkEventType.VIEW,
+      ipAddress: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || null,
+      userAgent: req.headers.get('user-agent') || null,
+      metadata: { kind: 'CLAIM_PUBLIC_VIEW' },
+    }).catch(() => {});
 
     if (claim.status === 'CLAIMED' || claim.claimedAt || claim.virtualCard.unlockedAt) {
       return NextResponse.json({ ok: false, error: 'CLAIM_ALREADY_CLAIMED' }, { status: 409 });

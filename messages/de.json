@@ -179,6 +179,13 @@
         "submitting": "Wird geprüft...",
         "invalid": "Ungültiges Code-Format.",
         "failed": "Ungültiger Code oder Link abgelaufen."
+      },
+      "stepUp": {
+        "title": "Zusätzliche Verifizierung",
+        "description": "Wir haben einen Code an deine E-Mail gesendet. Gib ihn unten ein, um fortzufahren.",
+        "label": "Code (6 Ziffern)",
+        "submit": "Bestätigen",
+        "submitting": "Prüfen..."
       }
     }
   },
@@ -1028,6 +1035,13 @@
       "claimAlreadyClaimed": "Diese Karte wurde bereits freigeschaltet. Wenn Sie die Daten verloren haben, kontaktieren Sie den Support.",
       "claimNotFound": "Ungültiger oder abgelaufener Link.",
       "generic": "Verarbeitungsfehler. Bitte erneut versuchen."
+    },
+    "stepUp": {
+      "title": "Zusätzliche Verifizierung",
+      "subtitle": "Wir haben einen Code an deine E-Mail gesendet. Gib ihn unten ein, um fortzufahren.",
+      "codeLabel": "Code (6 Ziffern)",
+      "confirm": "Bestätigen",
+      "verifying": "Prüfen..."
     }
   },
   "ClaimClient": {
